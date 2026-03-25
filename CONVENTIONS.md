@@ -15,19 +15,46 @@ Before writing, state aloud (in your response or thinking):
 1. The frontmatter you will use (copy the template below)
 2. Your assigned skill name
 3. Three topics you will NOT cover (per the boundary table below)
-4. Your target size (10-15KB)
+4. Your SKILL.md size target (6-8KB body, with overflow in `references/`)
 
 ---
 
-## File Location
+## Skill Directory Structure
 
-Your skill lives at exactly this path:
+Each skill lives in its own directory with this structure:
 
 ```
-skills/<skill-name>/SKILL.md
+skills/<skill-name>/
+├── SKILL.md              (required — core skill, 6-8KB target)
+├── references/           (optional — detailed content loaded on demand)
+│   ├── flag-reference.md
+│   └── advanced-examples.md
+├── examples/             (optional — complete, runnable example files)
+└── scripts/              (optional — utility scripts for validation, etc.)
 ```
 
-Do not create other files unless explicitly asked. Do not modify other skills.
+### Progressive Disclosure
+
+Skills use a three-tier loading system to manage context efficiently:
+
+1. **Metadata (name + description)** — always in context (~100 words)
+2. **SKILL.md body** — loaded when skill triggers (~1,500-2,500 words)
+3. **Bundled resources** — loaded as needed by the agent (unlimited)
+
+This means SKILL.md should contain the **essential** knowledge an agent needs for
+common tasks. Move exhaustive flag tables, advanced examples, edge cases, and deep
+reference material into `references/` files. The agent will read them when needed.
+
+### What goes where
+
+| Content type | Location | Why |
+|-------------|----------|-----|
+| Core concepts, quick start, common patterns | `SKILL.md` | Always needed |
+| Exhaustive flag tables, advanced YAML examples | `references/` | Loaded on demand |
+| Complete runnable pipeline examples | `examples/` | Copy-paste ready |
+| Validation or helper scripts | `scripts/` | Executed without reading |
+
+Do not modify other skills. Create only the directories you actually need.
 
 ---
 
@@ -39,30 +66,31 @@ Copy this exactly. Fill in `<skill-name>` and `<description>`:
 ---
 name: <skill-name>
 description: >
-  [2-3 sentences. First sentence: what this skill covers.
-  Second sentence: trigger scenarios — start with "Use when...".
-  Third sentence: additional triggers — start with "Also use when..."]
+  This skill should be used when the user asks to [primary task verb phrases].
+  Also use when the user mentions [specific terms, directories, commands, or concepts].
 ---
 ```
 
 **Good description example:**
 ```yaml
 description: >
-  Configure and manage Buildkite CI/CD pipelines using pipeline.yml.
-  Use when writing pipeline steps, configuring plugins, setting up dynamic
-  pipelines, working with artifacts, or troubleshooting pipeline syntax.
-  Also use when the user mentions .buildkite/ directory, buildkite-agent
-  pipeline upload, or asks about Buildkite CI configuration.
+  This skill should be used when the user asks to "configure pipelines",
+  "write pipeline steps", "set up dynamic pipelines", "troubleshoot pipeline syntax",
+  or "work with artifacts in pipeline YAML".
+  Also use when the user mentions .buildkite/ directory, buildkite-agent pipeline
+  upload, pipeline.yml, or asks about Buildkite CI configuration.
 ```
 
 **Why the description matters:** Agents load skills based on description matching.
-A weak description means the skill never gets loaded. Write it to match real queries.
+A weak description means the skill never gets loaded. Include specific quoted phrases
+that match real user queries. Use third person ("This skill should be used when...")
+so the system can evaluate the description in context.
 
 ---
 
 ## Section Order (mandatory)
 
-Every skill must follow this structure:
+Every SKILL.md must follow this structure:
 
 1. **YAML frontmatter** (name + description)
 2. **H1 title** — `# Buildkite <Area>`
@@ -70,18 +98,20 @@ Every skill must follow this structure:
 4. **## Quick Start** — minimum viable example, copy-paste ready, <20 lines
 5. **## [Feature sections]** — one H2 per major feature area
    - Include CLI examples in fenced code blocks
-   - Include flag tables for every command
+   - Include flag tables for the most common commands
    - Include YAML examples where relevant
 6. **## Common Mistakes** — table format (see below)
-7. **## Further Reading** — 3-5 links to buildkite.com/docs
+7. **## Additional Resources** — pointers to `references/` and `examples/` files
+8. **## Further Reading** — 3-5 links to buildkite.com/docs
 
 ---
 
 ## Style Rules
 
-**Voice:**
+**Voice — imperative/infinitive form:**
 - Write for agents, not humans. Agents need exact commands and structured data.
-- Active voice: "Run `bk build create`" not "A build can be created by running..."
+- Use imperative form: "Run `bk build create`" not "You should run `bk build create`"
+- No second person. Write "Specify the branch with `--branch`" not "You can specify..."
 - No marketing language. No "powerful", "seamless", "robust", "best-in-class".
 - No hedging. "Use `--branch` to specify the branch" not "You might want to consider using `--branch`..."
 
@@ -92,7 +122,8 @@ Every skill must follow this structure:
 - Show realistic example values, not `<your-value-here>` placeholders where avoidable
 
 **Flag tables:**
-Use this format for every CLI command:
+Use this format for CLI commands. Include the most essential commands inline in
+SKILL.md; move exhaustive tables to `references/`.
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
@@ -112,9 +143,35 @@ When your topic touches another skill's territory, use exactly this pattern:
 
 Never duplicate content owned by another skill. One sentence + pointer.
 
-**Size target:** 10-15KB. The Depot reference is 14.5KB — match that density.
-If your first draft is under 8KB, it's incomplete. Expand flag tables, add more
-examples, deepen the common mistakes section.
+**Size targets:**
+- SKILL.md body: **6-8KB** (~1,500-2,500 words). Contains core knowledge for common tasks.
+- References: **unlimited**. Move detailed flag tables, advanced examples, and edge cases here.
+- Total skill content (SKILL.md + references): **10-15KB** typical.
+
+If your SKILL.md first draft exceeds 8KB, identify sections to extract into `references/`.
+If it's under 4KB, it's too thin — expand quick start, add more inline examples, deepen
+common mistakes.
+
+---
+
+## Referencing Bundled Resources
+
+When your skill includes `references/`, `examples/`, or `scripts/`, add an
+**Additional Resources** section near the end of SKILL.md:
+
+```markdown
+## Additional Resources
+
+### Reference Files
+- **`references/flag-reference.md`** — Complete flag tables for all commands
+- **`references/advanced-examples.md`** — Complex pipeline patterns and edge cases
+
+### Examples
+- **`examples/basic-pipeline.yml`** — Minimal working pipeline
+- **`examples/matrix-build.yml`** — Matrix build with multiple languages
+```
+
+This ensures the agent knows these resources exist and can load them when needed.
 
 ---
 
@@ -183,17 +240,29 @@ is often more useful than what to do.
 
 Before you consider your skill done, verify:
 
+**Structure:**
 - [ ] Frontmatter has both `name` and `description` fields
-- [ ] Description contains trigger phrases ("Use when...", "Also use when...")
+- [ ] Description uses third person ("This skill should be used when...")
+- [ ] Description contains specific quoted trigger phrases
 - [ ] Follows section order exactly (Quick Start before feature sections, Common Mistakes near end)
-- [ ] File is 10-15KB
-- [ ] Every CLI command has a flag table
+- [ ] SKILL.md body is 6-8KB; detailed content moved to `references/`
+- [ ] All referenced `references/` and `examples/` files exist
+
+**Content:**
+- [ ] Written in imperative/infinitive form — no second person ("you")
+- [ ] Every inline CLI command has a flag table
 - [ ] Flag tables include Default column
-- [ ] All code blocks are syntactically correct
+- [ ] All code blocks are syntactically correct and copy-paste ready
 - [ ] No topics that belong to other skills (check boundary table)
 - [ ] Minimum 5 rows in Common Mistakes table
 - [ ] At least 3 Further Reading links to buildkite.com/docs
 - [ ] Cross-references use "see the **buildkite-[skill]** skill" pattern
+
+**Progressive Disclosure:**
+- [ ] Core concepts and common patterns in SKILL.md
+- [ ] Exhaustive flag tables, advanced examples in `references/`
+- [ ] Additional Resources section points to bundled files
+- [ ] Total skill content (SKILL.md + references) is 10-15KB
 
 ---
 
@@ -201,4 +270,6 @@ Before you consider your skill done, verify:
 
 Read `references/depot-ci-skill.md` to see what good looks like.
 Note: that's a Depot file, not Buildkite. Do not copy content — use it as a
-model for density, structure, and agent-friendliness only.
+model for density, structure, and agent-friendliness only. The Depot skill is
+a single-file skill (14.5KB); our skills use progressive disclosure to split
+that density across SKILL.md and `references/`.
