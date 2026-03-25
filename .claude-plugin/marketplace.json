@@ -1,0 +1,13 @@
+{
+  "name": "buildkite-skills",
+  "owner": {
+    "name": "Buildkite"
+  },
+  "plugins": [
+    {
+      "name": "buildkite",
+      "source": "./",
+      "description": "Buildkite skills for pipelines, agents, CLI, and platform management"
+    }
+  ]
+}

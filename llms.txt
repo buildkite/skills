@@ -1,0 +1,26 @@
+# Buildkite Skills for AI Agents
+# https://github.com/buildkite/skills
+
+> Buildkite is a CI/CD platform for fast, flexible software delivery.
+> These skills teach AI coding agents to configure Buildkite correctly.
+
+## Skills
+
+### buildkite-pipelines
+Path: skills/buildkite-pipelines/SKILL.md
+Topics: pipeline.yml, step types (command, wait, block, trigger, group), plugins, dynamic pipelines, artifacts, hooks, retry, concurrency, matrix builds
+
+### buildkite-agent
+Path: skills/buildkite-agent/SKILL.md
+Topics: agent installation, buildkite-agent.cfg, tags, queue routing, clusters, agent tokens, hosted agents, SSH keys, git mirrors, agent lifecycle hooks
+
+### buildkite-cli
+Path: skills/buildkite-cli/SKILL.md
+Topics: bk build create/list/view, bk job log/retry/cancel, bk pipeline, bk secret, bk artifact, bk auth login
+
+### buildkite-platform
+Path: skills/buildkite-platform/SKILL.md
+Topics: REST API, GraphQL API, webhooks, Test Engine, Packages registry, OIDC, SSO/SAML, notification services
+
+## Full Documentation
+https://buildkite.com/docs

@@ -1,0 +1,5 @@
+{
+  "name": "buildkite",
+  "description": "Buildkite skills for pipelines, agents, CLI, and platform management",
+  "version": "1.0.0"
+}

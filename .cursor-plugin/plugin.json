@@ -1,0 +1,30 @@
+{
+  "name": "buildkite-skills",
+  "displayName": "Buildkite pipeline, agent, CLI, and platform skills",
+  "version": "1.0.0",
+  "description": "Buildkite skills for pipelines, agents, CLI, and platform management",
+  "author": {
+    "name": "Buildkite"
+  },
+  "publisher": "Buildkite",
+  "homepage": "https://github.com/buildkite/skills",
+  "repository": "https://github.com/buildkite/skills",
+  "license": "MIT",
+  "keywords": [
+    "ci/cd",
+    "buildkite",
+    "pipelines",
+    "continuous integration",
+    "build automation",
+    "agents"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "ci/cd",
+    "buildkite",
+    "pipelines",
+    "agents",
+    "continuous integration"
+  ],
+  "skills": "./skills/"
+}
