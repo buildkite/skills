@@ -142,7 +142,72 @@ This shows which evals flipped (FIXED/REGRESSED) and the pass rate delta.
 
 The script exits with code 1 if any eval fails, making it usable in CI.
 
-## Adding Evals
+### Trigger Precision Eval Runner
+
+`run_trigger.py` tests whether Claude selects the correct skill based on description alone. It presents all skill descriptions in a system prompt, sends a query, and checks whether the model picks the right skill. This tests **routing accuracy** — complementary to the quality runner which tests **answer correctness**.
+
+Uses a separate dataset (`trigger_dataset.yaml`) with should-trigger and near-miss entries per skill.
+
+```bash
+# Run all trigger evals
+python evals/run_trigger.py
+
+# Filter to evals targeting a specific skill
+python evals/run_trigger.py --skill buildkite-pipelines
+
+# Only run near-miss entries
+python evals/run_trigger.py --tag near-miss
+
+# Multi-run for trigger rate reliability (3 runs per query)
+python evals/run_trigger.py --runs 3
+
+# Only holdout split (40%) for validation after description tuning
+python evals/run_trigger.py --holdout
+
+# Parallel execution (default: 5 concurrent)
+python evals/run_trigger.py --parallel 10
+
+# Compare against previous run
+python evals/run_trigger.py --compare evals/results/trigger-20260326-120000.json
+```
+
+#### Trigger Dataset Format
+
+Each eval in `trigger_dataset.yaml`:
+
+| Field | Description |
+|-------|-------------|
+| `id` | Unique identifier (`t-{skill}-NNN` or `t-{skill}-nNN` for near-misses) |
+| `query` | User question to route |
+| `expected_skill` | Which skill should be selected |
+| `expected_not_skills` | Skills that must NOT be selected (for near-miss testing) |
+| `tags` | `should-trigger`, `near-miss`, boundary labels like `pipelines-vs-runtime` |
+
+#### Trigger Metrics
+
+- **Accuracy**: overall correct routing rate
+- **Per-skill precision**: of queries where skill X was selected, what fraction should have been?
+- **Per-skill recall**: of queries where skill X should have been selected, what fraction was?
+- **F1**: harmonic mean of precision and recall
+- **Confusion matrix**: expected (rows) vs selected (columns) — reveals systematic misrouting
+
+#### Quality vs Trigger: When to Use Which
+
+| | Quality (`run_quality.py`) | Trigger (`run_trigger.py`) |
+|---|---|---|
+| **Tests** | Does the skill content produce correct answers? | Does Claude pick the right skill? |
+| **When to run** | After editing SKILL.md content | After editing skill description (frontmatter) |
+| **Fix loop** | Improve skill body content | Improve description trigger phrases |
+
+#### Adding Trigger Evals
+
+1. Use `t-{skill}-NNN` for should-trigger, `t-{skill}-nNN` for near-misses
+2. Near-misses are the most valuable — use shared keywords but different intent
+3. Focus on known boundary overlaps (e.g., `pipelines` vs `agent-runtime` for artifacts)
+4. Include `expected_not_skills` for near-miss entries
+5. Tag with the boundary being tested (e.g., `pipelines-vs-runtime`)
+
+## Adding Quality Evals
 
 1. Use the next available ID in the relevant cluster (e.g., `pipeline-009`)
 2. Prefer real questions from Plain/Avoma over synthetic ones
