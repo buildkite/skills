@@ -55,6 +55,10 @@ Thumbs.db
 # Claude Code skill build artifacts
 *.skill
 
+# Eval results
+evals/results/*.json
+**/__pycache__
+
 # Yarn
 .pnp.*
 .yarn/*

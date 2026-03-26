@@ -62,14 +62,85 @@ The support data suggests the current 4-skill split (pipelines, agent, CLI, plat
 
 ## Running Evals
 
-No eval runner exists yet. The dataset is designed for a future script that:
+### Setup
 
-1. Passes `question` to the skill routing system
-2. Checks if `primary_skill` was selected (routing accuracy)
-3. Passes question + SKILL.md content to an LLM
-4. Checks `expected_contains` terms appear in the response
-5. Checks `expected_not_contains` terms do NOT appear
-6. Scores: routing accuracy %, content coverage %, boundary violation rate
+```bash
+pip install -r evals/requirements.txt
+```
+
+Set `ANTHROPIC_API_KEY` in a `.env` file at the repo root (loaded automatically via python-dotenv):
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Quality Eval Runner
+
+`run_quality.py` tests whether a skill's content produces answers containing the right concepts. For each eval it sends the question to the Anthropic API with the skill's `SKILL.md` as a system prompt, then grades the response against `expected_contains` and `expected_not_contains` terms.
+
+```bash
+# Run all evals for a skill
+python evals/run_quality.py --skill buildkite-pipelines
+
+# Focus on a specific cluster
+python evals/run_quality.py --skill buildkite-pipelines --cluster pipeline-config
+
+# Run specific evals by ID
+python evals/run_quality.py --skill buildkite-pipelines --id pipeline-001,pipeline-006
+
+# Filter by difficulty or tag
+python evals/run_quality.py --skill buildkite-pipelines --difficulty getting-started
+python evals/run_quality.py --skill buildkite-pipelines --tag dynamic-pipelines
+
+# Speed up with parallel API calls
+python evals/run_quality.py --skill buildkite-pipelines --parallel 5
+
+# Use a different model
+python evals/run_quality.py --skill buildkite-pipelines --model claude-opus-4-20250514
+
+# Print full model responses in terminal
+python evals/run_quality.py --skill buildkite-pipelines --show-responses
+
+# Skip saving results JSON
+python evals/run_quality.py --skill buildkite-pipelines --no-save
+```
+
+### Results
+
+Each run saves a JSON file to `evals/results/` (gitignored) containing:
+- Pass/fail status and matched/missed terms for each eval
+- The full model response for each eval
+- The original question for easy reading
+- Aggregate stats (pass rate, coverage)
+
+### Comparing Runs
+
+Track progress between skill iterations using `--compare`:
+
+```bash
+# Edit SKILL.md to fix gaps, then re-run and compare
+python evals/run_quality.py --skill buildkite-pipelines \
+  --compare evals/results/quality-buildkite-pipelines-20260326-005304.json
+```
+
+This shows which evals flipped (FIXED/REGRESSED) and the pass rate delta.
+
+### Iteration Workflow
+
+1. Run evals: `python evals/run_quality.py --skill buildkite-pipelines`
+2. Review failures — check which `expected_contains` terms are missing
+3. Read the full responses in the results JSON to understand why
+4. Improve `SKILL.md` to cover the gaps
+5. Re-run with `--compare` to verify fixes and catch regressions
+6. Repeat until pass rate is satisfactory
+
+### Scoring
+
+- **Pass/fail**: An eval passes when all `expected_contains` terms appear and no `expected_not_contains` terms appear (case-insensitive substring match)
+- **Contains coverage**: Average fraction of expected terms matched across all evals
+- **Boundary violations**: Count of `expected_not_contains` terms found (indicates hallucination or wrong-skill content)
+
+The script exits with code 1 if any eval fails, making it usable in CI.
 
 ## Adding Evals
 
