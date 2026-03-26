@@ -49,3 +49,30 @@ def grade_eval(response: str, eval_entry: dict) -> dict:
         "response_length": len(response),
         "response": response,
     }
+
+
+# --- Trigger eval grading ---
+
+
+def grade_trigger(selected_skill: str | None, eval_entry: dict) -> dict:
+    """Grade a trigger eval result.
+
+    Returns dict with: passed, selected_skill, expected_skill,
+    correct_selection, is_false_positive, is_false_negative, expected_not_violations.
+    """
+    expected = eval_entry.get("expected_skill")
+    expected_not = eval_entry.get("expected_not_skills", [])
+
+    correct = (selected_skill == expected)
+    not_violations = [s for s in expected_not if selected_skill == s]
+    passed = correct and len(not_violations) == 0
+
+    return {
+        "passed": passed,
+        "selected_skill": selected_skill,
+        "expected_skill": expected,
+        "correct_selection": correct,
+        "expected_not_violations": not_violations,
+        "is_false_positive": expected is None and selected_skill is not None,
+        "is_false_negative": expected is not None and selected_skill is None,
+    }

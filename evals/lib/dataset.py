@@ -7,6 +7,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATASET_PATH = REPO_ROOT / "evals" / "dataset.yaml"
+TRIGGER_DATASET_PATH = REPO_ROOT / "evals" / "trigger_dataset.yaml"
 SKILLS_DIR = REPO_ROOT / "skills"
 
 
@@ -88,3 +89,61 @@ def load_skill(skill_name: str) -> tuple[str, str]:
 def skill_path(skill_name: str) -> Path:
     """Return the path to a skill's SKILL.md."""
     return SKILLS_DIR / skill_name / "SKILL.md"
+
+
+# --- Trigger eval functions ---
+
+
+def load_trigger_dataset(path: Path = TRIGGER_DATASET_PATH) -> list[dict]:
+    """Load trigger evals from trigger_dataset.yaml."""
+    with open(path) as f:
+        data = yaml.safe_load(f)
+    return data.get("trigger_evals", [])
+
+
+def load_all_skill_descriptions() -> dict[str, str]:
+    """Load name->description mapping for all skills with SKILL.md files.
+
+    Returns dict like {"buildkite-pipelines": "This skill should be used when..."}
+    Only includes skills that have a non-empty description in frontmatter.
+    """
+    descriptions = {}
+    for skill_dir in sorted(SKILLS_DIR.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        skill_md = skill_dir / "SKILL.md"
+        if skill_md.exists():
+            description, _ = load_skill(skill_dir.name)
+            if description:
+                descriptions[skill_dir.name] = description
+    return descriptions
+
+
+def filter_trigger_evals(
+    evals: list[dict],
+    skill: str | None = None,
+    tags: list[str] | None = None,
+    ids: list[str] | None = None,
+    holdout: bool = False,
+    holdout_ratio: float = 0.4,
+) -> list[dict]:
+    """Filter trigger evals by criteria. All filters are AND-ed together."""
+    result = evals
+
+    if skill:
+        result = [e for e in result if e.get("expected_skill") == skill]
+
+    if tags:
+        result = [
+            e for e in result
+            if any(t in e.get("tags", []) for t in tags)
+        ]
+
+    if ids:
+        id_set = set(ids)
+        result = [e for e in result if e.get("id") in id_set]
+
+    if holdout:
+        result = [e for e in result if _is_holdout(e["id"], holdout_ratio)]
+
+    return result
