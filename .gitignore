@@ -57,6 +57,7 @@ Thumbs.db
 
 # Eval results
 evals/results/*.json
+**/__pycache__
 
 # Yarn
 .pnp.*
