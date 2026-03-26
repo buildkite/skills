@@ -1,6 +1,0 @@
-interface:
-  display_name: "Buildkite Agent"
-  short_description: "Agent installation, configuration, hooks, and queues"
-  icon_small: "./assets/buildkite-icon-small.png"
-  icon_large: "./assets/buildkite-icon-large.png"
-  brand_color: "#00D974"
