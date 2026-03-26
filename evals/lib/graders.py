@@ -47,4 +47,5 @@ def grade_eval(response: str, eval_entry: dict) -> dict:
         "not_contains_violated": violations,
         "total_expected": len(expected),
         "response_length": len(response),
+        "response": response,
     }

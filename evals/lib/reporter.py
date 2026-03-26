@@ -123,6 +123,7 @@ def write_json_results(
         "results": [
             {
                 "id": e["id"],
+                "question": e["question"],
                 "cluster": e.get("cluster", ""),
                 "difficulty": e.get("difficulty", ""),
                 **r,
