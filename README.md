@@ -1,8 +1,8 @@
 # Buildkite Skills
 
 Skills that teach AI coding agents how to use [Buildkite](https://buildkite.com).
-Install them into your agent of choice so it can generate correct Buildkite
-pipeline YAML, configure agents, use the `bk` CLI, and call the API.
+Install them into your agent of choice so it can generate correct pipeline YAML,
+run CLI commands, call the API, configure agents, split tests, and ship securely.
 
 ## Installation
 
@@ -10,113 +10,68 @@ pipeline YAML, configure agents, use the `bk` CLI, and call the API.
 npx skills add buildkite/skills
 ```
 
-See [skills.sh](https://skills.sh) for more info.
+See [skills.sh](https://skills.sh) for supported agents and options.
 
 ### Cursor
 
-Search for "Buildkite Skills" in the Cursor Marketplace, or run `/add-plugin` and search for "Buildkite".
+Search for **Buildkite Skills** in the Cursor Marketplace, or run `/add-plugin` and search for "Buildkite".
 
 ### Manual
 
-Copy skill files directly into your agent's skills directory:
+Copy skill directories into your agent's skills folder:
 
 ```bash
 # Claude Code
 mkdir -p .claude/skills
 cp -r skills/buildkite-pipelines .claude/skills/
-cp -r skills/buildkite-agent .claude/skills/
+cp -r skills/buildkite-agent-runtime .claude/skills/
 cp -r skills/buildkite-cli .claude/skills/
-cp -r skills/buildkite-platform .claude/skills/
+cp -r skills/buildkite-api .claude/skills/
+cp -r skills/buildkite-platform-engineering .claude/skills/
+cp -r skills/buildkite-secure-delivery .claude/skills/
+cp -r skills/buildkite-test-engine .claude/skills/
 
 # Cursor
 mkdir -p .cursor/skills
 cp -r skills/buildkite-pipelines .cursor/skills/
-cp -r skills/buildkite-agent .cursor/skills/
+cp -r skills/buildkite-agent-runtime .cursor/skills/
 cp -r skills/buildkite-cli .cursor/skills/
-cp -r skills/buildkite-platform .cursor/skills/
+cp -r skills/buildkite-api .cursor/skills/
+cp -r skills/buildkite-platform-engineering .cursor/skills/
+cp -r skills/buildkite-secure-delivery .cursor/skills/
+cp -r skills/buildkite-test-engine .cursor/skills/
 ```
 
-## Available Skills
+## Skills
+
+### Journey Skills
+
+Skills organized by what you are trying to accomplish.
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
-| **Pipelines** | [skills/buildkite-pipelines/](skills/buildkite-pipelines/SKILL.md) | Pipeline YAML, step types, plugins, dynamic pipelines, artifacts, hooks, matrix builds |
-| **Agent** | [skills/buildkite-agent/](skills/buildkite-agent/SKILL.md) | Agent installation, configuration, tags, queues, clusters, hosted agents |
-| **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, and artifacts |
-| **Platform** | [skills/buildkite-platform/](skills/buildkite-platform/SKILL.md) | REST API, GraphQL, webhooks, Test Engine, Packages, OIDC, SSO |
+| **Pipelines** | [skills/buildkite-pipelines/](skills/buildkite-pipelines/SKILL.md) | Pipeline YAML, step types, plugins, caching, parallelism, dynamic pipelines, matrix builds, artifacts, hooks |
+| **Test Engine** | [skills/buildkite-test-engine/](skills/buildkite-test-engine/SKILL.md) | Test splitting, flaky detection, quarantine, bktec CLI, test collectors |
+| **Secure Delivery** | [skills/buildkite-secure-delivery/](skills/buildkite-secure-delivery/SKILL.md) | OIDC authentication, Package Registry, SLSA provenance, pipeline signing |
+| **Platform Engineering** | [skills/buildkite-platform-engineering/](skills/buildkite-platform-engineering/SKILL.md) | Clusters, queues, hosted agents, agent config, pipeline templates, SSO, audit logging |
 
-## Contributing — Hackathon Quick Start
+### Cross-Cutting Skills
 
-### 1. Clone and branch
+Skills needed across all journeys.
 
-```bash
-git clone git@github.com:buildkite/skills.git
-cd skills
-git checkout -b <firstname>
-```
+| Skill | Directory | Description |
+|-------|-----------|-------------|
+| **Agent Runtime** | [skills/buildkite-agent-runtime/](skills/buildkite-agent-runtime/SKILL.md) | `buildkite-agent` subcommands inside running job steps — annotate, artifact, meta-data, pipeline upload, OIDC, locks |
+| **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
+| **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
 
-### 2. Read the conventions and reference
+## Contributing
 
-Before writing anything, read these two files completely:
-
-- **[CONVENTIONS.md](CONVENTIONS.md)** — frontmatter format, section order, style rules, skill boundary table, quality checklist
-- **[references/depot-ci-skill.md](references/depot-ci-skill.md)** — quality benchmark (14.5KB, dense, agent-friendly)
-
-### 3. Scope assignments
-
-| Person | Skill | Directory | Primary docs |
-|--------|-------|-----------|-------------|
-| Ozden + Daniel | buildkite-pipelines | `skills/buildkite-pipelines/` | [buildkite.com/docs/pipelines](https://buildkite.com/docs/pipelines) |
-| Baz | buildkite-agent | `skills/buildkite-agent/` | [buildkite.com/docs/agent/v3](https://buildkite.com/docs/agent/v3) |
-| Jams | buildkite-cli | `skills/buildkite-cli/` | [buildkite.com/docs/platform/cli](https://buildkite.com/docs/platform/cli) |
-| Simone | buildkite-platform | `skills/buildkite-platform/` | [buildkite.com/docs/apis](https://buildkite.com/docs/apis) |
-| Patrick | README + llms.txt | root | (synthesizes from all four skills) |
-| Ken | Blog draft + publishing | external | (writes after skills done) |
-
-Each person owns exactly one directory. No two people write to the same path.
-
-### 4. Write your skill
-
-Open `skills/<your-skill>/SKILL.md` — the frontmatter stub is already there. Write the full skill content following the section order in CONVENTIONS.md.
-
-**Agent bootstrapping prompt** (adapt for your tool):
-
-```
-Before writing anything, read these two files completely:
-1. CONVENTIONS.md
-2. references/depot-ci-skill.md
-
-Then confirm you've read them by stating:
-- The frontmatter format you'll use
-- Your assigned skill name
-- 3 topics you will NOT cover (because they belong to other skills)
-- Your target file size
-
-Only after this confirmation, fetch the docs from buildkite.com/docs/[your-area]
-and write skills/<your-skill>/SKILL.md.
-```
-
-### 5. Commit and push
-
-```bash
-git add skills/<your-skill>/SKILL.md
-git commit -m "wip: <skill-name> - <what you added>"
-git push origin <firstname>
-```
-
-### 6. Open a PR when done
-
-```bash
-gh pr create --title "Add buildkite-<skill> skill" --base main
-```
-
-### Quality bar
-
-- **10-15KB** per skill (the Depot reference is 14.5KB)
-- Every CLI command has a **flag table** (Flag | Short | Default | Description)
-- At least **5 rows** in the Common Mistakes table
-- At least **3 links** in Further Reading
-- **No boundary violations** — check the boundary table in CONVENTIONS.md
+1. Read [CONVENTIONS.md](CONVENTIONS.md) — frontmatter format, section order, style rules, skill boundaries, quality checklist
+2. Review an existing complete skill as a quality benchmark (e.g. `skills/buildkite-pipelines/SKILL.md`)
+3. Check the boundary table in CONVENTIONS.md — each topic is owned by exactly one skill
+4. Write your skill following the section order and style rules
+5. Run evals to verify quality: see [evals/README.md](evals/README.md)
 
 ## Documentation
 

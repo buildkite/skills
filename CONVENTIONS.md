@@ -5,7 +5,7 @@ Your output will be installed by AI coding agents (Claude Code, Cursor, Codex,
 Copilot, Windsurf, Gemini CLI) via `npx skills add buildkite/skills`.
 
 **Read this entire file before writing a single line of your skill.**
-**Then read `references/depot-ci-skill.md` as your quality benchmark.**
+**Then review an existing complete skill (e.g. `skills/buildkite-pipelines/SKILL.md`) as your quality benchmark.**
 
 ---
 
@@ -181,41 +181,18 @@ Each skill owns specific topics exclusively. Do not cover topics outside your bo
 
 | Topic | Owner | Others do this |
 |-------|-------|---------------|
-| `pipeline.yml` syntax | **buildkite-pipelines** | Reference only |
-| Step types (command, wait, block, trigger, group) | **buildkite-pipelines** | Reference only |
-| Plugins — how to use them | **buildkite-pipelines** | Reference only |
-| Dynamic pipelines (`buildkite-agent pipeline upload`) | **buildkite-pipelines** | Reference only |
-| Hooks (environment, pre-command, post-command, etc.) | **buildkite-pipelines** | Reference only |
-| Artifacts — YAML syntax for upload/download | **buildkite-pipelines** | Reference only |
-| Retry, concurrency, priority rules | **buildkite-pipelines** | Reference only |
-| Matrix builds | **buildkite-pipelines** | Reference only |
-| `buildkite-agent` binary installation | **buildkite-agent** | Reference only |
-| `buildkite-agent.cfg` configuration | **buildkite-agent** | Reference only |
-| Tags and queue routing | **buildkite-agent** | Reference only |
-| Clusters | **buildkite-agent** | Reference only |
-| Agent tokens | **buildkite-agent** | Reference only |
-| Hosted agents (sizes, labels) | **buildkite-agent** | Reference only |
-| SSH keys, git mirrors | **buildkite-agent** | Reference only |
-| Agent lifecycle hooks | **buildkite-agent** | Reference only |
-| Agent diagnostics and debugging | **buildkite-agent** | Reference only |
-| `bk build create/watch/view/list` | **buildkite-cli** | Reference only |
-| `bk job log/retry/cancel` | **buildkite-cli** | Reference only |
-| `bk pipeline` commands | **buildkite-cli** | Reference only |
-| `bk secret` management | **buildkite-cli** | Reference only |
-| `bk artifact` commands | **buildkite-cli** | Reference only |
-| `bk auth login` | **buildkite-cli** | Reference only |
-| REST API | **buildkite-platform** | Reference only |
-| GraphQL API | **buildkite-platform** | Reference only |
-| Webhooks | **buildkite-platform** | Reference only |
-| Test Engine (splitting, analytics) | **buildkite-platform** | Reference only |
-| Packages registry | **buildkite-platform** | Reference only |
-| OIDC token management | **buildkite-platform** | Reference only |
-| SSO/SAML | **buildkite-platform** | Reference only |
-| Notification services | **buildkite-platform** | Reference only |
+| `pipeline.yml` syntax, step types, plugins, caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, `notify:`, `artifact_paths:`, concurrency, `agents:` routing, `secrets:` | **buildkite-pipelines** | Reference only |
+| Test Engine suites, `bktec` CLI, test splitting, flaky detection, quarantine, test collectors, `BUILDKITE_TEST_ENGINE_*` env vars | **buildkite-test-engine** | Reference only |
+| OIDC auth flows, Package Registry setup, SLSA provenance, pipeline signing (JWKS), verification rollout | **buildkite-secure-delivery** | Reference only |
+| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | **buildkite-platform-engineering** | Reference only |
+| `buildkite-agent` subcommands inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor, tool sign/verify | **buildkite-agent-runtime** | Reference only |
+| `bk build`, `bk job`, `bk pipeline`, `bk secret`, `bk artifact`, `bk auth`, `bk cluster`, `bk package` commands | **buildkite-cli** | Reference only |
+| REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Reference only |
 
 **Artifact ambiguity:** The pipeline YAML for artifact upload/download belongs to
-**buildkite-pipelines**. The `bk artifact` CLI commands belong to **buildkite-cli**.
-Each skill covers its half and cross-references the other.
+**buildkite-pipelines**. The `buildkite-agent artifact` subcommands belong to
+**buildkite-agent-runtime**. The `bk artifact` CLI commands belong to **buildkite-cli**.
+Each skill covers its scope and cross-references the others.
 
 ---
 
@@ -268,8 +245,10 @@ Before you consider your skill done, verify:
 
 ## Reference
 
-Read `references/depot-ci-skill.md` to see what good looks like.
-Note: that's a Depot file, not Buildkite. Do not copy content — use it as a
-model for density, structure, and agent-friendliness only. The Depot skill is
-a single-file skill (14.5KB); our skills use progressive disclosure to split
-that density across SKILL.md and `references/`.
+Review existing complete skills to see what good looks like:
+
+- **`skills/buildkite-pipelines/SKILL.md`** — journey skill with progressive disclosure (SKILL.md + references/ + examples/)
+- **`skills/buildkite-api/SKILL.md`** — cross-cutting skill, single-file format
+- **`skills/buildkite-agent-runtime/SKILL.md`** — cross-cutting skill with reference files
+
+Use these as models for density, structure, and agent-friendliness.
