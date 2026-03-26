@@ -2,14 +2,15 @@
 
 ## Skills overview
 
-6 skills. 4 journey-based, 2 cross-cutting. Organized by what users are trying to accomplish, not Buildkite's product surface.
+7 skills. 4 journey-based, 3 cross-cutting. Organized by what users are trying to accomplish, not Buildkite's product surface.
 
 | Skill | Type | Persona | Scope |
 |-------|------|---------|-------|
-| **`buildkite-pipelines`** | Journey | Every developer | Pipeline YAML: caching, parallelism, annotations, retry, if_changed, dynamic pipelines, matrix, plugins, notifications, artifacts |
+| **`buildkite-pipelines`** | Journey | Every developer | Pipeline YAML: caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, plugins, notifications, artifact paths, concurrency |
 | **`buildkite-test-engine`** | Journey | Devs with slow/flaky tests | bktec CLI, test splitting, flaky detection, quarantine, collectors, suite setup, `BUILDKITE_TEST_ENGINE_*` env vars |
 | **`buildkite-secure-delivery`** | Journey (Phase 2) | Devs shipping artifacts | OIDC auth, Package Registry, SLSA provenance, pipeline signing (JWKS), end-to-end secure publish flow |
 | **`buildkite-platform-engineering`** | Journey | Platform teams | Clusters, queues, hosted agents, instance shapes, cluster secrets, agent config, templates, audit logging, SSO, cost optimization |
+| **`buildkite-agent-runtime`** | Cross-cutting | Every developer (in-job) | `buildkite-agent` subcommands used inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor |
 | **`buildkite-cli`** | Cross-cutting | Everyone (terminal) | `bk` CLI: builds, jobs, pipelines, secrets, artifacts, auth |
 | **`buildkite-api`** | Cross-cutting | Automation engineers | REST API, GraphQL API, webhooks, authentication, pagination |
 
@@ -19,12 +20,15 @@ Each skill owns specific topics. Others cross-reference with one sentence + poin
 
 | Topic | Owner | Do NOT duplicate in |
 |-------|-------|--------------------|
-| `pipeline.yml` syntax, step types, caching, parallelism, annotations, retry, `if_changed`, dynamic pipelines, matrix, plugins, `notify:`, artifact YAML, concurrency, `agents:` queue routing | **buildkite-pipelines** | Any other skill |
+| `pipeline.yml` syntax, step types, caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, plugins, `notify:`, `artifact_paths:`, concurrency, `agents:` queue routing, `secrets:` | **buildkite-pipelines** | Any other skill |
 | Test Engine suites, `bktec` CLI, test splitting, flaky detection, quarantine, test collectors, `BUILDKITE_TEST_ENGINE_*` env vars, reliability scores | **buildkite-test-engine** | Any other skill |
-| OIDC token requests, Package Registry, SLSA provenance, `generate-provenance-attestation` plugin, pipeline signing (JWKS), verification config | **buildkite-secure-delivery** | Any other skill |
-| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, agent lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost tracking, organization settings | **buildkite-platform-engineering** | Any other skill |
+| End-to-end secure publish flows, Package Registry setup, SLSA provenance patterns, pipeline signing (JWKS) config, verification rollout strategy | **buildkite-secure-delivery** | Any other skill |
+| Clusters, queues, hosted agent instance shapes, cluster secrets setup, `buildkite-agent.cfg`, agent tokens, agent lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost tracking, org settings | **buildkite-platform-engineering** | Any other skill |
+| `buildkite-agent annotate`, `artifact upload/download/search/shasum`, `meta-data set/get/exists/keys`, `pipeline upload`, `oidc request-token`, `step get/update/cancel`, `lock acquire/release/get/do`, `env dump/get/set/unset`, `secret get`, `redactor add`, `tool sign/verify` — command syntax, flags, examples | **buildkite-agent-runtime** | Any other skill |
 | `bk build`, `bk job`, `bk pipeline`, `bk secret`, `bk artifact`, `bk auth` — command syntax, flags, examples | **buildkite-cli** | Any other skill |
 | REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Any other skill |
+
+**Ambiguity rule — pipelines vs agent-runtime:** The pipeline YAML *concept* (when to annotate, why to use dynamic pipelines, artifact_paths syntax) belongs to **buildkite-pipelines**. The *command syntax* for executing it inside a step (`buildkite-agent annotate --style error`, `buildkite-agent pipeline upload`) belongs to **buildkite-agent-runtime**. Pipelines teaches the *what and why*. Agent-runtime teaches the *how to invoke*.
 
 ### Execution paths — skills vs MCP vs CLI vs API
 
@@ -33,6 +37,7 @@ Skills teach *knowledge*. The agent *acts* through different execution paths dep
 | Agent needs to... | Knowledge source | Executes via |
 |-------------------|-----------------|--------------|
 | Write or edit `pipeline.yml` | Journey skill | File edit |
+| Write `buildkite-agent` commands inside step scripts | `buildkite-agent-runtime` | File edit (inline in step `command:`) |
 | Inspect a build, read logs, check queue depth | Journey skill (for *why*) | **Buildkite MCP server** tools (direct access) |
 | Run a `bk` command | `buildkite-cli` | Bash |
 | Run `bktec` for test splitting | `buildkite-test-engine` | Bash |
@@ -44,7 +49,7 @@ Skills teach *knowledge*. The agent *acts* through different execution paths dep
 
 v1 organized skills by **product surface** (pipeline YAML, agent binary, CLI tool, platform APIs). That mirrors Buildkite's internal org chart, not how users think.
 
-v2 organizes by **user journey**. When someone asks an AI agent for help, they're in the middle of a job — not browsing a product catalog. The framework reveals 4 distinct journeys that users travel through, and 2 cross-cutting needs that show up throughout.
+v2 organizes by **user journey**. When someone asks an AI agent for help, they're in the middle of a job — not browsing a product catalog. The framework reveals 4 distinct journeys that users travel through, and 3 cross-cutting needs that show up throughout.
 
 ---
 
@@ -52,10 +57,11 @@ v2 organizes by **user journey**. When someone asks an AI agent for help, they'r
 
 | Skill | Type | Jobs | Persona | What it teaches |
 |-------|------|------|---------|-----------------|
-| `buildkite-pipelines` | Journey | J1, J2, J3 | Every developer | Pipeline YAML: caching, parallelism, annotations, retry, if_changed, dynamic pipelines, matrix, plugins |
+| `buildkite-pipelines` | Journey | J1, J2, J3 | Every developer | Pipeline YAML: caching, parallelism, retry, if_changed, dynamic pipelines, matrix, plugins |
 | `buildkite-test-engine` | Journey | J4, J5 | Developers with slow/flaky tests | Test Engine: bktec CLI, test splitting, flaky detection, quarantine, collectors |
-| `buildkite-secure-delivery` | Journey | J6, J7 | Developers shipping artifacts | OIDC auth, Package Registry, SLSA provenance, pipeline signing (JWKS) |
+| `buildkite-secure-delivery` | Journey (Phase 2) | J6, J7 | Developers shipping artifacts | OIDC auth, Package Registry, SLSA provenance, pipeline signing (JWKS) |
 | `buildkite-platform-engineering` | Journey | J8, J9 | Platform teams | Clusters, queues, hosted agents, secrets, agent config, templates, audit, SSO, cost |
+| `buildkite-agent-runtime` | Cross-cutting | All | Every developer (in-job) | `buildkite-agent` subcommands inside steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor |
 | `buildkite-cli` | Cross-cutting | All | Everyone (terminal) | `bk` CLI: builds, jobs, pipelines, secrets, artifacts, auth |
 | `buildkite-api` | Cross-cutting | All | Automation engineers | REST API, GraphQL API, webhooks, authentication |
 
@@ -91,6 +97,12 @@ The Buildkite MCP server gives agents **direct read/write access** to Buildkite 
 
 **The rule:** Skills teach *what to do and why*. The MCP server provides *the tool to do it*. A skill says "check queue depth to diagnose wait time" and points to `get_cluster_queue`. It does not document `get_cluster_queue`'s parameters.
 
+### Skills ↔ `buildkite-agent` runtime commands
+
+The `buildkite-agent-runtime` skill teaches agents the subcommands available *inside* a running job step — `annotate`, `artifact`, `meta-data`, `pipeline upload`, `oidc`, `step`, `lock`, `env`, `secret`, `redactor`, `tool`. These are commands that go inside your step's `command:` block.
+
+Journey skills say *when and why* to use these commands ("add an annotation on test failure"). The agent-runtime skill documents *how* to invoke them (flags, arguments, patterns). A journey skill references agent-runtime: "to create an annotation, see the **buildkite-agent-runtime** skill for `buildkite-agent annotate` syntax."
+
 ### Skills ↔ `bk` CLI
 
 The `buildkite-cli` skill teaches agents how to use the `bk` CLI — command syntax, flags, flag tables, examples. This is **core skill content, not duplication**. The skill teaches the knowledge; the agent executes via Bash.
@@ -108,9 +120,10 @@ Journey skills reference the API skill when they need programmatic access: "to c
 | Agent needs to... | Use | Why |
 |-------------------|-----|-----|
 | Read build status, logs, annotations right now | MCP server (`get_build`, `read_logs`) | Direct access, no API call construction needed |
-| Write pipeline YAML | Skill knowledge → file edit | Skills teach syntax, agent writes files |
-| Run a CLI command | Skill knowledge → Bash | `buildkite-cli` teaches syntax, agent runs via shell |
-| Write a script/integration that calls the API | Skill knowledge → code generation | `buildkite-api` teaches endpoints, agent writes code |
+| Write pipeline YAML | Skill knowledge → file edit | Journey skills teach syntax, agent writes files |
+| Write `buildkite-agent` commands inside step scripts | `buildkite-agent-runtime` → file edit | Agent-runtime teaches command syntax, agent writes it into step `command:` blocks |
+| Run a `bk` CLI command | `buildkite-cli` → Bash | CLI skill teaches syntax, agent runs via shell |
+| Write a script/integration that calls the API | `buildkite-api` → code generation | API skill teaches endpoints, agent writes code |
 | Understand *why* to do something (caching strategy, retry patterns, splitting approach) | Journey skill | Skills teach the reasoning and patterns |
 
 ---
@@ -131,7 +144,7 @@ Journey skills reference the API skill when they need programmatic access: "to c
 
 ---
 
-## 4 journey skills + 2 cross-cutting skills
+## 4 journey skills + 3 cross-cutting skills
 
 ### Journey 1: `buildkite-pipelines` — "Write and optimize my pipeline"
 
@@ -292,7 +305,45 @@ Journey skills reference the API skill when they need programmatic access: "to c
 
 ---
 
-### Cross-cutting 1: `buildkite-cli` — "Do things from my terminal"
+### Cross-cutting 1: `buildkite-agent-runtime` — "The in-job toolkit"
+
+**Jobs served:** All — used inside step scripts across every journey
+
+**What this is:** The `buildkite-agent` binary exposes subcommands that run *inside* a job step. This is the runtime toolkit for interacting with Buildkite from within your build scripts — creating annotations, uploading artifacts, sharing state between jobs, generating dynamic pipelines, requesting OIDC tokens, acquiring distributed locks, and more.
+
+**Why separate from pipelines:** The pipelines skill teaches *what to put in pipeline.yml* (declarative). This skill teaches *what commands to run inside your step scripts* (imperative). `artifact_paths: "dist/**"` is pipeline YAML (→ buildkite-pipelines). `buildkite-agent artifact upload "dist/**"` is a runtime command (→ buildkite-agent-runtime). Same outcome, different skill.
+
+**Why separate from platform-engineering:** Platform-engineering is about *setting up* agents — clusters, queues, `buildkite-agent.cfg`, tokens. This skill is about *using* the agent binary from within a running job. Different persona, different moment.
+
+**What triggers this skill:**
+- "buildkite-agent annotate", "buildkite-agent artifact", "buildkite-agent meta-data"
+- "upload pipeline dynamically", "pipeline upload"
+- "share data between steps", "meta-data set/get"
+- "request OIDC token", "buildkite-agent oidc"
+- "distributed lock", "buildkite-agent lock"
+- "get step attribute", "update step label"
+- "redact secret from logs", "buildkite-agent secret get"
+- Any `buildkite-agent <subcommand>` invocation inside a step
+
+**Content outline:**
+
+| Subcommand | What it does | Framework evidence |
+|------------|-------------|-------------------|
+| `annotate` | Create/update build annotations with styles (default, info, warning, error, success), context keys, markdown content | SURFACE phase — "show errors in the build page." The example pipeline uses annotate extensively for test summaries, triage checklists, and navigation. |
+| `artifact upload/download/search/shasum` | Upload files as build artifacts, download from current or other builds, search by glob, verify checksums | Used across all phases. SHARPEN uses artifacts for Docker manifests + SLSA attestations. |
+| `meta-data set/get/exists/keys` | Shared key-value store across all jobs in a build. Set in one job, read in another. | SKIP phase — dynamic pipeline generators read meta-data to pass state. Block step field values stored as meta-data. |
+| `pipeline upload` | Upload YAML (from file or stdin) to dynamically add steps to the running build | SKIP phase — the core of dynamic pipeline generation. The Python generator pipes YAML to `pipeline upload`. |
+| `oidc request-token` | Request a short-lived OIDC token for authentication to external services (package registries, cloud providers) | SHARPEN phase — `--audience URL --lifetime 300`, piped to `docker login --password-stdin`. |
+| `step get/update/cancel` | Read or modify step attributes at runtime (label, state, metadata). Cancel a running step. | Useful for conditional logic within steps and build automation. |
+| `lock acquire/release/get/do` | Distributed mutex locks across parallel jobs in the same build | SCALE phase — when parallel jobs need to coordinate (e.g., only one job runs a migration). |
+| `env dump/get/set/unset` | Inspect and modify the job's environment. `dump` outputs JSON for debugging hook changes. | Debugging lifecycle hooks — see what environment changes hooks made. |
+| `secret get` | Retrieve cluster secrets by name at runtime (alternative to `secrets:` YAML key) | Programmatic secret access within scripts when `secrets:` declarative approach isn't flexible enough. |
+| `redactor add` | Add values to the log redactor so they're masked in build output | Security — redact dynamically-retrieved secrets that weren't declared in `secrets:`. |
+| `tool sign/verify` | Sign or verify pipeline step definitions for integrity checking | SHARPEN phase — pipeline signing verification at the step level. |
+
+---
+
+### Cross-cutting 2: `buildkite-cli` — "Do things from my terminal"
 
 **Jobs served:** All (operational layer)
 
@@ -318,7 +369,7 @@ Journey skills reference the API skill when they need programmatic access: "to c
 
 ---
 
-### Cross-cutting 2: `buildkite-api` — "Automate and integrate programmatically"
+### Cross-cutting 3: `buildkite-api` — "Automate and integrate programmatically"
 
 **Jobs served:** J8, J6, J7 (automation layer)
 
@@ -350,10 +401,11 @@ Journey skills reference the API skill when they need programmatic access: "to c
 | Dimension | v1 | v2 |
 |-----------|----|----|
 | **Organizing principle** | Product surface (YAML, binary, CLI, APIs) | User journey (what are they trying to accomplish) |
-| **Number of skills** | 5 | 6 (4 journey + 2 cross-cutting) |
+| **Number of skills** | 5 | 7 (4 journey + 3 cross-cutting) |
 | **Biggest change** | Test Engine extracted from platform | Secure delivery + platform engineering split from catch-all "platform"; agent infra gets a real home |
 | **`buildkite-platform` (v1)** | Catch-all: APIs, webhooks, OIDC, SSO, Test Engine, packages, audit, templates | Split into 3 focused skills: secure-delivery, platform-engineering, api |
 | **`buildkite-agent` (v1)** | Standalone skill for agent binary | Clusters, queues, hosted agents, secrets, agent config → `buildkite-platform-engineering`. Signing → `buildkite-secure-delivery`. Queue routing in YAML → `buildkite-pipelines`. |
+| **`buildkite-agent` (v1)** runtime cmds | Mixed into pipelines skill | **buildkite-agent-runtime**: dedicated skill for in-job subcommands (annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor) |
 | **CLI + API** | Separate (CLI only) | Separated: CLI (human terminal) vs API (programmatic automation) |
 
 ### What happened to `buildkite-agent`?
@@ -378,8 +430,14 @@ How user queries route to skills, and which execution path the agent uses:
 |-----------|-------|--------------------|---------------------|
 | "my build takes 20 minutes" | buildkite-pipelines | File edit (pipeline.yml) | `get_build`, `read_logs` to diagnose |
 | "add caching to this pipeline" | buildkite-pipelines | File edit | — |
-| "show test failures in the build page" | buildkite-pipelines | File edit (annotations) | `list_annotations` to check existing |
+| "show test failures in the build page" | buildkite-pipelines + buildkite-agent-runtime | File edit (pipeline YAML + annotate command) | `list_annotations` to check existing |
 | "only run tests when code changes" | buildkite-pipelines | File edit | — |
+| "add an annotation to this step" | buildkite-agent-runtime | File edit (step script) | — |
+| "share data between steps" | buildkite-agent-runtime | File edit (`meta-data set/get`) | — |
+| "upload pipeline dynamically from a script" | buildkite-agent-runtime | File edit (`pipeline upload`) | — |
+| "acquire a lock so parallel jobs don't collide" | buildkite-agent-runtime | File edit (`lock acquire/release`) | — |
+| "redact this secret from the logs" | buildkite-agent-runtime | File edit (`redactor add`) | — |
+| "get an OIDC token inside the step" | buildkite-agent-runtime | File edit (`oidc request-token`) | — |
 | "why did this build fail" | buildkite-pipelines | — (read-only) | `get_build`, `read_logs`, `list_annotations` |
 | "split my tests across 10 machines" | buildkite-test-engine | File edit + Bash (bktec) | `get_test_run`, `get_failed_executions` |
 | "is this test flaky" | buildkite-test-engine | — (read-only) | `get_test`, `list_test_runs` |
