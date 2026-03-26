@@ -1,0 +1,832 @@
+# Buildkite Skills Evals Dataset
+# Generated: 2026-03-26
+# Source: Plain support threads (Sep 2025 - Mar 2026), ~389 threads analyzed
+#
+# Purpose:
+#   1. Discover natural skill boundaries from real customer questions
+#   2. Test skill routing (does the right skill get selected?)
+#   3. Test answer quality (does the skill produce correct guidance?)
+#
+# Clusters are emergent from support data, not mapped to existing skill stubs.
+# Use cluster distribution to inform skill boundary decisions.
+
+evals:
+
+  # ============================================================
+  # PIPELINE CONFIGURATION
+  # ============================================================
+
+  - id: "pipeline-001"
+    question: "How do I validate my Buildkite pipeline YAML before pushing it?"
+    source: "plain"
+    source_ref: "th_01KF3WA7M94GKPHWQEBS3HKY0X"
+    difficulty: "getting-started"
+    cluster: "pipeline-config"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "pipeline.yml"
+      - "schema"
+    expected_not_contains: []
+    tags: ["validation", "getting-started"]
+
+  - id: "pipeline-002"
+    question: "What are best practices for reducing boilerplate across multiple pipeline configurations?"
+    source: "plain"
+    source_ref: "th_01KF1MBC4N8CCFZDSXK5C4SECW"
+    difficulty: "configuration"
+    cluster: "pipeline-config"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "template"
+    expected_not_contains: []
+    tags: ["best-practices", "templates"]
+
+  - id: "pipeline-003"
+    question: "Why are my pipeline uploads slow, taking 2-3 minutes for sequential YAML file uploads?"
+    source: "plain"
+    source_ref: "th_01KHVJ499KSP3MRJG78T5ZWQB0"
+    difficulty: "troubleshooting"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "parallel"
+      - "pipeline upload"
+    expected_not_contains: []
+    tags: ["performance", "dynamic-pipelines"]
+
+  - id: "pipeline-004"
+    question: "We hit the 500 jobs per pipeline upload limit. Can it be increased?"
+    source: "plain"
+    source_ref: "th_01KEFQFBHW6ZNJD8BJSMD64JR3"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "500"
+      - "limit"
+      - "upload"
+    expected_not_contains: []
+    tags: ["limits", "dynamic-pipelines"]
+
+  - id: "pipeline-005"
+    question: "How do I make dynamically generated steps appear after the generating step in the build graph?"
+    source: "plain"
+    source_ref: "th_01KD8VHV2TRAGVTHJTGM1KJ6TK"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "depends_on"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "step-ordering"]
+
+  - id: "pipeline-006"
+    question: "Why did a wait step proceed even though a prior step failed?"
+    source: "plain"
+    source_ref: "th_01KKM0MM419PA24N4ZGC6WA859"
+    difficulty: "configuration"
+    cluster: "pipeline-syntax"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "soft_fail"
+      - "wait"
+    expected_not_contains: []
+    tags: ["wait-step", "soft-fail"]
+
+  - id: "pipeline-007"
+    question: "What's the difference between `**` and `**/*` in branch and file filter patterns?"
+    source: "plain"
+    source_ref: "th_01KEGDGMBHEMGH75EASXFSPX7J"
+    difficulty: "configuration"
+    cluster: "pipeline-syntax"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "glob"
+      - "pattern"
+    expected_not_contains: []
+    tags: ["patterns", "filters"]
+
+  - id: "pipeline-008"
+    question: "Should we always dynamically generate pipelines or use static YAML? What are the trade-offs?"
+    source: "plain"
+    source_ref: "th_01KEV5VN9YFYMX4VHXBDVNS5Y5"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "dynamic"
+      - "pipeline upload"
+    expected_not_contains: []
+    tags: ["architecture", "dynamic-pipelines"]
+
+  # ============================================================
+  # TRIGGERS & BUILD FLOW
+  # ============================================================
+
+  - id: "trigger-001"
+    question: "Why doesn't `[skip ci]` in my commit message prevent a build from being triggered?"
+    source: "plain"
+    source_ref: "th_01KGNTQHDBZ3R0YQRJC082RMRM"
+    difficulty: "getting-started"
+    cluster: "triggers"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "HEAD commit"
+      - "skip ci"
+    expected_not_contains: []
+    tags: ["triggers", "git"]
+
+  - id: "trigger-002"
+    question: "Do branch filters apply to builds triggered via the API or only to webhook-triggered builds?"
+    source: "plain"
+    source_ref: "th_01KG3N899AMM9H8F6CD2R1TA7J"
+    difficulty: "configuration"
+    cluster: "triggers"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-platform"]
+    expected_contains:
+      - "webhook"
+      - "branch filter"
+    expected_not_contains: []
+    tags: ["triggers", "filters", "cross-skill"]
+
+  - id: "trigger-003"
+    question: "How do I trigger a pipeline only when specific directories change?"
+    source: "plain"
+    source_ref: "th_01KFP49VQZ46WDSJKSZ4T92551"
+    difficulty: "configuration"
+    cluster: "triggers"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "if_changed"
+    expected_not_contains: []
+    tags: ["triggers", "monorepo", "if_changed"]
+
+  # ============================================================
+  # ENVIRONMENT VARIABLES & META-DATA
+  # ============================================================
+
+  - id: "env-001"
+    question: "How do I pass a value from one pipeline step to another?"
+    source: "plain"
+    source_ref: "th_01KM64BXK87WFN4K5DKBPDF09Z"
+    difficulty: "getting-started"
+    cluster: "environment-vars"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "meta-data"
+      - "buildkite-agent meta-data set"
+      - "buildkite-agent meta-data get"
+    expected_not_contains: []
+    tags: ["meta-data", "cross-step", "cross-skill"]
+
+  - id: "env-002"
+    question: "My pipeline env block isn't working - I used a list instead of a map."
+    source: "plain"
+    source_ref: "th_01KG2N49P0F8S0GQQMZX28KKEX"
+    difficulty: "getting-started"
+    cluster: "environment-vars"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "env"
+      - "map"
+      - "key: value"
+    expected_not_contains: []
+    tags: ["common-mistake", "yaml"]
+
+  - id: "env-003"
+    question: "How can I inject an environment variable globally across 400+ pipelines?"
+    source: "plain"
+    source_ref: "th_01KFV1QPH7MZ6414A2N2GC8KSS"
+    difficulty: "advanced"
+    cluster: "environment-vars"
+    primary_skill: "buildkite-agent"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "environment hook"
+    expected_not_contains: []
+    tags: ["hooks", "environment", "scale", "cross-skill"]
+
+  # ============================================================
+  # RETRY & TIMEOUT
+  # ============================================================
+
+  - id: "retry-001"
+    question: "How do I configure automatic retries for failed jobs?"
+    source: "plain"
+    source_ref: "th_01KFP49VQZ46WDSJKSZ4T92551"
+    difficulty: "getting-started"
+    cluster: "retry-timeout"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "retry"
+      - "automatic"
+      - "exit_status"
+      - "limit"
+    expected_not_contains: []
+    tags: ["retry", "getting-started"]
+
+  - id: "retry-002"
+    question: "Automatic retries aren't triggered when my job times out. Why?"
+    source: "plain"
+    source_ref: "th_01KMECTE27PQ8B5VBA9AADBHCG"
+    difficulty: "troubleshooting"
+    cluster: "retry-timeout"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "timeout"
+      - "exit_status"
+      - "retry"
+    expected_not_contains: []
+    tags: ["retry", "timeout"]
+
+  - id: "retry-003"
+    question: "If a step fails then passes on retry, does the build pass?"
+    source: "plain"
+    source_ref: "th_01KJ69ZJT7JF563CYW23DSJGZS"
+    difficulty: "getting-started"
+    cluster: "retry-timeout"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "latest attempt"
+      - "pass"
+    expected_not_contains: []
+    tags: ["retry", "build-state"]
+
+  - id: "retry-004"
+    question: "How do I set a timeout for a pipeline step, and what happens when it fires?"
+    source: "plain"
+    source_ref: "th_01KKCY742391FS65W1RW9MRMWW"
+    difficulty: "configuration"
+    cluster: "retry-timeout"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "timeout_in_minutes"
+      - "SIGTERM"
+    expected_not_contains: []
+    tags: ["timeout", "signals"]
+
+  # ============================================================
+  # ARTIFACTS
+  # ============================================================
+
+  - id: "artifact-001"
+    question: "How do I download artifacts from a triggered (child) pipeline?"
+    source: "plain"
+    source_ref: "th_01KK9KE1KV9RES7FGR1PQ66M0Y"
+    difficulty: "configuration"
+    cluster: "artifacts"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "artifact download"
+      - "--build"
+    expected_not_contains: []
+    tags: ["artifacts", "trigger-step", "cross-skill"]
+
+  - id: "artifact-002"
+    question: "Artifacts are intermittently not found during download despite being uploaded. Why?"
+    source: "plain"
+    source_ref: "th_01KHPC23P7YEMSKP3DM9XCCNEZ"
+    difficulty: "troubleshooting"
+    cluster: "artifacts"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "wait"
+      - "depends_on"
+    expected_not_contains: []
+    tags: ["artifacts", "timing", "troubleshooting"]
+
+  # ============================================================
+  # AGENT SETUP & CONFIGURATION
+  # ============================================================
+
+  - id: "agent-001"
+    question: "An agent token was accidentally exposed. What should I do?"
+    source: "plain"
+    source_ref: "th_01KM67RSF5JTFN0EK64KMTKFQE"
+    difficulty: "troubleshooting"
+    cluster: "agent-setup"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "revoke"
+      - "new token"
+    expected_not_contains: []
+    tags: ["security", "agent-token"]
+
+  - id: "agent-002"
+    question: "When should I use queues vs agent tags for routing workloads?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "getting-started"
+    cluster: "agent-setup"
+    primary_skill: "buildkite-agent"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "queue"
+      - "tag"
+    expected_not_contains: []
+    tags: ["architecture", "queues", "tags", "cross-skill"]
+
+  - id: "agent-003"
+    question: "My agent is online but not picking up jobs. What's wrong?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "troubleshooting"
+    cluster: "agent-troubleshooting"
+    primary_skill: "buildkite-agent"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "queue"
+      - "tag"
+      - "cluster"
+    expected_not_contains: []
+    tags: ["troubleshooting", "agent", "cross-skill"]
+
+  - id: "agent-004"
+    question: "How do I configure agent timeout and disconnect settings?"
+    source: "plain"
+    source_ref: "th_01KF9TPYRCFY86R6R7CJA6NC9E"
+    difficulty: "configuration"
+    cluster: "agent-setup"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "disconnect-after-idle-timeout"
+      - "cancel-after-agent-disconnect"
+    expected_not_contains: []
+    tags: ["agent-config", "timeout"]
+
+  # ============================================================
+  # HOSTED AGENTS
+  # ============================================================
+
+  - id: "hosted-001"
+    question: "What's the difference between hosted and self-hosted agents?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "getting-started"
+    cluster: "hosted-agents"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "managed"
+      - "fresh"
+    expected_not_contains: []
+    tags: ["hosted-agents", "getting-started"]
+
+  - id: "hosted-002"
+    question: "How do I connect hosted agents to our internal services behind a firewall?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "configuration"
+    cluster: "hosted-agents"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "private connectivity"
+    expected_not_contains: []
+    tags: ["hosted-agents", "networking"]
+
+  - id: "hosted-003"
+    question: "Are hosted agent jobs isolated from each other?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "getting-started"
+    cluster: "hosted-agents"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "fresh VM"
+      - "isolated"
+    expected_not_contains: []
+    tags: ["hosted-agents", "security"]
+
+  - id: "hosted-004"
+    question: "Docker-in-Docker is failing on hosted agents. How do I fix this?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "troubleshooting"
+    cluster: "hosted-agents"
+    primary_skill: "buildkite-agent"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "docker"
+      - "privileged"
+    expected_not_contains: []
+    tags: ["hosted-agents", "docker", "cross-skill"]
+
+  # ============================================================
+  # KUBERNETES
+  # ============================================================
+
+  - id: "k8s-001"
+    question: "How do I add agent hooks when using agent-stack-k8s?"
+    source: "plain"
+    source_ref: "th_01KJX6TSS9BEDYTB7EH3W927AD"
+    difficulty: "advanced"
+    cluster: "kubernetes"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "ConfigMap"
+      - "agent-stack-k8s"
+    expected_not_contains: []
+    tags: ["kubernetes", "hooks"]
+
+  - id: "k8s-002"
+    question: "How do I set global environment variables in agent-stack-k8s?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "configuration"
+    cluster: "kubernetes"
+    primary_skill: "buildkite-agent"
+    secondary_skills: []
+    expected_contains:
+      - "extraEnv"
+      - "Helm"
+    expected_not_contains: []
+    tags: ["kubernetes", "environment"]
+
+  # ============================================================
+  # GRAPHQL API
+  # ============================================================
+
+  - id: "api-001"
+    question: "I'm getting 'query complexity exceeding limit' errors in GraphQL. How do I fix this?"
+    source: "plain"
+    source_ref: "th_01KC3CS4N4ARMD593VWXJANW2G"
+    difficulty: "troubleshooting"
+    cluster: "api-graphql"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "complexity"
+      - "first"
+      - "nested"
+    expected_not_contains: []
+    tags: ["graphql", "rate-limits"]
+
+  - id: "api-002"
+    question: "Where do I start with the Buildkite GraphQL API? How do I construct a query?"
+    source: "plain"
+    source_ref: "th_01K9CQ9Q7VE5TAB64XRJJHE7EQ"
+    difficulty: "getting-started"
+    cluster: "api-graphql"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "graphql.buildkite.com"
+      - "explorer"
+    expected_not_contains: []
+    tags: ["graphql", "getting-started"]
+
+  - id: "api-003"
+    question: "What are the REST API rate limits and how do I stay within them?"
+    source: "plain"
+    source_ref: "th_01KHSRK43K4T6TN3C33BASV9GQ"
+    difficulty: "getting-started"
+    cluster: "api-rest"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "rate limit"
+      - "X-RateLimit"
+    expected_not_contains: []
+    tags: ["rest-api", "rate-limits"]
+
+  - id: "api-004"
+    question: "How do I fetch a build by build ID instead of pipeline slug + build number?"
+    source: "plain"
+    source_ref: "th_01KJ58YQY7CPXX7HP1BR94VP5G"
+    difficulty: "configuration"
+    cluster: "api-graphql"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "GraphQL"
+      - "node"
+    expected_not_contains: []
+    tags: ["graphql", "queries"]
+
+  # ============================================================
+  # WEBHOOKS
+  # ============================================================
+
+  - id: "webhook-001"
+    question: "How do I set up a webhook to receive build status notifications?"
+    source: "plain"
+    source_ref: "th_01KKX4AWH0EMTK7KP3DMTSZBK4"
+    difficulty: "getting-started"
+    cluster: "webhooks"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "notification"
+      - "build.finished"
+    expected_not_contains: []
+    tags: ["webhooks", "getting-started"]
+
+  - id: "webhook-002"
+    question: "How do I configure a webhook secret for signature verification?"
+    source: "plain"
+    source_ref: "th_01K7QYP6392K14JBXMGEKDVA2M"
+    difficulty: "configuration"
+    cluster: "webhooks"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "HMAC"
+      - "X-Buildkite-Signature"
+      - "secret"
+    expected_not_contains: []
+    tags: ["webhooks", "security"]
+
+  - id: "webhook-003"
+    question: "Why are my webhook deliveries intermittently delayed?"
+    source: "plain"
+    source_ref: "th_01KHS7VD4VTCWPG4AC46DHJY4H"
+    difficulty: "troubleshooting"
+    cluster: "webhooks"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "delivery"
+      - "retry"
+    expected_not_contains: []
+    tags: ["webhooks", "troubleshooting"]
+
+  - id: "webhook-004"
+    question: "What is the difference between Buildkite webhooks and GitHub webhooks?"
+    source: "plain"
+    source_ref: "th_01KGJ1H5TKEB3B1TSH6B2ZGD4D"
+    difficulty: "getting-started"
+    cluster: "webhooks"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "GitHub"
+      - "trigger"
+      - "notification"
+    expected_not_contains: []
+    tags: ["webhooks", "github"]
+
+  # ============================================================
+  # TEST ENGINE
+  # ============================================================
+
+  - id: "test-001"
+    question: "How do I upload test results to Test Engine?"
+    source: "plain"
+    source_ref: "th_01KH3XYK68XSEM75B1TAFDCGVN"
+    difficulty: "getting-started"
+    cluster: "test-engine"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "JUnit XML"
+      - "artifact upload"
+    expected_not_contains: []
+    tags: ["test-engine", "getting-started"]
+
+  - id: "test-002"
+    question: "How do I set up test splitting with dynamic parallelism?"
+    source: "plain"
+    source_ref: "th_01KC77P5BZSQARWCZFZZS43392"
+    difficulty: "advanced"
+    cluster: "test-engine"
+    primary_skill: "buildkite-platform"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "parallelism"
+      - "split"
+    expected_not_contains: []
+    tags: ["test-engine", "test-splitting", "cross-skill"]
+
+  - id: "test-003"
+    question: "The Test Engine client (bktec) intermittently returns error plans causing slow builds. How do I fix this?"
+    source: "plain"
+    source_ref: "th_01KK35WSB44FPECPRWBJD4MZN3"
+    difficulty: "troubleshooting"
+    cluster: "test-engine"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "bktec"
+      - "fallback"
+    expected_not_contains: []
+    tags: ["test-engine", "troubleshooting"]
+
+  # ============================================================
+  # OIDC
+  # ============================================================
+
+  - id: "oidc-001"
+    question: "How do I set up Buildkite OIDC for authenticating to AWS from pipeline steps?"
+    source: "plain"
+    source_ref: "th_01K9R5C9MC72YJ6MCCAQ7HJVX8"
+    difficulty: "getting-started"
+    cluster: "oidc"
+    primary_skill: "buildkite-platform"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "buildkite-agent oidc request-token"
+      - "trust policy"
+      - "AWS"
+    expected_not_contains: []
+    tags: ["oidc", "aws", "getting-started", "cross-skill"]
+
+  - id: "oidc-002"
+    question: "My OIDC token is expiring during long-running steps. How do I extend the lifetime?"
+    source: "plain"
+    source_ref: "th_01KKD0Q3WAY436BD3R9SZRJ4MA"
+    difficulty: "troubleshooting"
+    cluster: "oidc"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "--lifetime"
+      - "oidc request-token"
+    expected_not_contains: []
+    tags: ["oidc", "token-lifetime"]
+
+  - id: "oidc-003"
+    question: "Can I use Buildkite OIDC tokens instead of API tokens for authentication?"
+    source: "plain"
+    source_ref: "th_01KKX8XZ5VA6QXC93BHW2VX7VM"
+    difficulty: "getting-started"
+    cluster: "oidc"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "cloud provider"
+      - "not a replacement"
+    expected_not_contains: []
+    tags: ["oidc", "common-mistake"]
+
+  # ============================================================
+  # HOOKS & PLUGINS
+  # ============================================================
+
+  - id: "hooks-001"
+    question: "How do I run a command before a Docker build plugin executes?"
+    source: "plain"
+    source_ref: "th_01KKA5MNBKS42VTHWSN5JN9M06"
+    difficulty: "configuration"
+    cluster: "hooks-plugins"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "pre-command"
+      - "hook"
+    expected_not_contains: []
+    tags: ["hooks", "docker", "plugins", "cross-skill"]
+
+  # ============================================================
+  # MIGRATION
+  # ============================================================
+
+  - id: "migration-001"
+    question: "I'm new to Buildkite, coming from another CI system. How do I get started?"
+    source: "plain"
+    source_ref: "th_01KH4RRQKQYWN3BGF5EGFNZ430"
+    difficulty: "getting-started"
+    cluster: "migration"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "pipeline.yml"
+      - "agent"
+    expected_not_contains: []
+    tags: ["migration", "getting-started", "cross-skill"]
+
+  - id: "migration-002"
+    question: "How do I migrate pipelines from the web UI editor to YAML-based configuration?"
+    source: "plain"
+    source_ref: "th_01KH818XAKB8T2CFNNA28YPQTF"
+    difficulty: "configuration"
+    cluster: "migration"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "pipeline.yml"
+      - "upload"
+    expected_not_contains: []
+    tags: ["migration", "yaml"]
+
+  - id: "migration-003"
+    question: "What topics should we plan for when migrating our CI to Buildkite?"
+    source: "plain"
+    source_ref: "th_01K70JKJ3TK5ZFM030NBEJS761"
+    difficulty: "getting-started"
+    cluster: "migration"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent", "buildkite-platform"]
+    expected_contains:
+      - "agent"
+      - "pipeline"
+      - "secrets"
+    expected_not_contains: []
+    tags: ["migration", "architecture", "cross-skill"]
+
+  # ============================================================
+  # SECRETS & SECURITY
+  # ============================================================
+
+  - id: "secrets-001"
+    question: "How do I share environment variables and secrets across pipeline steps?"
+    source: "plain"
+    source_ref: "th_01KEWE87BJRPV8WNMCKJQ9EGXX"
+    difficulty: "configuration"
+    cluster: "secrets"
+    primary_skill: "buildkite-agent"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "meta-data"
+      - "environment hook"
+    expected_not_contains: []
+    tags: ["secrets", "cross-step", "cross-skill"]
+
+  - id: "secrets-002"
+    question: "What are best practices for scoping API tokens?"
+    source: "plain"
+    source_ref: "th_01KCSETY9CNMXWXKAYCFK3HV42"
+    difficulty: "getting-started"
+    cluster: "secrets"
+    primary_skill: "buildkite-platform"
+    secondary_skills: []
+    expected_contains:
+      - "scope"
+      - "read-only"
+    expected_not_contains: []
+    tags: ["security", "api-tokens"]
+
+  # ============================================================
+  # BUILD DEBUGGING
+  # ============================================================
+
+  - id: "debug-001"
+    question: "My pipeline shows as failed but all visible steps passed. Why?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "troubleshooting"
+    cluster: "build-debugging"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "soft_fail"
+      - "cancelled"
+      - "trigger"
+    expected_not_contains: []
+    tags: ["build-state", "troubleshooting"]
+
+  - id: "debug-002"
+    question: "Pipeline upload step failed with no clear error message. How do I debug?"
+    source: "plain"
+    source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
+    difficulty: "troubleshooting"
+    cluster: "build-debugging"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "agent logs"
+      - "YAML"
+    expected_not_contains: []
+    tags: ["troubleshooting", "pipeline-upload", "cross-skill"]
+
+  # ============================================================
+  # DOCKER
+  # ============================================================
+
+  - id: "docker-001"
+    question: "How do I use artifacts inside a Docker build when buildkite-agent isn't available in the container?"
+    source: "plain"
+    source_ref: "th_01KK2A2D15G7NR8G81YY2CBVWK"
+    difficulty: "troubleshooting"
+    cluster: "docker"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent"]
+    expected_contains:
+      - "artifact download"
+      - "before"
+      - "Docker"
+    expected_not_contains: []
+    tags: ["docker", "artifacts", "cross-skill"]
