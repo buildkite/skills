@@ -55,6 +55,9 @@ Thumbs.db
 # Claude Code skill build artifacts
 *.skill
 
+# Eval results
+evals/results/*.json
+
 # Yarn
 .pnp.*
 .yarn/*
