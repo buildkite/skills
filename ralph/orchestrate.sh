@@ -408,6 +408,7 @@ Current iteration: $version" \
 record_iteration() {
   local version=$1
   local score=$2
+  local duration_secs=${3:-0}
   local cluster_name="ralph-express-v${version}"
   local timestamp
   timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -438,6 +439,7 @@ history.append({
     'cluster': '$cluster_name',
     'skills_commit': '$skills_commit',
     'express_branch': 'ralph/iter-$version',
+    'duration_seconds': $duration_secs,
     'scores_by_category': $categories_json
 })
 json.dump(history, open('$STATE_DIR/iterations.json', 'w'), indent=2)
@@ -547,6 +549,7 @@ main() {
     fi
 
     log_section "ITERATION ${version} / ${MAX_ITERATIONS}"
+    local iter_start=$SECONDS
 
     # Reset Express.js to clean state
     reset_express "$version"
@@ -558,8 +561,10 @@ main() {
     local score
     score=$(run_evaluation "$version")
 
+    local iter_elapsed=$(( SECONDS - iter_start ))
+
     # Record result
-    record_iteration "$version" "$score"
+    record_iteration "$version" "$score" "$iter_elapsed"
 
     # Print summary
     print_summary "$version" "$score"
