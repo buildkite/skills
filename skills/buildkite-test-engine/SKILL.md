@@ -704,6 +704,7 @@ Review the Test Engine dashboard for tests flagged as flaky. Quarantine confirme
 
 ## Further Reading
 
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Test Engine overview](https://buildkite.com/docs/test-engine)
 - [Speed up builds with bktec](https://buildkite.com/docs/test-engine/speed-up-builds-with-bktec)
 - [Configuring bktec](https://buildkite.com/docs/test-engine/bktec/configuring)

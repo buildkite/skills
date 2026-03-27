@@ -429,7 +429,7 @@ Scaffold a new pipeline in the current directory with `bk init`, then edit the g
 
 ## Further Reading
 
-- [Buildkite Docs](https://buildkite.com/docs/llms.txt)
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Defining pipeline steps](https://buildkite.com/docs/pipelines/configure/defining-steps.md)
 - [Step types reference](https://buildkite.com/docs/pipelines/configure/step-types.md)
 - [Pipeline upload](https://buildkite.com/docs/agent/v3/cli-pipeline.md)

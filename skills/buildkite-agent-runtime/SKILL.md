@@ -768,6 +768,7 @@ buildkite-agent tool verify --jwks-file /etc/buildkite-agent/verification-key.js
 
 ## Further Reading
 
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Agent CLI — annotate](https://buildkite.com/docs/agent/v3/cli-annotate)
 - [Agent CLI — artifact](https://buildkite.com/docs/agent/v3/cli-artifact)
 - [Agent CLI — meta-data](https://buildkite.com/docs/agent/v3/cli-meta-data)

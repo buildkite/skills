@@ -617,6 +617,7 @@ Use this checklist when reviewing a pipeline's security posture:
 
 ## Further Reading
 
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [OIDC with Buildkite Pipelines](https://buildkite.com/docs/pipelines/security/oidc) — overview of OIDC configuration and trust policies
 - [OIDC with Package Registries](https://buildkite.com/docs/package-registries/security/oidc) — OIDC authentication for all registry types
 - [OIDC with AWS](https://buildkite.com/docs/pipelines/security/oidc/aws) — AWS IAM federation setup
