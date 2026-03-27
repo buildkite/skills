@@ -59,6 +59,10 @@ Thumbs.db
 evals/results/*.json
 **/__pycache__
 
+# Ralph Wiggum loop artifacts
+ralph/express-checkout/
+ralph/state/
+
 # Yarn
 .pnp.*
 .yarn/*

@@ -1,0 +1,86 @@
+# Evaluation rubric for GHA-to-Buildkite conversion quality
+# Each category has a weight (must sum to 100) and specific checks
+
+categories:
+  file_existence:
+    weight: 10
+    description: "Expected pipeline files exist in .buildkite/"
+    expected_files:
+      - ".buildkite/pipeline.yml"
+      - ".buildkite/pipeline.codeql.yml"
+      - ".buildkite/pipeline.legacy.yml"
+      - ".buildkite/pipeline.scorecard.yml"
+    alternative_patterns:
+      - ".buildkite/*.yml"
+      - ".buildkite/*.yaml"
+
+  yaml_validity:
+    weight: 10
+    description: "All pipeline files are valid YAML with top-level steps: key"
+
+  workflow_coverage:
+    weight: 15
+    description: "Each GHA workflow's major features are represented"
+    expected_features:
+      ci:
+        - "lint"
+        - "test"
+        - "node"
+        - "coverage"
+      codeql:
+        - "security"
+      legacy:
+        - "node"
+      scorecard:
+        - "scorecard"
+
+  matrix_builds:
+    weight: 10
+    description: "CI test matrix correctly uses Buildkite matrix syntax"
+    expected_terms:
+      - "matrix"
+      - "adjustments"  # or "setup" -- indicates BK-native matrix
+
+  buildkite_idioms:
+    weight: 10
+    description: "Uses proper Buildkite patterns instead of 1:1 GHA translation"
+    expected_patterns:
+      - "agents:"
+      - "depends_on"
+      - "artifact_paths"
+      - "wait"
+      - "plugins:"
+      - "concurrency"
+      - "matrix:"
+
+  infrastructure_live:
+    weight: 15
+    description: "Buildkite resources actually exist (verified via REST API)"
+    # Checks: cluster exists, queues exist, pipelines exist
+    # Uses BUILDKITE_API_TOKEN to query the Buildkite REST API
+    # Cluster name is ralph-express-vN (passed via --cluster-name)
+    checks:
+      - "cluster_exists"
+      - "queues_exist"
+      - "pipelines_exist"
+
+  builds_ran:
+    weight: 15
+    description: "Builds were triggered, completed, and passed"
+    # 3-tier: 33% builds triggered, 33% reached terminal state, 34% at least one passed
+    # Uses `bk build list` to check pipeline builds
+
+  conversion_notes:
+    weight: 5
+    description: "CONVERSION_NOTES.md exists with meaningful content"
+    min_length: 200
+
+  no_anti_patterns:
+    weight: 10
+    description: "No GitHub Actions syntax remnants in pipeline files"
+    forbidden_patterns:
+      - "runs-on:"
+      - "uses:"
+      - "${{ github."
+      - "actions/checkout"
+      - "actions/setup-node"
