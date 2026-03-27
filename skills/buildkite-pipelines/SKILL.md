@@ -381,6 +381,28 @@ steps:
 | `concurrency_method` | `ordered` | `ordered` (FIFO) or `eager` (next available) |
 | `priority` | `0` | Higher numbers run first when queued |
 
+## Working with Pipelines from the Terminal
+
+Use the Buildkite CLI (`bk`) to trigger, watch, and debug pipelines without leaving the terminal:
+
+```bash
+# Trigger a build on the current branch
+bk build create --pipeline my-app
+
+# Watch it run in real-time
+bk build watch 42 --pipeline my-app
+
+# View logs for a failed job
+bk job log <job-id> --pipeline my-app --build 42
+
+# Download artifacts locally
+bk artifact download "dist/*" --pipeline my-app --build 42
+```
+
+Scaffold a new pipeline in the current directory with `bk init`, then edit the generated file to define build steps.
+
+> For installation, authentication, secrets management, and full command reference, see the **buildkite-cli** skill.
+
 ## Common Mistakes
 
 | Mistake | What happens | Fix |
@@ -407,8 +429,9 @@ steps:
 
 ## Further Reading
 
-- [Defining pipeline steps](https://buildkite.com/docs/pipelines/configure/defining-steps)
-- [Step types reference](https://buildkite.com/docs/pipelines/configure/step-types)
-- [Pipeline upload](https://buildkite.com/docs/agent/v3/cli-pipeline)
-- [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals)
-- [Managing pipeline secrets](https://buildkite.com/docs/pipelines/security/secrets/managing)
+- [Buildkite Docs](https://buildkite.com/docs/llms.txt)
+- [Defining pipeline steps](https://buildkite.com/docs/pipelines/configure/defining-steps.md)
+- [Step types reference](https://buildkite.com/docs/pipelines/configure/step-types.md)
+- [Pipeline upload](https://buildkite.com/docs/agent/v3/cli-pipeline.md)
+- [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals.md)
+- [Managing pipeline secrets](https://buildkite.com/docs/pipelines/security/secrets/managing.md)
