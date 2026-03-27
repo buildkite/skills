@@ -23,14 +23,9 @@ The Express.js repository has 4 GitHub Actions workflow files in `/workspace/.gi
 
 ### 2. Learn Buildkite
 
-Read the Buildkite skills thoroughly before writing anything. Start with:
-- `/skills/skills/buildkite-pipelines/SKILL.md` and its `references/` directory
-- `/skills/skills/buildkite-agent-infrastructure/SKILL.md` and its `references/` directory
-- `/skills/skills/buildkite-agent-runtime/SKILL.md` and its `references/` directory
-- `/skills/skills/buildkite-cli/SKILL.md`
-- `/skills/skills/buildkite-api/SKILL.md`
+You have Buildkite skills loaded as a plugin. They cover pipeline YAML, infrastructure setup (clusters, queues, hosted agents), the agent runtime, the `bk` CLI, and the Buildkite API. The skills will be available automatically based on what you're working on.
 
-The skills are your primary reference for Buildkite patterns, syntax, and best practices. Follow the patterns in the skills. If the skills don't cover something you need, consult the Buildkite docs at `https://buildkite.com/docs/llms.txt` (an LLM-friendly index) or fetch specific doc pages at their `.md` URL (e.g., `https://buildkite.com/docs/clusters/manage-queues.md`).
+If the skills don't cover something you need, consult the Buildkite docs at `https://buildkite.com/docs/llms.txt` (an LLM-friendly index) or fetch specific doc pages at their `.md` URL (e.g., `https://buildkite.com/docs/clusters/manage-queues.md`).
 
 ### 3. Create Buildkite infrastructure
 

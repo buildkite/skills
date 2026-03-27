@@ -219,6 +219,7 @@ run_conversion() {
     "$DOCKER_IMAGE" \
       --print \
       --bare \
+      --plugin-dir /skills \
       --mcp-config /mcp-config.json \
       --permission-mode bypassPermissions \
       --output-format stream-json \
@@ -226,7 +227,6 @@ run_conversion() {
       --model "$MODEL" \
       --max-budget-usd "$CONVERSION_BUDGET" \
       "Convert Express.js GitHub Actions to Buildkite pipelines. \
-Read the skills at /skills/skills/ for guidance. \
 Cluster name: ${cluster_name}. Iteration version: ${version}. \
 The bk CLI and buildkite-agent are pre-installed. Use BUILDKITE_API_TOKEN for API auth. \
 Read /MIGRATION_JOURNAL.md first for learnings from previous iterations. \
