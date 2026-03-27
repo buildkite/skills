@@ -224,7 +224,18 @@ run_conversion() {
 Cluster name: ${cluster_name}. Iteration version: ${version}. \
 The bk CLI and buildkite-agent are pre-installed. Use BUILDKITE_API_TOKEN for API auth. \
 ${extra_flags}" \
-    2>"$STATE_DIR/conversion-v${version}-stderr.log" | tee "$raw_log"
+    2>"$STATE_DIR/conversion-v${version}-stderr.log" > "$raw_log" &
+  local docker_pid=$!
+
+  # Show progress while Docker runs
+  log "Conversion running (pid: $docker_pid). Raw log: $raw_log"
+  while kill -0 "$docker_pid" 2>/dev/null; do
+    local lines=$(wc -l < "$raw_log" 2>/dev/null || echo 0)
+    printf "\r${BLUE}[ralph]${NC} Conversion in progress... %d events logged" "$lines" >&2
+    sleep 5
+  done
+  printf "\n" >&2
+  wait "$docker_pid" || true
 
   # Post-process the stream into a readable summary for the improvement agent
   python3 -c "
