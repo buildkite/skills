@@ -659,3 +659,70 @@ trigger_evals:
     expected_skill: "buildkite-agent-runtime"
     expected_not_skills: ["buildkite-platform"]
     tags: ["near-miss", "platform-vs-runtime"]
+
+  # ============================================================
+  # BUILDKITE-MIGRATION — should trigger
+  # ============================================================
+
+  - id: "t-migration-001"
+    query: "How do I convert my GitHub Actions workflow to a Buildkite pipeline?"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  - id: "t-migration-002"
+    query: "We're migrating from Jenkins to Buildkite, where do we start?"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  - id: "t-migration-003"
+    query: "What's the Buildkite equivalent of CircleCI orbs?"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  - id: "t-migration-004"
+    query: "Convert this Bitbucket Pipelines config to Buildkite YAML"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  - id: "t-migration-005"
+    query: "I need to plan our CI migration from GitHub Actions to Buildkite"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  - id: "t-migration-006"
+    query: "What are the conversion rules for translating Jenkins stages to Buildkite steps?"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  - id: "t-migration-007"
+    query: "How do I use bk pipeline convert to migrate my GitLab CI config?"
+    expected_skill: "buildkite-migration"
+    tags: ["should-trigger"]
+
+  # ============================================================
+  # BUILDKITE-MIGRATION — near-miss (should NOT trigger migration)
+  # ============================================================
+
+  - id: "t-migration-n01"
+    query: "How do I write a pipeline.yml with parallel steps?"
+    expected_skill: "buildkite-pipelines"
+    expected_not_skills: ["buildkite-migration"]
+    tags: ["near-miss", "migration-vs-pipelines"]
+
+  - id: "t-migration-n02"
+    query: "How do I set up a new Buildkite agent on Ubuntu?"
+    expected_skill: "buildkite-platform-engineering"
+    expected_not_skills: ["buildkite-migration"]
+    tags: ["near-miss", "migration-vs-platform"]
+
+  - id: "t-migration-n03"
+    query: "How do I add caching to my Buildkite pipeline?"
+    expected_skill: "buildkite-pipelines"
+    expected_not_skills: ["buildkite-migration"]
+    tags: ["near-miss", "migration-vs-pipelines"]
+
+  - id: "t-migration-n04"
+    query: "How do I validate my pipeline YAML before pushing?"
+    expected_skill: "buildkite-pipelines"
+    expected_not_skills: ["buildkite-migration"]
+    tags: ["near-miss", "migration-vs-pipelines"]

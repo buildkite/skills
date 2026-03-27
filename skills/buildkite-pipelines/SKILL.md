@@ -405,6 +405,8 @@ steps:
 - **`examples/basic-pipeline.yml`** — Minimal working pipeline (test, wait, deploy)
 - **`examples/optimized-pipeline.yml`** — Full-featured pipeline with caching, parallelism, annotations, retry, artifacts, and notifications
 
+> For migrating pipelines from other CI systems, see the **buildkite-migration** skill.
+
 ## Further Reading
 
 - [Defining pipeline steps](https://buildkite.com/docs/pipelines/configure/defining-steps)
