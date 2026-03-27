@@ -215,6 +215,7 @@ run_conversion() {
       --plugin-dir /skills \
       --mcp-config /mcp-config.json \
       --permission-mode bypassPermissions \
+      --verbose \
       --output-format stream-json \
       --system-prompt "$prompt_content" \
       --model "$MODEL" \
