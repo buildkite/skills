@@ -20,17 +20,32 @@ Provision and govern Buildkite CI infrastructure at scale. This skill covers clu
 
 ## Quick Start
 
-Create a cluster and a hosted queue using the GraphQL API:
+Create a cluster with a hosted queue to get builds running immediately. Hosted queues use Buildkite-managed compute — agents are provisioned automatically. Self-hosted queues require provisioning your own agents; builds will hang in a "scheduled" state until agents connect.
+
+**Start with hosted agents unless there is a specific reason to self-host** (e.g., GPU workloads, on-prem requirements, custom hardware).
+
+All GraphQL mutations go to `https://graphql.buildkite.com/v1` with a Bearer token. The examples below show the GraphQL operations — execute them via curl:
+
+```bash
+curl -sS -X POST "https://graphql.buildkite.com/v1" \
+  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "<GRAPHQL_QUERY_OR_MUTATION>", "variables": { ... }}'
+```
+
+**Step 1: Get the organization ID** (required for all mutations):
 
 ```graphql
-# Step 1: Get the organization ID
 query {
   organization(slug: "my-org") {
     id
   }
 }
+```
 
-# Step 2: Create a cluster
+**Step 2: Create a cluster:**
+
+```graphql
 mutation {
   clusterCreate(input: {
     organizationId: "org-id"
@@ -47,8 +62,11 @@ mutation {
     }
   }
 }
+```
 
-# Step 3: Create a hosted queue with a specific instance shape
+**Step 3: Create a hosted queue** with a specific instance shape:
+
+```graphql
 mutation {
   clusterQueueCreate(input: {
     organizationId: "org-id"
@@ -65,6 +83,23 @@ mutation {
       key
       hostedAgents { instanceShape { name size vcpu memory } }
     }
+  }
+}
+```
+
+**Step 4: Create a pipeline** in the cluster, then trigger a build:
+
+```graphql
+mutation {
+  pipelineCreate(input: {
+    organizationId: "org-id"
+    clusterId: "cluster-id"
+    name: "My Pipeline"
+    repository: { url: "https://github.com/my-org/my-repo" }
+    steps: { yaml: "steps:\n  - label: ':pipeline:'\n    command: 'buildkite-agent pipeline upload'" }
+    defaultBranch: "main"
+  }) {
+    pipeline { id slug url }
   }
 }
 ```
@@ -127,6 +162,8 @@ Use the Buildkite MCP server's `list_clusters` and `get_cluster` tools to inspec
 ## Queues and Hosted Agents
 
 Queues route builds to agents. Each queue runs either **hosted agents** (Buildkite-managed compute) or **self-hosted agents** (agents on your own infrastructure). Create specialized queues to isolate workloads by resource needs.
+
+**Hosted queues** are the recommended starting point. Buildkite provisions and manages the compute — builds start running immediately after queue creation. **Self-hosted queues** require connecting your own agents; until agents connect, builds remain in "scheduled" state indefinitely.
 
 ### Create a hosted queue
 
@@ -919,6 +956,7 @@ Jobs already running continue. New jobs queue until dispatch resumes.
 
 ## Further Reading
 
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Manage clusters](https://buildkite.com/docs/clusters/manage-clusters)
 - [Manage cluster queues](https://buildkite.com/docs/clusters/manage-queues)
 - [Manage cluster agent tokens](https://buildkite.com/docs/clusters/manage-cluster-agent-tokens)
