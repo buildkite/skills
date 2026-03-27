@@ -187,12 +187,6 @@ run_conversion() {
   local claude_home="$STATE_DIR/claude-home-v${version}"
   mkdir -p "$claude_home"
 
-  # Mount the migration journal so the agent benefits from cross-iteration learnings
-  local journal_flag=""
-  if [[ -f "$RALPH_DIR/MIGRATION_JOURNAL.md" ]]; then
-    journal_flag="-v $RALPH_DIR/MIGRATION_JOURNAL.md:/MIGRATION_JOURNAL.md:ro"
-  fi
-
   local raw_log="$STATE_DIR/conversion-v${version}-raw.jsonl"
 
   # Mount customer research scripts if available
@@ -229,7 +223,6 @@ run_conversion() {
       "Convert Express.js GitHub Actions to Buildkite pipelines. \
 Cluster name: ${cluster_name}. Iteration version: ${version}. \
 The bk CLI and buildkite-agent are pre-installed. Use BUILDKITE_API_TOKEN for API auth. \
-Read /MIGRATION_JOURNAL.md first for learnings from previous iterations. \
 ${extra_flags}" \
     2>"$STATE_DIR/conversion-v${version}-stderr.log" | tee "$raw_log"
 

@@ -17,7 +17,6 @@ The Express.js repository has 4 GitHub Actions workflow files in `/workspace/.gi
 
 ### 1. Understand the source
 
-- Read `/MIGRATION_JOURNAL.md` if it exists -- it contains pitfalls from previous attempts.
 - Read all GitHub Actions workflow files in `/workspace/.github/workflows/`.
 - Explore the Express.js repo to understand its structure: `package.json` scripts, test setup, linting config, etc.
 
@@ -33,7 +32,6 @@ Set up the Buildkite infrastructure needed to run builds. The org slug is `new23
 
 You need:
 - A dedicated cluster named `ralph-express-v{version}` (where version comes from the iteration number in the conversion prompt)
-- Queues with hosted agents so builds actually run (self-hosted queues have no agents and builds will hang)
 - Pipelines associated with the cluster for each workflow being converted
 
 The skills describe how to create all of this. Use the `bk` CLI and/or the Buildkite APIs.
