@@ -204,7 +204,6 @@ run_conversion() {
     -v "$SKILLS_REPO:/skills:ro" \
     -v "$claude_home:/home/ralph/.claude:rw" \
     -v "$RALPH_DIR/mcp-config.json:/mcp-config.json:ro" \
-    $journal_flag \
     $research_flag \
     -e ANTHROPIC_API_KEY \
     -e "BUILDKITE_API_TOKEN=${BUILDKITE_API_TOKEN:-}" \
