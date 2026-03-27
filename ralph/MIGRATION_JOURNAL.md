@@ -48,7 +48,7 @@ The agent created self-hosted queues and pipelines in the **default cluster** in
 1. The skills didn't lead with "use hosted agents" as the recommended starting point
 2. The skills showed self-hosted and hosted as equal options
 3. The PROMPT.md was telling the agent exactly what API calls to make instead of letting the skills guide it
-**Fix applied:** Updated platform-engineering skill to recommend hosted agents first, added `pipelineCreate` with `clusterId`, rewrote PROMPT.md to be task-focused.
+**Fix applied:** Updated agent-infrastructure skill to recommend hosted agents first, added `pipelineCreate` with `clusterId`, rewrote PROMPT.md to be task-focused.
 
 ### Infra notes
 - Org slug: `new23`

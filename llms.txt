@@ -18,8 +18,8 @@ Topics: test splitting, bktec CLI, flaky detection, quarantine, test collectors,
 Path: skills/buildkite-secure-delivery/SKILL.md
 Topics: OIDC authentication, Package Registry, SLSA provenance, pipeline signing, JWKS, cosign, attestation, credential-free publishing
 
-### buildkite-platform-engineering
-Path: skills/buildkite-platform-engineering/SKILL.md
+### buildkite-agent-infrastructure
+Path: skills/buildkite-agent-infrastructure/SKILL.md
 Topics: clusters, queues, hosted agent instance shapes, cluster secrets, buildkite-agent.cfg, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization
 
 ## Cross-Cutting Skills

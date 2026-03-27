@@ -621,7 +621,7 @@ echo "--- Environment after environment hook:"
 buildkite-agent env dump | jq 'keys'
 ```
 
-> For agent lifecycle hooks and `buildkite-agent.cfg` configuration, see the **buildkite-platform-engineering** skill.
+> For agent lifecycle hooks and `buildkite-agent.cfg` configuration, see the **buildkite-agent-infrastructure** skill.
 
 ## Secrets
 
@@ -678,7 +678,7 @@ steps:
       - github-api-token
 ```
 
-> For setting up cluster secrets, see the **buildkite-platform-engineering** skill. For the declarative `secrets:` pipeline YAML key, see the **buildkite-pipelines** skill.
+> For setting up cluster secrets, see the **buildkite-agent-infrastructure** skill. For the declarative `secrets:` pipeline YAML key, see the **buildkite-pipelines** skill.
 
 ## Log Redaction
 

@@ -27,7 +27,7 @@ cp -r skills/buildkite-pipelines .claude/skills/
 cp -r skills/buildkite-agent-runtime .claude/skills/
 cp -r skills/buildkite-cli .claude/skills/
 cp -r skills/buildkite-api .claude/skills/
-cp -r skills/buildkite-platform-engineering .claude/skills/
+cp -r skills/buildkite-agent-infrastructure .claude/skills/
 cp -r skills/buildkite-secure-delivery .claude/skills/
 cp -r skills/buildkite-test-engine .claude/skills/
 
@@ -37,7 +37,7 @@ cp -r skills/buildkite-pipelines .cursor/skills/
 cp -r skills/buildkite-agent-runtime .cursor/skills/
 cp -r skills/buildkite-cli .cursor/skills/
 cp -r skills/buildkite-api .cursor/skills/
-cp -r skills/buildkite-platform-engineering .cursor/skills/
+cp -r skills/buildkite-agent-infrastructure .cursor/skills/
 cp -r skills/buildkite-secure-delivery .cursor/skills/
 cp -r skills/buildkite-test-engine .cursor/skills/
 ```
@@ -53,7 +53,7 @@ Skills organized by what you are trying to accomplish.
 | **Pipelines** | [skills/buildkite-pipelines/](skills/buildkite-pipelines/SKILL.md) | Pipeline YAML, step types, plugins, caching, parallelism, dynamic pipelines, matrix builds, artifacts, hooks |
 | **Test Engine** | [skills/buildkite-test-engine/](skills/buildkite-test-engine/SKILL.md) | Test splitting, flaky detection, quarantine, bktec CLI, test collectors |
 | **Secure Delivery** | [skills/buildkite-secure-delivery/](skills/buildkite-secure-delivery/SKILL.md) | OIDC authentication, Package Registry, SLSA provenance, pipeline signing |
-| **Platform Engineering** | [skills/buildkite-platform-engineering/](skills/buildkite-platform-engineering/SKILL.md) | Clusters, queues, hosted agents, agent config, pipeline templates, SSO, audit logging |
+| **Platform Engineering** | [skills/buildkite-agent-infrastructure/](skills/buildkite-agent-infrastructure/SKILL.md) | Clusters, queues, hosted agents, agent config, pipeline templates, SSO, audit logging |
 
 ### Cross-Cutting Skills
 

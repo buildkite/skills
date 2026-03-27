@@ -402,7 +402,7 @@ mutation {
 }
 ```
 
-> For detailed guidance on cluster and queue provisioning strategy, see the **buildkite-platform-engineering** skill.
+> For detailed guidance on cluster and queue provisioning strategy, see the **buildkite-agent-infrastructure** skill.
 
 Other key mutations: `pipelineUpdate`, `pipelineTemplateCreate` (Enterprise), `agentTokenCreate`, `agentTokenRevoke`.
 

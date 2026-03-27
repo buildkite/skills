@@ -10,7 +10,7 @@ skills/                              # All skills live here
   buildkite-pipelines/               # Journey — pipeline YAML, step types, caching, parallelism
   buildkite-test-engine/             # Journey — test splitting, flaky detection, bktec CLI
   buildkite-secure-delivery/         # Journey — OIDC, Package Registry, SLSA provenance
-  buildkite-platform-engineering/    # Journey — clusters, queues, hosted agents, SSO, audit
+  buildkite-agent-infrastructure/    # Journey — clusters, queues, hosted agents, SSO, audit
   buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks

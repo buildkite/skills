@@ -70,7 +70,7 @@ Buildkite looks for `.buildkite/pipeline.yml` by default. Override the path with
 4. Push — Buildkite triggers a build automatically via webhook
 
 > For creating pipelines programmatically, see the **buildkite-api** skill.
-> For agent and queue setup, see the **buildkite-platform-engineering** skill.
+> For agent and queue setup, see the **buildkite-agent-infrastructure** skill.
 
 ## Step Types
 
@@ -114,7 +114,7 @@ steps:
       key: "v1-deps-{{ checksum 'package-lock.json' }}"
 ```
 
-> Hosted agent setup and instance shapes are covered by the **buildkite-platform-engineering** skill.
+> Hosted agent setup and instance shapes are covered by the **buildkite-agent-infrastructure** skill.
 
 ## Parallelism and Dependencies
 

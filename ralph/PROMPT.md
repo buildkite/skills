@@ -25,7 +25,7 @@ The Express.js repository has 4 GitHub Actions workflow files in `/workspace/.gi
 
 Read the Buildkite skills thoroughly before writing anything. Start with:
 - `/skills/skills/buildkite-pipelines/SKILL.md` and its `references/` directory
-- `/skills/skills/buildkite-platform-engineering/SKILL.md` and its `references/` directory
+- `/skills/skills/buildkite-agent-infrastructure/SKILL.md` and its `references/` directory
 - `/skills/skills/buildkite-agent-runtime/SKILL.md` and its `references/` directory
 - `/skills/skills/buildkite-cli/SKILL.md`
 - `/skills/skills/buildkite-api/SKILL.md`

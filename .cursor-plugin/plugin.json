@@ -21,7 +21,7 @@
     "api",
     "oidc",
     "secure-delivery",
-    "platform-engineering"
+    "agent-infrastructure"
   ],
   "category": "developer-tools",
   "tags": [
@@ -33,7 +33,7 @@
     "test-engine",
     "api",
     "secure-delivery",
-    "platform-engineering"
+    "agent-infrastructure"
   ],
   "skills": "./skills/"
 }

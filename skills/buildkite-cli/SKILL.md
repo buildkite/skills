@@ -471,7 +471,7 @@ bk secret delete MY_SECRET --cluster my-cluster
 
 Secrets are scoped to a cluster. All agents and pipelines within that cluster can access the secret. Secrets created by cluster maintainers and organization administrators only. Control which pipelines can access specific secrets through agent access policies.
 
-> For cluster creation and management, see the **buildkite-platform-engineering** skill.
+> For cluster creation and management, see the **buildkite-agent-infrastructure** skill.
 
 ## Artifacts
 
@@ -532,7 +532,7 @@ bk cluster view <cluster-slug>
 |------|-------|---------|-------------|
 | `--output` | `-o` | `text` | Output format: `text`, `json` |
 
-> For cluster creation, queue management, hosted agent configuration, and infrastructure provisioning, see the **buildkite-platform-engineering** skill.
+> For cluster creation, queue management, hosted agent configuration, and infrastructure provisioning, see the **buildkite-agent-infrastructure** skill.
 
 ## Packages
 

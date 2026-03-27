@@ -505,7 +505,7 @@ config:
 
 Once all pipelines are signed, remove the `verification-failure-behavior: warn` line (defaults to `block`).
 
-> For `buildkite-agent.cfg` configuration details, see the **buildkite-platform-engineering** skill.
+> For `buildkite-agent.cfg` configuration details, see the **buildkite-agent-infrastructure** skill.
 
 ## End-to-End Secure Publish Flow
 

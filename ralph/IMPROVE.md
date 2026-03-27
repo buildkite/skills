@@ -114,8 +114,8 @@ Commit each skill change individually as you go, with a clear commit message exp
 
 Example:
 ```bash
-git add skills/buildkite-platform-engineering/SKILL.md
-git commit -m "platform-engineering: lead Quick Start with hosted agents
+git add skills/buildkite-agent-infrastructure/SKILL.md
+git commit -m "agent-infrastructure: lead Quick Start with hosted agents
 
 The conversion agent created self-hosted queues, so no agents picked up
 jobs (builds_ran scored 0%). Rewrite Quick Start to recommend hosted
@@ -135,7 +135,7 @@ These are absolute rules. Violating them will cause regressions.
 
 2. **SKILL.md body must be 6-8KB.** If adding content would exceed 8KB, extract detail into `references/` files. If the skill is currently under 4KB, it is too thin and should be expanded.
 
-3. **Do not violate skill boundaries.** Check the boundary table in CONVENTIONS.md before adding content. Pipeline YAML syntax belongs in `buildkite-pipelines`. Agent subcommands belong in `buildkite-agent-runtime`. CLI commands belong in `buildkite-cli`. Platform config belongs in `buildkite-platform-engineering`.
+3. **Do not violate skill boundaries.** Check the boundary table in CONVENTIONS.md before adding content. Pipeline YAML syntax belongs in `buildkite-pipelines`. Agent subcommands belong in `buildkite-agent-runtime`. CLI commands belong in `buildkite-cli`. Platform config belongs in `buildkite-agent-infrastructure`.
 
 4. **Limit to 1-3 changes per iteration.** Small, targeted changes make it possible to attribute score improvements to specific edits. Large rewrites create noise.
 

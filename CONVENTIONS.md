@@ -184,7 +184,7 @@ Each skill owns specific topics exclusively. Do not cover topics outside your bo
 | `pipeline.yml` syntax, step types, plugins, caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, `notify:`, `artifact_paths:`, concurrency, `agents:` routing, `secrets:` | **buildkite-pipelines** | Reference only |
 | Test Engine suites, `bktec` CLI, test splitting, flaky detection, quarantine, test collectors, `BUILDKITE_TEST_ENGINE_*` env vars | **buildkite-test-engine** | Reference only |
 | OIDC auth flows, Package Registry setup, SLSA provenance, pipeline signing (JWKS), verification rollout | **buildkite-secure-delivery** | Reference only |
-| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | **buildkite-platform-engineering** | Reference only |
+| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | **buildkite-agent-infrastructure** | Reference only |
 | `buildkite-agent` subcommands inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor, tool sign/verify | **buildkite-agent-runtime** | Reference only |
 | `bk build`, `bk job`, `bk pipeline`, `bk secret`, `bk artifact`, `bk auth`, `bk cluster`, `bk package` commands | **buildkite-cli** | Reference only |
 | REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Reference only |
