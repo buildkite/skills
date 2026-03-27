@@ -71,6 +71,7 @@ Buildkite looks for `.buildkite/pipeline.yml` by default. Override the path with
 
 > For creating pipelines programmatically, see the **buildkite-api** skill.
 > For agent and queue setup, see the **buildkite-platform-engineering** skill.
+> For migrating from another CI system, see the **buildkite-migration** skill.
 
 ## Step Types
 

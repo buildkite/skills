@@ -188,6 +188,7 @@ Each skill owns specific topics exclusively. Do not cover topics outside your bo
 | `buildkite-agent` subcommands inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor, tool sign/verify | **buildkite-agent-runtime** | Reference only |
 | `bk build`, `bk job`, `bk pipeline`, `bk secret`, `bk artifact`, `bk auth`, `bk cluster`, `bk package` commands | **buildkite-cli** | Reference only |
 | REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Reference only |
+| CI migration planning, provider-specific conversion rules (GitHub Actions, Jenkins, CircleCI, Bitbucket), pipeline best practices for converted pipelines | **buildkite-migration** | Reference only |
 
 **Artifact ambiguity:** The pipeline YAML for artifact upload/download belongs to
 **buildkite-pipelines**. The `buildkite-agent artifact` subcommands belong to

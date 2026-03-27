@@ -348,6 +348,8 @@ bk job log <job-id> --pipeline my-app --build 42
 
 Manage pipeline configuration — list, create, and update pipelines.
 
+> For converting pipelines from other CI systems, see the **buildkite-migration** skill.
+
 ### List pipelines
 
 ```bash
