@@ -306,6 +306,8 @@ steps:
           skip: true  # Known incompatible
 ```
 
+Valid properties inside each `adjustments` entry: `with`, `skip`, `soft_fail`, `env`. The `agents:` key is **not valid** inside `adjustments` — Buildkite rejects the pipeline with "agents is not a valid property on the matrix.adjustments configuration". To route matrix combinations to different queues (e.g., Linux vs Windows agents), use separate steps or a dynamic pipeline generator.
+
 ## Plugins
 
 Add capabilities with 3-line YAML blocks. Pin versions for reproducibility:
@@ -415,6 +417,7 @@ Scaffold a new pipeline in the current directory with `bk init`, then edit the g
 | Hardcoding parallel job split logic | Uneven test distribution, one slow job blocks the build | Use `parallelism: N` with timing-based splitting via Test Engine |
 | Inline secrets in pipeline YAML | Secrets visible in build logs and Buildkite UI | Use cluster secrets or agent environment hooks |
 | Using `retry.automatic` with `exit_status: "*"` and high limit | Genuine bugs retry repeatedly, wasting compute | Target specific exit codes; keep wildcard limit at 1 |
+| Using `agents:` inside `matrix.adjustments` | Pipeline upload fails: "agents is not a valid property on the matrix.adjustments configuration" | Remove `agents:` from `adjustments`; use separate steps per platform or a dynamic pipeline generator for per-combination queue routing |
 
 ## Additional Resources
 

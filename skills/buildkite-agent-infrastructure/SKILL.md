@@ -948,6 +948,9 @@ Jobs already running continue. New jobs queue until dispatch resumes.
 | Skipping IP restrictions on agent tokens | Any machine with the token can connect as an agent | Use `allowed_ip_addresses` to restrict to known CIDR ranges |
 | Creating one large queue for all workloads | Light jobs wait behind heavy jobs; no cost optimization | Create specialized queues per workload type |
 | Editing pipeline template YAML without testing | Broken template affects all pipelines using it | Test YAML as a regular pipeline first, then promote to template |
+| Cluster creation returns HTTP 500 or GraphQL "unknown error" | Cannot create a new cluster; repeated retries also fail | List existing clusters first (`GET /v2/organizations/{org}/clusters`); rename the Default cluster via `PATCH /v2/organizations/{org}/clusters/{id}` with `{"name": "desired-name"}` as a reliable workaround |
+| Hosted queue creation fails with "Upgrade to Platform Pro to access hosted agents" | Plan tier does not include hosted agents; mutation returns an error | Fall back immediately: create a self-hosted queue (omit `hostedAgents`), install `buildkite-agent` locally, and start it with `--token <cluster-token> --tags "queue=default" --spawn 3` |
+| Jobs hang indefinitely in "scheduled" state with self-hosted agents connected | The cluster's `default_queue_id` points to a different queue key than the one in the agent's `queue` tag | Check which queue key the agent uses (`queue=default` → queue with key `default`); update the cluster: `PATCH /v2/organizations/{org}/clusters/{id}` with `{"default_queue_id": "<uuid-of-matching-queue>"}` |
 
 ## Additional Resources
 
