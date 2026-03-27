@@ -363,12 +363,13 @@ mutation {
 
 Note: `pipelineID` is the GraphQL node ID (base64-encoded), not the pipeline slug. Retrieve it with a pipeline query first.
 
-**Create a pipeline:**
+**Create a pipeline** (use `clusterId` to associate with a cluster):
 
 ```graphql
 mutation {
   pipelineCreate(input: {
     organizationId: "T3JnYW5pemF0aW9uLS0t..."
+    clusterId: "Q2x1c3Rlci0tLQ..."
     name: "My New Pipeline"
     repository: { url: "git@github.com:my-org/my-repo.git" }
     steps: { yaml: "steps:\n  - label: ':test_tube: Test'\n    command: 'make test'" }
@@ -643,6 +644,7 @@ def trigger_downstream(api_token, org, pipeline, branch="main", env=None):
 
 ## Further Reading
 
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Buildkite REST API reference](https://buildkite.com/docs/apis/rest-api)
 - [Buildkite GraphQL API documentation](https://buildkite.com/docs/apis/graphql-api)
 - [Buildkite GraphQL Explorer](https://buildkite.com/docs/apis/graphql/graphql-tutorial)

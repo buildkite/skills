@@ -79,11 +79,13 @@ Run `bk configure` to set the organization slug and API access token. This creat
 bk configure
 ```
 
-Pass values non-interactively for automation:
+Pass values non-interactively for CI, Docker, or headless environments:
 
 ```bash
-bk configure --org my-org --token "$BUILDKITE_API_TOKEN"
+bk configure --org my-org --token "$BUILDKITE_API_TOKEN" --no-input
 ```
+
+The `--no-input` flag disables all interactive prompts (required in environments without a TTY). Other useful global flags: `--yes` (skip confirmations), `--quiet` (suppress progress output).
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
@@ -648,6 +650,7 @@ When the Buildkite MCP server is available, agents can use MCP tools for direct 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
 | Running `bk` commands before `bk configure` | Every command fails with authentication errors | Run `bk configure` or `bk auth login` first |
+| Running `bk configure` in Docker/CI without `--no-input` | Hangs or fails trying to read from TTY or system keychain | Add `--no-input` flag: `bk configure --org my-org --token "$TOKEN" --no-input` |
 | Omitting `--pipeline` on build commands | Command fails or targets the wrong pipeline | Always pass `--pipeline <slug>` explicitly |
 | Retrying a job ID that was already retried | API returns 422 error — each job ID can only be retried once | Use the new job ID returned by the first retry |
 | Creating secrets with keys starting with `buildkite` or `bk` | Creation fails — reserved prefix | Choose a different key name (exception: `BUILDKITE_API_TOKEN`) |
@@ -658,6 +661,7 @@ When the Buildkite MCP server is available, agents can use MCP tools for direct 
 
 ## Further Reading
 
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Buildkite CLI overview](https://buildkite.com/docs/platform/cli)
 - [CLI command reference](https://buildkite.com/docs/platform/cli/reference)
 - [CLI installation](https://buildkite.com/docs/platform/cli/installation)
