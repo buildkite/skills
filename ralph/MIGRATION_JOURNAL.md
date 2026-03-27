@@ -75,3 +75,30 @@ The agent created self-hosted queues and pipelines in the **default cluster** in
 - Which `bk` commands exist vs which need REST API
 - Cross-platform patterns (Windows agent queue routing)
 - Scheduled build configuration via API
+
+---
+
+## Improvement Agent Run — Iteration 1 (2026-03-28)
+
+**Analyzing score: 67.1/100**
+
+### Score breakdown
+- Passing (≥70): file_existence 100, yaml_validity 100, workflow_coverage 100, matrix_builds 100, no_anti_patterns 100, conversion_notes 100
+- Partial: buildkite_idioms 71.4 (missing depends_on, plugins: in generated pipelines)
+- Zero: infrastructure_live 0, builds_ran 0
+
+### Root cause of zero scores
+The v1 conversion agent created infrastructure and ran builds (confirmed in CONVERSION_NOTES.md — build 5 had all 4 upload steps pass). The zeros are likely due to the agent spending 45+ minutes on three avoidable failure modes, leaving infra in an uncertain state at eval time:
+1. Cluster creation HTTP 500 — 6+ failed API calls before discovering rename workaround
+2. Hosted agents Plan Pro error — skill said "use hosted" but didn't warn about plan requirement
+3. Default queue ID mismatch — builds hung in scheduled state while agent polled
+
+### Skill changes made
+1. **agent-infrastructure SKILL.md**: Added 3 Common Mistakes rows for the above failure modes. Next iteration's agent will immediately apply the workarounds without retry loops.
+2. **buildkite-pipelines SKILL.md**: Added valid adjustments properties list to matrix section + Common Mistakes row for `agents:` not being valid in adjustments.
+
+### What the v2 agent should do differently
+- When `clusterCreate` returns error → immediately try renaming Default cluster, don't retry create
+- When hosted agent creation fails with Plan Pro error → immediately create self-hosted queue, no retries
+- After creating self-hosted queue → immediately check cluster's `default_queue_id` matches agent's queue tag
+- Use `agents:` at step level, not inside `matrix.adjustments`

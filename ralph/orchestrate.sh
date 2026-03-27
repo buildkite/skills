@@ -24,7 +24,8 @@ fi
 SKILLS_REPO="$(cd "$(dirname "$0")/.." && pwd)"
 RALPH_DIR="$SKILLS_REPO/ralph"
 EXPRESS_DIR="$RALPH_DIR/express-checkout"
-STATE_DIR="$RALPH_DIR/state"
+STATE_BASE="$RALPH_DIR/state"
+STATE_DIR=""  # Set in init_state based on run ID
 
 MAX_ITERATIONS=20
 PASS_THRESHOLD=90
@@ -118,15 +119,32 @@ setup_express() {
 
 # --- Initialize state ---
 init_state() {
-  mkdir -p "$STATE_DIR"
+  mkdir -p "$STATE_BASE"
 
-  if [[ ! -f "$STATE_DIR/iterations.json" ]]; then
+  if [[ "$RESUME" == "true" ]]; then
+    # Find the latest run directory
+    local latest
+    latest=$(ls -1d "$STATE_BASE"/run-* 2>/dev/null | sort | tail -1)
+    if [[ -z "$latest" ]]; then
+      log_err "No previous run found to resume."
+      exit 1
+    fi
+    STATE_DIR="$latest"
+    log "Resuming run: $(basename "$STATE_DIR")"
+  else
+    # Create a new run directory
+    local run_id
+    run_id="run-$(date +%Y%m%d-%H%M%S)"
+    STATE_DIR="$STATE_BASE/$run_id"
+    mkdir -p "$STATE_DIR"
+    log "New run: $run_id"
+
     echo "[]" > "$STATE_DIR/iterations.json"
-  fi
-
-  if [[ ! -f "$STATE_DIR/current_version.txt" ]]; then
     echo "0" > "$STATE_DIR/current_version.txt"
   fi
+
+  # Update latest symlink
+  ln -sfn "$STATE_DIR" "$STATE_BASE/latest"
 
   if [[ -n "$START_VERSION" ]]; then
     echo "$((START_VERSION - 1))" > "$STATE_DIR/current_version.txt"
@@ -553,6 +571,8 @@ main() {
   setup_express
   init_state
 
+  log "State dir: $STATE_DIR"
+
   local plateau_count=0
   local best_score=0
 
@@ -617,6 +637,24 @@ main() {
     # Regression check (if not dry run)
     if [[ "$DRY_RUN" == "false" ]]; then
       run_regression_check || true
+    fi
+
+    # Append timestamped entry to migration journal
+    local journal_ts
+    journal_ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    local journal_file="$RALPH_DIR/MIGRATION_JOURNAL.md"
+    if [[ -f "$STATE_DIR/changes-v${version}.md" ]]; then
+      {
+        echo ""
+        echo "---"
+        echo ""
+        echo "## Run $(basename "$STATE_DIR") / Iteration $version -- $journal_ts"
+        echo ""
+        echo "**Score: ${score}/100**"
+        echo ""
+        cat "$STATE_DIR/changes-v${version}.md"
+      } >> "$journal_file"
+      log_ok "Appended iteration $version results to MIGRATION_JOURNAL.md"
     fi
 
     log_ok "Iteration $version complete (score: $score). Starting next iteration..."
