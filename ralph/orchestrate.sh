@@ -30,6 +30,7 @@ STATE_DIR=""  # Set in init_state based on run ID
 MAX_ITERATIONS=20
 PASS_THRESHOLD=90
 PLATEAU_LIMIT=3  # stop after N iterations with no improvement
+PLATEAU_MIN_DELTA=1  # minimum score improvement to reset plateau counter
 
 CONVERSION_BUDGET=5   # max USD per conversion agent run
 IMPROVEMENT_BUDGET=3  # max USD per improvement agent run
@@ -98,6 +99,11 @@ check_prerequisites() {
     fi
   fi
 
+  if ! command -v bc &>/dev/null; then
+    log_err "bc not found. Install bc (used for score comparison)."
+    exit 1
+  fi
+
   if ! command -v python3 &>/dev/null; then
     log_err "python3 not found."
     exit 1
@@ -164,16 +170,16 @@ reset_express() {
   local branch="ralph/iter-${version}"
 
   log "Resetting Express.js to clean state..."
-  cd "$EXPRESS_DIR"
-  git fetch origin 2>/dev/null || true
-  git checkout main 2>/dev/null || git checkout master 2>/dev/null
-  git reset --hard origin/main 2>/dev/null || git reset --hard origin/master 2>/dev/null
+  (
+    cd "$EXPRESS_DIR"
+    git fetch origin 2>/dev/null || true
+    git checkout main 2>/dev/null || git checkout master 2>/dev/null
+    git reset --hard origin/main 2>/dev/null || git reset --hard origin/master 2>/dev/null
 
-  # Delete old branch if it exists, then create fresh
-  git branch -D "$branch" 2>/dev/null || true
-  git checkout -b "$branch"
-
-  cd "$SKILLS_REPO"
+    # Delete old branch if it exists, then create fresh
+    git branch -D "$branch" 2>/dev/null || true
+    git checkout -b "$branch"
+  )
   log_ok "Express.js ready on branch $branch"
 }
 
@@ -212,9 +218,9 @@ run_conversion() {
 
   # Mount customer research scripts if available
   local research_dir="${CUSTOMER_RESEARCH_DIR:-}"
-  local research_flag=""
+  local -a docker_extra=()
   if [[ -d "$research_dir/scripts" ]]; then
-    research_flag="-v $research_dir/scripts:/research:ro"
+    docker_extra+=(-v "$research_dir/scripts:/research:ro")
     log "Customer research scripts mounted at /research"
   else
     log_warn "No customer research scripts found. Set CUSTOMER_RESEARCH_DIR to enable."
@@ -225,7 +231,7 @@ run_conversion() {
     -v "$SKILLS_REPO:/skills:ro" \
     -v "$claude_home:/home/ralph/.claude:rw" \
     -v "$RALPH_DIR/mcp-config.json:/mcp-config.json:ro" \
-    $research_flag \
+    "${docker_extra[@]}" \
     -e ANTHROPIC_API_KEY \
     -e "BUILDKITE_API_TOKEN=${BUILDKITE_API_TOKEN:-}" \
     -e "PLAIN_API_KEY=${PLAIN_API_KEY:-}" \
@@ -259,7 +265,11 @@ ${extra_flags}" \
     sleep 5
   done
   printf "\n" >&2
-  wait "$docker_pid" || true
+  local docker_exit=0
+  wait "$docker_pid" || docker_exit=$?
+  if [[ $docker_exit -ne 0 ]]; then
+    log_warn "Conversion agent exited with code $docker_exit (check $STATE_DIR/conversion-v${version}-stderr.log)"
+  fi
   local phase_elapsed=$(( SECONDS - phase_start ))
   log_ok "Conversion phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s"
 
@@ -336,9 +346,9 @@ run_evaluation() {
   local phase_start=$SECONDS
 
   # Use bk CLI for live verification if available
-  local cluster_flag=""
+  local -a cluster_args=()
   if command -v bk &>/dev/null && [[ "$SKIP_INFRA" == "false" ]]; then
-    cluster_flag="--cluster-name $cluster_name"
+    cluster_args+=(--cluster-name "$cluster_name")
     log "Live bk CLI verification enabled (cluster: $cluster_name)"
   else
     log_warn "bk CLI not found or --skip-infra set. Skipping live infrastructure & build checks."
@@ -346,7 +356,7 @@ run_evaluation() {
 
   python3 "$RALPH_DIR/evaluate.py" \
     --express-dir "$EXPRESS_DIR" \
-    $cluster_flag \
+    "${cluster_args[@]}" \
     --version "$version" \
     --output "$eval_file" >&2
 
@@ -382,7 +392,7 @@ run_improvement() {
   local phase_start=$SECONDS
   log "Running improvement agent (budget: \$${IMPROVEMENT_BUDGET})..."
 
-  cd "$SKILLS_REPO"
+  pushd "$SKILLS_REPO" > /dev/null
 
   # Point the improvement agent at the conversion session files
   local claude_home="$STATE_DIR/claude-home-v${version}"
@@ -435,6 +445,8 @@ Current iteration: $version" \
   printf "\n" >&2
   wait "$improve_pid" || true
 
+  popd > /dev/null
+
   local phase_elapsed=$(( SECONDS - phase_start ))
   log_ok "Improvement phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s. Log: $improve_log"
 }
@@ -483,24 +495,6 @@ json.dump(history, open('$STATE_DIR/iterations.json', 'w'), indent=2)
   echo "$version" > "$STATE_DIR/current_version.txt"
 }
 
-# --- Check for plateau ---
-check_plateau() {
-  local current_score=$1
-
-  python3 -c "
-import json, sys
-history = json.load(open('$STATE_DIR/iterations.json'))
-if len(history) < $PLATEAU_LIMIT:
-    sys.exit(1)  # Not enough data
-recent = [h['score'] for h in history[-$PLATEAU_LIMIT:]]
-best_recent = max(recent)
-if best_recent <= recent[0]:
-    print(f'Plateau detected: last $PLATEAU_LIMIT scores = {recent}')
-    sys.exit(0)
-sys.exit(1)
-" 2>/dev/null
-}
-
 # --- Print iteration summary ---
 print_summary() {
   local version=$1
@@ -545,8 +539,7 @@ if len(history) > 1:
 run_regression_check() {
   log "Running quality eval regression check..."
 
-  cd "$SKILLS_REPO"
-  if python3 evals/run_quality.py --skill buildkite-pipelines --no-save --parallel 10 2>/dev/null; then
+  if (cd "$SKILLS_REPO" && python3 evals/run_quality.py --skill buildkite-pipelines --no-save --parallel 10 2>/dev/null); then
     log_ok "Quality evals passed (no regression)"
     return 0
   else
@@ -591,6 +584,17 @@ main() {
     if [[ "$RESUME" == "true" ]]; then
       RESUME=false  # Only skip once, subsequent iterations run normally
       log "Resuming iteration $version — skipping conversion, picking up from evaluation..."
+      # Verify Express repo exists and has conversion output
+      if [[ ! -d "$EXPRESS_DIR/.git" ]]; then
+        log_err "Express repo not found at $EXPRESS_DIR — cannot resume without prior conversion output."
+        exit 1
+      fi
+      local express_branch
+      express_branch=$(cd "$EXPRESS_DIR" && git branch --show-current 2>/dev/null || echo "unknown")
+      log "Express repo on branch: $express_branch"
+      if [[ "$express_branch" != "ralph/iter-"* ]]; then
+        log_warn "Express repo is on '$express_branch', not a ralph iteration branch. Evaluation may use stale data."
+      fi
     else
       # Reset Express.js to clean state
       reset_express "$version"
@@ -611,8 +615,8 @@ main() {
     # Print summary
     print_summary "$version" "$score"
 
-    # Track best score
-    if (( $(echo "$score > $best_score" | bc -l) )); then
+    # Track best score (require minimum delta to count as improvement)
+    if (( $(echo "$score >= $best_score + $PLATEAU_MIN_DELTA" | bc -l) )); then
       best_score=$score
       plateau_count=0
     else
