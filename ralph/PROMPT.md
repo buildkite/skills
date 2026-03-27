@@ -7,7 +7,6 @@ You are a migration agent. Your job is to take the Express.js repository's GitHu
 You have no memory of previous runs. Everything you need is in:
 - The Express.js checkout at `/workspace` (the repo to migrate)
 - The Buildkite skills at `/skills/skills/` (your guide for all things Buildkite)
-- `/MIGRATION_JOURNAL.md` (learnings from previous attempts, if it exists)
 
 ## What to Convert
 

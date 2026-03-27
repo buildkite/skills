@@ -39,6 +39,7 @@ DOCKER_IMAGE="ralph-agent"
 DRY_RUN=false
 SKIP_INFRA=false
 START_VERSION=""
+RESUME=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -47,6 +48,7 @@ while [[ $# -gt 0 ]]; do
     --start-from) START_VERSION="$2"; shift 2 ;;
     --max-iterations) MAX_ITERATIONS="$2"; shift 2 ;;
     --model) MODEL="$2"; shift 2 ;;
+    --resume) RESUME=true; shift ;;
     *) echo "Unknown flag: $1"; exit 1 ;;
   esac
 done
@@ -328,7 +330,7 @@ run_evaluation() {
     --express-dir "$EXPRESS_DIR" \
     $cluster_flag \
     --version "$version" \
-    --output "$eval_file"
+    --output "$eval_file" >&2
 
   local phase_elapsed=$(( SECONDS - phase_start ))
   log_ok "Evaluation phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s"
@@ -377,8 +379,9 @@ run_improvement() {
   claude \
     --print \
     --bare \
-    --tools "Read,Edit,Glob,Grep" \
+    --tools "Read,Write,Edit,Glob,Grep" \
     --allowed-tools "Bash(python:evals/*),Bash(git:*)" \
+    --permission-mode bypassPermissions \
     --system-prompt "$improve_prompt" \
     --model "$MODEL" \
     --max-budget-usd "$IMPROVEMENT_BUDGET" \
@@ -398,7 +401,21 @@ Iteration history: $history
 Write your changes summary to: $STATE_DIR/changes-v${version}.md
 
 Current iteration: $version" \
-    2>&1 | tee "$improve_log"
+    > "$improve_log" 2>&1 &
+  local improve_pid=$!
+
+  # Show progress while improvement agent runs
+  log "Improvement running (pid: $improve_pid). Log: $improve_log"
+  while kill -0 "$improve_pid" 2>/dev/null; do
+    local lines=$(wc -l < "$improve_log" 2>/dev/null || echo 0)
+    local elapsed=$(( SECONDS - phase_start ))
+    local mins=$(( elapsed / 60 ))
+    local secs=$(( elapsed % 60 ))
+    printf "\r${BLUE}[ralph]${NC} Improvement in progress... %d lines, %dm%02ds elapsed" "$lines" "$mins" "$secs" >&2
+    sleep 5
+  done
+  printf "\n" >&2
+  wait "$improve_pid" || true
 
   local phase_elapsed=$(( SECONDS - phase_start ))
   log_ok "Improvement phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s. Log: $improve_log"
@@ -483,9 +500,9 @@ print()
 for cat, result in data.get('categories', {}).items():
     score = result.get('score', 0)
     weight = result.get('weight', 0)
-    bar = '█' * int(score / 5) + '░' * (20 - int(score / 5))
+    bar = '#' * int(score / 5) + '-' * (20 - int(score / 5))
     weighted = score * weight / 100
-    print(f'  {cat:<25s} {bar} {score:5.1f}/100 (×{weight}% = {weighted:.1f})')
+    print(f'  {cat:<25s} {bar} {score:5.1f}/100 (x{weight}% = {weighted:.1f})')
 print()
 print(f'  Total weighted score: {data[\"total_score\"]}/100')
 "
@@ -501,7 +518,7 @@ if len(history) > 1:
     for h in history:
         v = h['version']
         s = h['score']
-        bar = '█' * int(s / 5)
+        bar = '#' * int(s / 5)
         print(f'    v{v}: {bar} {s}')
 " 2>/dev/null || true
 }
@@ -511,7 +528,7 @@ run_regression_check() {
   log "Running quality eval regression check..."
 
   cd "$SKILLS_REPO"
-  if python3 evals/run_quality.py --skill buildkite-pipelines --no-save 2>/dev/null; then
+  if python3 evals/run_quality.py --skill buildkite-pipelines --no-save --parallel 10 2>/dev/null; then
     log_ok "Quality evals passed (no regression)"
     return 0
   else
@@ -551,11 +568,16 @@ main() {
     log_section "ITERATION ${version} / ${MAX_ITERATIONS}"
     local iter_start=$SECONDS
 
-    # Reset Express.js to clean state
-    reset_express "$version"
+    if [[ "$RESUME" == "true" ]]; then
+      RESUME=false  # Only skip once, subsequent iterations run normally
+      log "Resuming iteration $version — skipping conversion, picking up from evaluation..."
+    else
+      # Reset Express.js to clean state
+      reset_express "$version"
 
-    # Phase 1: Conversion
-    run_conversion "$version"
+      # Phase 1: Conversion
+      run_conversion "$version"
+    fi
 
     # Phase 2: Evaluate
     local score

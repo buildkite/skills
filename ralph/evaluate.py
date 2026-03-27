@@ -572,8 +572,8 @@ def main():
     for cat_name, cat_result in result["categories"].items():
         s = cat_result["score"]
         w = cat_result["weight"]
-        bar = "█" * int(s / 5) + "░" * (20 - int(s / 5))
-        print(f"  {cat_name:<25s} {bar} {s:5.1f}/100 (×{w}%)")
+        bar = "#" * int(s / 5) + "-" * (20 - int(s / 5))
+        print(f"  {cat_name:<25s} {bar} {s:5.1f}/100 (x{w}%)")
     print(f"\nResult written to: {output_path}")
 
 
