@@ -180,6 +180,7 @@ run_conversion() {
     extra_flags="Do NOT create Buildkite infrastructure (cluster, queues, pipelines). Only write pipeline YAML files."
   fi
 
+  local phase_start=$SECONDS
   log "Running conversion agent in Docker (budget: \$${CONVERSION_BUDGET})..."
   log "Cluster: $cluster_name"
 
@@ -231,11 +232,16 @@ ${extra_flags}" \
   log "Conversion running (pid: $docker_pid). Raw log: $raw_log"
   while kill -0 "$docker_pid" 2>/dev/null; do
     local lines=$(wc -l < "$raw_log" 2>/dev/null || echo 0)
-    printf "\r${BLUE}[ralph]${NC} Conversion in progress... %d events logged" "$lines" >&2
+    local elapsed=$(( SECONDS - phase_start ))
+    local mins=$(( elapsed / 60 ))
+    local secs=$(( elapsed % 60 ))
+    printf "\r${BLUE}[ralph]${NC} Conversion in progress... %d events, %dm%02ds elapsed" "$lines" "$mins" "$secs" >&2
     sleep 5
   done
   printf "\n" >&2
   wait "$docker_pid" || true
+  local phase_elapsed=$(( SECONDS - phase_start ))
+  log_ok "Conversion phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s"
 
   # Post-process the stream into a readable summary for the improvement agent
   python3 -c "
@@ -307,6 +313,7 @@ run_evaluation() {
   local cluster_name="ralph-express-v${version}"
 
   log_section "PHASE 2: EVALUATION (v${version})"
+  local phase_start=$SECONDS
 
   # Use bk CLI for live verification if available
   local cluster_flag=""
@@ -322,6 +329,9 @@ run_evaluation() {
     $cluster_flag \
     --version "$version" \
     --output "$eval_file"
+
+  local phase_elapsed=$(( SECONDS - phase_start ))
+  log_ok "Evaluation phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s"
 
   # Extract score
   local score
@@ -349,6 +359,7 @@ run_improvement() {
   local improve_prompt
   improve_prompt=$(cat "$RALPH_DIR/IMPROVE.md")
 
+  local phase_start=$SECONDS
   log "Running improvement agent (budget: \$${IMPROVEMENT_BUDGET})..."
 
   cd "$SKILLS_REPO"
@@ -389,7 +400,8 @@ Write your changes summary to: $STATE_DIR/changes-v${version}.md
 Current iteration: $version" \
     2>&1 | tee "$improve_log"
 
-  log_ok "Improvement complete. Log: $improve_log"
+  local phase_elapsed=$(( SECONDS - phase_start ))
+  log_ok "Improvement phase took $(( phase_elapsed / 60 ))m$(( phase_elapsed % 60 ))s. Log: $improve_log"
 }
 
 # --- Record iteration result ---
