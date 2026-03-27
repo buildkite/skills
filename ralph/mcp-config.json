@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "Buildkite": {
-      "type": "url",
+      "type": "sse",
       "url": "https://mcp.buildkite.com/sse"
     }
   }
