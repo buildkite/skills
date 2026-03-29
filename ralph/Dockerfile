@@ -35,6 +35,8 @@ RUN useradd -m -s /bin/bash ralph && \
     mkdir -p /workspace && chown ralph:ralph /workspace
 
 USER ralph
+RUN git config --global user.email "ralph@buildkite.com" && \
+    git config --global user.name "Ralph Wiggum"
 WORKDIR /workspace
 
 ENTRYPOINT ["claude"]

@@ -97,6 +97,10 @@ check_prerequisites() {
     if [[ -z "${BUILDKITE_API_TOKEN:-}" ]]; then
       log_warn "BUILDKITE_API_TOKEN not set. Infrastructure creation will fail."
     fi
+
+    if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+      log_warn "GITHUB_TOKEN not set. Agent won't be able to push to fork."
+    fi
   fi
 
   if ! command -v bc &>/dev/null; then
@@ -179,8 +183,14 @@ reset_express() {
     # Delete old branch if it exists, then create fresh
     git branch -D "$branch" 2>/dev/null || true
     git checkout -b "$branch"
+
+    # Configure fork remote for pushing .buildkite/ files
+    git remote add fork https://github.com/clbarrell/express.git 2>/dev/null || true
+    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+      git remote set-url fork "https://x-access-token:${GITHUB_TOKEN}@github.com/clbarrell/express.git"
+    fi
   )
-  log_ok "Express.js ready on branch $branch"
+  log_ok "Express.js ready on branch $branch (fork remote configured)"
 }
 
 # --- Phase 1: Conversion Agent (Docker) ---
@@ -234,6 +244,7 @@ run_conversion() {
     "${docker_extra[@]}" \
     -e ANTHROPIC_API_KEY \
     -e "BUILDKITE_API_TOKEN=${BUILDKITE_API_TOKEN:-}" \
+    -e "GITHUB_TOKEN=${GITHUB_TOKEN:-}" \
     -e "PLAIN_API_KEY=${PLAIN_API_KEY:-}" \
     -e "AVOMA_API_KEY=${AVOMA_API_KEY:-}" \
     "$DOCKER_IMAGE" \

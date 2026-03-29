@@ -39,12 +39,28 @@ The skills describe how to create all of this. Use the `bk` CLI and/or the Build
 
 Write Buildkite pipeline YAML files to `/workspace/.buildkite/`. Each GitHub Actions workflow should map to a Buildkite pipeline. Use Buildkite-native patterns -- no GitHub Actions syntax.
 
-### 5. Validate and trigger
+### 5. Commit and push to fork
+
+The Express.js checkout has a `fork` remote pointing at `https://github.com/clbarrell/express`. Buildkite pipelines will clone from this fork, so the `.buildkite/` files must exist there.
+
+- Stage and commit all `.buildkite/` files and `CONVERSION_NOTES.md` to the current branch
+- Push the branch to the fork: `git push fork HEAD`
+- Use `GITHUB_TOKEN` for authentication (it's already configured on the remote)
+
+### 6. Create pipelines pointing at the fork
+
+When creating Buildkite pipelines, configure them to use:
+- **Repository:** `https://github.com/clbarrell/express`
+- **Default branch:** the current git branch name (e.g. `ralph/iter-1`)
+
+The cluster must have **hosted agent queues** so builds are picked up by Buildkite-hosted agents. Learn how to create hosted queues from the Buildkite skills.
+
+### 7. Validate and trigger
 
 - Validate all pipeline YAML using `bk pipeline validate`
-- Trigger builds and verify they start running (agents pick up jobs)
+- Trigger builds and verify they start running (agents pick up jobs, not stuck in scheduled state)
 
-### 6. Document
+### 8. Document
 
 Write `/workspace/CONVERSION_NOTES.md` covering:
 - How each GitHub Actions workflow maps to a Buildkite pipeline
@@ -73,6 +89,6 @@ If the skills don't cover what you need or an API call fails:
 
 - All 4 workflows are converted to valid Buildkite pipeline YAML
 - Real Buildkite infrastructure exists: cluster, hosted queues, pipelines
-- Builds are triggered and jobs are picked up by agents (not hanging in scheduled state)
+- Builds are triggered on the fork repo and jobs are picked up by hosted agents (not hanging in scheduled state)
 - No GitHub Actions syntax remnants (`uses:`, `runs-on:`, `${{ }}`, `actions/`)
 - CONVERSION_NOTES.md documents decisions and skill gaps
