@@ -37,4 +37,4 @@ Path: skills/buildkite-api/SKILL.md
 Topics: REST API (api.buildkite.com), GraphQL API (graphql.buildkite.com), webhooks, API authentication, pagination, GraphQL mutations
 
 ## Full Documentation
-https://buildkite.com/docs
+https://buildkite.com/docs/llms.txt
