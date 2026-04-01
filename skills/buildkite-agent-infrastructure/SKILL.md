@@ -588,6 +588,59 @@ RUN chmod +x /custom/hooks/*.sh
 
 Set the custom image on the queue with `agentImageRef` in the `clusterQueueCreate` mutation's `hostedAgents` input.
 
+### Hosted agent pre-installed tools
+
+Linux hosted agents include: `bash`, `curl`, `wget`, `git`, `docker`, `python3`, `jq`.
+
+**`nvm` is NOT pre-installed.** Do not source `~/.nvm/nvm.sh` in pipeline commands — it will fail silently or exit 127. Use `fnm` (Fast Node Manager) instead to install any Node.js version, including EOL releases:
+
+```bash
+# Install fnm and activate it in one step
+curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.fnm" --skip-shell
+export PATH="$HOME/.fnm:$PATH"
+eval "$(fnm env --use-on-cd)"
+
+# Install and activate the target version
+fnm install 20
+fnm use 20
+node --version
+```
+
+`fnm` downloads directly from `nodejs.org` and works for all versions including EOL (16, 17, 19, etc.) without GPG key issues.
+
+**GitHub release asset downloads may be blocked.** The hostname `release-assets.githubusercontent.com` (used when downloading assets from GitHub Releases) is unreachable from the hosted agent network. Tools distributed as GitHub release binaries — such as CodeQL, Scorecard, Trivy — will fail to download. Pre-install these tools in a custom agent image using `agentImageRef`:
+
+```graphql
+mutation {
+  clusterQueueCreate(input: {
+    organizationId: "org-id"
+    clusterId: "cluster-id"
+    key: "linux"
+    hostedAgents: {
+      instanceShape: LINUX_AMD64_4X16
+      agentImageRef: "us-docker.pkg.dev/my-project/agents/linux-ci:latest"
+    }
+  }) {
+    clusterQueue { id key }
+  }
+}
+```
+
+The custom image should extend `buildkite/agent` and `RUN` the tool installation steps.
+
+**Verify queue creation** after the GraphQL mutation by listing queues via the REST API. Silent GraphQL errors can leave the cluster in a state where no hosted queue exists:
+
+```bash
+curl -s "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLUSTER_ID/queues" \
+  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" | python3 -c "
+import sys, json
+queues = json.load(sys.stdin)
+print(f'{len(queues)} queue(s) found: {[q[\"key\"] for q in queues]}')
+"
+```
+
+If the list is empty after a `clusterQueueCreate` mutation, the mutation may have failed silently — retry using the REST API instead (see the **buildkite-api** skill for queue creation via REST).
+
 ## Pipeline Templates
 
 Pipeline templates (Enterprise-only) standardize pipeline YAML across the organization. Templates define a base configuration that pipelines inherit, ensuring consistency for security, compliance, or organizational standards.

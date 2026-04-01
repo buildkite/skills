@@ -409,7 +409,9 @@ Scaffold a new pipeline in the current directory with `bk init`, then edit the g
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
-| Missing `wait` between dependent steps | Steps run in parallel, second step fails because first hasn't finished | Add `- wait` or use `depends_on` |
+| Missing `wait` between dependent steps | Steps run in parallel, second step fails because first hasn't finished | Add `- wait` or use `depends_on:` |
+| Using only `wait` steps for all dependencies | Valid but non-idiomatic; `wait` blocks ALL prior steps, making it impossible to run independent steps in parallel | Give named steps a `key:` and use `depends_on: "key"` to express fine-grained dependencies; reserve `wait` for unconditional barriers |
+| No `plugins:` in pipeline for package install steps | Dependencies reinstalled from scratch on every build, slowing builds and inflating costs | Add `cache` plugin (or the built-in `cache:` key for hosted agents) to cache `node_modules/`, `.gradle/`, etc. See the Caching section above |
 | Using step-level `if` to skip plugins | Plugins still execute (they run before `if` is evaluated) | Wrap in a `group` with the `if` condition |
 | Not pinning plugin versions | Builds break when plugin releases breaking change | Always use full semver: `plugin#v1.2.3` |
 | Forgetting `concurrency_group` with `concurrency` | `concurrency` is ignored without a group name | Always pair `concurrency` with `concurrency_group` |
