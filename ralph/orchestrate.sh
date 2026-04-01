@@ -177,6 +177,9 @@ reset_express() {
   (
     cd "$EXPRESS_DIR"
     git fetch origin 2>/dev/null || true
+    # Clean any dirty state from the previous conversion before switching branches
+    git checkout -- . 2>/dev/null || true
+    git clean -fd 2>/dev/null || true
     git checkout main 2>/dev/null || git checkout master 2>/dev/null
     git reset --hard origin/main 2>/dev/null || git reset --hard origin/master 2>/dev/null
 
@@ -267,6 +270,7 @@ ${extra_flags}" \
 
   # Show progress while Docker runs
   log "Conversion running (pid: $docker_pid). Raw log: $raw_log"
+  touch "$raw_log"
   while kill -0 "$docker_pid" 2>/dev/null; do
     local lines=$(wc -l < "$raw_log" 2>/dev/null || echo 0)
     local elapsed=$(( SECONDS - phase_start ))
@@ -445,6 +449,7 @@ Current iteration: $version" \
 
   # Show progress while improvement agent runs
   log "Improvement running (pid: $improve_pid). Log: $improve_log"
+  touch "$improve_log"
   while kill -0 "$improve_pid" 2>/dev/null; do
     local lines=$(wc -l < "$improve_log" 2>/dev/null || echo 0)
     local elapsed=$(( SECONDS - phase_start ))
@@ -546,17 +551,76 @@ if len(history) > 1:
 " 2>/dev/null || true
 }
 
-# --- Run regression check on existing quality evals ---
-run_regression_check() {
-  log "Running quality eval regression check..."
+# --- Run quality eval and save results ---
+# Usage: run_quality_eval <label> <output_path> [compare_path]
+run_quality_eval() {
+  local label=$1
+  local output_path=$2
+  local compare_path=${3:-}
 
-  if (cd "$SKILLS_REPO" && python3 evals/run_quality.py --skill buildkite-pipelines --no-save --parallel 10 2>/dev/null); then
-    log_ok "Quality evals passed (no regression)"
-    return 0
-  else
-    log_warn "Quality eval regression detected! Review improvement changes."
-    return 1
+  log "Running quality eval ($label)..."
+
+  local -a eval_args=(--skill buildkite-pipelines --parallel 10)
+  if [[ -n "$compare_path" && -f "$compare_path" ]]; then
+    eval_args+=(--compare "$compare_path")
   fi
+
+  local eval_output
+  local eval_exit=0
+  eval_output=$(cd "$SKILLS_REPO" && python3 evals/run_quality.py "${eval_args[@]}" 2>&1) || eval_exit=$?
+
+  # Print the output (includes summary and comparison)
+  echo "$eval_output" >&2
+
+  # Extract the saved results path and copy to state dir
+  local saved_path
+  saved_path=$(echo "$eval_output" | grep -o 'Results saved to: .*' | head -1 | sed 's/Results saved to: //')
+  if [[ -n "$saved_path" && -f "$saved_path" ]]; then
+    cp "$saved_path" "$output_path"
+    log_ok "Quality eval ($label) results saved to: $output_path"
+  else
+    log_warn "Could not find saved quality eval results"
+  fi
+
+  if [[ $eval_exit -eq 0 ]]; then
+    log_ok "Quality eval ($label): all evals passed"
+  else
+    log_warn "Quality eval ($label): some evals failed"
+  fi
+
+  return $eval_exit
+}
+
+# --- Commit skill changes after improvement ---
+commit_skill_changes() {
+  local version=$1
+  local score=$2
+
+  (
+    cd "$SKILLS_REPO"
+
+    # Stage only skill and eval files (not ralph/ state)
+    git add skills/ evals/ 2>/dev/null || true
+
+    # Check if there are staged changes
+    if git diff --cached --quiet 2>/dev/null; then
+      log "No skill changes to commit for iteration $version"
+      return 0
+    fi
+
+    # Build commit message
+    local msg="ralph: iteration ${version} improvements (score: ${score}/100)"
+    if [[ -f "$STATE_DIR/changes-v${version}.md" ]]; then
+      local details
+      details=$(head -c 500 "$STATE_DIR/changes-v${version}.md")
+      msg="${msg}
+
+${details}"
+    fi
+
+    git commit -m "$msg"
+    log_ok "Committed skill changes for iteration $version"
+  )
 }
 
 # ============================================================
@@ -646,13 +710,18 @@ main() {
       break
     fi
 
+    # Quality eval baseline (before improvement)
+    run_quality_eval "baseline" "$STATE_DIR/quality-baseline-v${version}.json" || true
+
     # Phase 3: Improvement
     run_improvement "$version"
 
-    # Regression check (if not dry run)
-    if [[ "$DRY_RUN" == "false" ]]; then
-      run_regression_check || true
-    fi
+    # Quality eval post-improvement (compare against baseline)
+    run_quality_eval "post-improvement" "$STATE_DIR/quality-post-v${version}.json" \
+        "$STATE_DIR/quality-baseline-v${version}.json" || true
+
+    # Commit skill changes
+    commit_skill_changes "$version" "$score"
 
     # Append timestamped entry to migration journal
     local journal_ts
