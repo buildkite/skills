@@ -43,31 +43,7 @@ steps:
 
 The agent reads `.buildkite/pipeline.yml` and uploads the steps to Buildkite for execution.
 
-## Getting Started
-
-### Directory structure
-
-```
-repo/
-└── .buildkite/
-    └── pipeline.yml    # Pipeline definition (required)
-```
-
 Buildkite looks for `.buildkite/pipeline.yml` by default. Override the path with `buildkite-agent pipeline upload path/to/other.yml`.
-
-### How pipeline upload works
-
-1. A build starts with a single step: `buildkite-agent pipeline upload`
-2. The agent runs on the machine, reads `pipeline.yml`, and uploads steps to the Buildkite API
-3. Buildkite schedules the uploaded steps across available agents
-4. Steps run in parallel unless separated by `wait` steps or linked with `depends_on`
-
-### First pipeline setup
-
-1. Create a pipeline in Buildkite (UI or API)
-2. Set the initial command to `buildkite-agent pipeline upload`
-3. Commit `.buildkite/pipeline.yml` to the repository
-4. Push — Buildkite triggers a build automatically via webhook
 
 > For creating pipelines programmatically, see the **buildkite-api** skill.
 > For agent and queue setup, see the **buildkite-agent-infrastructure** skill.
@@ -264,7 +240,24 @@ steps:
     if: build.branch == "main" && build.message !~ /\[skip deploy\]/
 ```
 
-Common expressions: `build.branch`, `build.tag`, `build.message`, `build.source`, `build.env("VAR")`, `pipeline.default_branch`.
+For the full list of condition expressions, see [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals.md).
+
+**`[skip ci]` gotcha:** Buildkite only checks the HEAD commit message for `[skip ci]` / `[ci skip]`. If the tag is in an earlier commit in a multi-commit push, the build still triggers.
+
+### Directory-based step filtering (if_changed)
+
+Skip steps when relevant files haven't changed. Only applied by the Buildkite agent when uploading a pipeline. See https://buildkite.com/docs/pipelines/configure/dynamic-pipelines/if-changed.md.
+
+```yaml
+steps:
+  - label: ":nodejs: Frontend tests"
+    command: "npm test"
+    if_changed:
+      - "src/frontend/**"
+      - "package.json"
+```
+
+For exclude patterns and monorepo configurations, see `references/advanced-patterns.md`.
 
 ### Conditionally running plugins
 
@@ -331,19 +324,7 @@ Always pin plugin versions (e.g., `docker#v5.12.0` not `docker#v5`). Unpinned ve
 
 ## Notifications and Artifacts
 
-### Pipeline-level notifications
-
-```yaml
-notify:
-  - slack:
-      channels:
-        - "#builds"
-      message: "Build {{build.number}} {{build.state}}"
-    if: build.state == "failed"
-
-steps:
-  - command: "make test"
-```
+Add pipeline-level `notify:` above `steps:` to send Slack, email, or webhook notifications on build state changes. See [Notifications](https://buildkite.com/docs/pipelines/configure/notifications.md) for syntax.
 
 ### Artifact upload and download
 
@@ -363,9 +344,19 @@ steps:
       make package
 ```
 
+When using artifacts in a Docker build, download artifacts before starting the Docker build since `buildkite-agent` is not available inside the container:
+
+```yaml
+steps:
+  - label: "Docker build"
+    command: |
+      buildkite-agent artifact download "dist/*" .
+      docker build -t myapp .
+```
+
 ## Concurrency
 
-Limit parallel execution of steps sharing a resource:
+Limit parallel execution of steps sharing a resource. Always pair `concurrency` with `concurrency_group` — without a group name, the limit is silently ignored.
 
 ```yaml
 steps:
@@ -376,34 +367,9 @@ steps:
     concurrency_method: "eager"
 ```
 
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `concurrency` | unlimited | Max parallel jobs in this group |
-| `concurrency_group` | — | Shared name across pipelines (required with `concurrency`) |
-| `concurrency_method` | `ordered` | `ordered` (FIFO) or `eager` (next available) |
-| `priority` | `0` | Higher numbers run first when queued |
+Use `concurrency_method: "eager"` (next available) for independent jobs like deploys. Use the default `"ordered"` (FIFO) when execution order matters. Set `priority` (default `0`, higher = first) to control which queued jobs run next.
 
-## Working with Pipelines from the Terminal
-
-Use the Buildkite CLI (`bk`) to trigger, watch, and debug pipelines without leaving the terminal:
-
-```bash
-# Trigger a build on the current branch
-bk build create --pipeline my-app
-
-# Watch it run in real-time
-bk build watch 42 --pipeline my-app
-
-# View logs for a failed job
-bk job log <job-id> --pipeline my-app --build 42
-
-# Download artifacts locally
-bk artifact download "dist/*" --pipeline my-app --build 42
-```
-
-Scaffold a new pipeline in the current directory with `bk init`, then edit the generated file to define build steps.
-
-> For installation, authentication, secrets management, and full command reference, see the **buildkite-cli** skill.
+> For triggering, watching, and debugging pipelines from the terminal, see the **buildkite-cli** skill.
 
 ## Common Mistakes
 
@@ -420,6 +386,8 @@ Scaffold a new pipeline in the current directory with `bk init`, then edit the g
 | Inline secrets in pipeline YAML | Secrets visible in build logs and Buildkite UI | Use cluster secrets or agent environment hooks |
 | Using `retry.automatic` with `exit_status: "*"` and high limit | Genuine bugs retry repeatedly, wasting compute | Target specific exit codes; keep wildcard limit at 1 |
 | Using `agents:` inside `matrix.adjustments` | Pipeline upload fails: "agents is not a valid property on the matrix.adjustments configuration" | Remove `agents:` from `adjustments`; use separate steps per platform or a dynamic pipeline generator for per-combination queue routing |
+| Build fails but all visible steps passed | A trigger step started a child pipeline that failed, or a step was cancelled rather than unblocked | Check the triggered pipeline's build status; inspect block steps for cancellations |
+| Pipeline upload fails with no clear error | YAML syntax error or agent-side issue not shown in build logs | Validate YAML locally; check agent logs on the host machine for detailed upload errors; run `buildkite-agent pipeline upload --debug` |
 
 ## Additional Resources
 
