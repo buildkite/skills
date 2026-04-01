@@ -65,6 +65,24 @@ Skills needed across all journeys.
 | **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
 | **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
 
+## How Skills Differ from Docs
+
+Buildkite docs at [buildkite.com/docs](https://buildkite.com/docs) are the canonical
+reference for what Buildkite features exist and how they work.
+
+Skills serve a different purpose: they encode **expertise**. Where docs explain every
+option, skills teach agents the right defaults, common patterns, and mistakes to avoid.
+A skill captures the judgment an experienced Buildkite user applies — which step type to
+reach for, how to structure a dynamic pipeline, when to use OIDC instead of static tokens.
+
+In practice this means:
+- Skills assume the agent already understands YAML, CI/CD concepts, and general programming
+- SKILL.md files focus on quick starts, recommended patterns, and pitfall tables — not exhaustive option lists
+- Detailed reference material lives in `references/` subdirectories, loaded only when needed
+- Skills link to Buildkite docs rather than reproducing them
+
+For more on content strategy, see [CONVENTIONS.md](CONVENTIONS.md).
+
 ## Contributing
 
 1. Read [CONVENTIONS.md](CONVENTIONS.md) — frontmatter format, section order, style rules, skill boundaries, quality checklist

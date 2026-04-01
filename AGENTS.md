@@ -31,6 +31,15 @@ Skills use progressive disclosure:
 2. **SKILL.md body** — loaded when skill triggers (~1,500-2,500 words)
 3. **Bundled resources** — loaded as needed by the agent (unlimited)
 
+## Skills vs. Documentation
+
+Skills are not documentation rewrites. They encode *expertise* — the judgment calls,
+defaults, and pitfalls that experienced Buildkite users know — rather than cataloguing
+features. Buildkite docs explain what's possible; skills teach agents how to do it correctly.
+
+Assume the agent is already smart. Only include context it cannot infer on its own.
+Link to Buildkite docs for canonical reference; do not reproduce them.
+
 ## Key Conventions
 
 - Read `CONVENTIONS.md` before writing or modifying any skill

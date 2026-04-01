@@ -9,6 +9,27 @@ Copilot, Windsurf, Gemini CLI) via `npx skills add buildkite/skills`.
 
 ---
 
+## Skills Are Not Documentation
+
+Skills teach agents *how to do things correctly*. Buildkite docs explain *what features exist*.
+Do not rewrite documentation into skill format. Instead, encode the expertise that makes
+the difference between a working pipeline and a correct one.
+
+**Content strategy principles:**
+
+1. **Assume the agent is smart.** Do not explain YAML, CI/CD concepts, or general programming.
+   Only add context the agent cannot already infer. Challenge every paragraph: does this
+   justify its token cost?
+2. **Encode expertise, not reference material.** Capture the judgment calls, default
+   recommendations, and common mistakes that an experienced Buildkite user knows —
+   not exhaustive option lists.
+3. **Link to docs, don't duplicate them.** Use the Further Reading section to point at
+   canonical Buildkite documentation. One cross-reference is better than a reproduced page.
+4. **Test with real usage.** Build evaluations before writing extensive content. Observe what
+   agents actually need, not what you assume they need.
+
+---
+
 ## Required: Confirm Your Understanding First
 
 Before writing, state aloud (in your response or thinking):
@@ -41,9 +62,10 @@ Skills use a three-tier loading system to manage context efficiently:
 2. **SKILL.md body** — loaded when skill triggers (~1,500-2,500 words)
 3. **Bundled resources** — loaded as needed by the agent (unlimited)
 
-This means SKILL.md should contain the **essential** knowledge an agent needs for
-common tasks. Move exhaustive flag tables, advanced examples, edge cases, and deep
-reference material into `references/` files. The agent will read them when needed.
+SKILL.md should contain the expertise an agent needs for common tasks — recommended
+patterns, quick starts, and pitfalls. Move exhaustive flag tables, advanced examples,
+edge cases, and deep reference material into `references/` files. These cost zero
+tokens until the agent reads them for a specific task.
 
 ### What goes where
 
@@ -148,6 +170,11 @@ Never duplicate content owned by another skill. One sentence + pointer.
 - References: **unlimited**. Move detailed flag tables, advanced examples, and edge cases here.
 - Total skill content (SKILL.md + references): **10-15KB** typical.
 
+Note: Anthropic's official guidance recommends skills under ~2,000 tokens / 500 lines.
+Our skills are larger because Buildkite-specific domain knowledge is niche and unlikely
+to be in model training data. This is a deliberate trade-off — but it means every line
+must earn its place. Prefer moving detail to `references/` over inflating SKILL.md.
+
 If your SKILL.md first draft exceeds 8KB, identify sections to extract into `references/`.
 If it's under 4KB, it's too thin — expand quick start, add more inline examples, deepen
 common mistakes.
@@ -226,6 +253,8 @@ Before you consider your skill done, verify:
 - [ ] All referenced `references/` and `examples/` files exist
 
 **Content:**
+- [ ] Encodes expertise (patterns, defaults, pitfalls) — not a docs rewrite
+- [ ] Does not explain general concepts the agent already knows (YAML, CI/CD, etc.)
 - [ ] Written in imperative/infinitive form — no second person ("you")
 - [ ] Every inline CLI command has a flag table
 - [ ] Flag tables include Default column
