@@ -152,7 +152,7 @@ evals:
     difficulty: "configuration"
     cluster: "triggers"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-platform"]
+    secondary_skills: ["buildkite-api"]
     expected_contains:
       - "webhook"
       - "branch filter"
@@ -183,7 +183,7 @@ evals:
     difficulty: "getting-started"
     cluster: "environment-vars"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent"]
+    secondary_skills: ["buildkite-agent-runtime"]
     expected_contains:
       - "meta-data"
       - "buildkite-agent meta-data set"
@@ -212,7 +212,7 @@ evals:
     source_ref: "th_01KFV1QPH7MZ6414A2N2GC8KSS"
     difficulty: "advanced"
     cluster: "environment-vars"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: ["buildkite-pipelines"]
     expected_contains:
       - "environment hook"
@@ -263,7 +263,7 @@ evals:
     primary_skill: "buildkite-pipelines"
     secondary_skills: []
     expected_contains:
-      - "latest attempt"
+      - "latest attempt|final attempt"
       - "pass"
     expected_not_contains: []
     tags: ["retry", "build-state"]
@@ -293,7 +293,7 @@ evals:
     difficulty: "configuration"
     cluster: "artifacts"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent"]
+    secondary_skills: ["buildkite-agent-runtime"]
     expected_contains:
       - "artifact download"
       - "--build"
@@ -324,7 +324,7 @@ evals:
     source_ref: "th_01KM67RSF5JTFN0EK64KMTKFQE"
     difficulty: "troubleshooting"
     cluster: "agent-setup"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "revoke"
@@ -338,7 +338,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "getting-started"
     cluster: "agent-setup"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: ["buildkite-pipelines"]
     expected_contains:
       - "queue"
@@ -352,7 +352,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "troubleshooting"
     cluster: "agent-troubleshooting"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: ["buildkite-pipelines"]
     expected_contains:
       - "queue"
@@ -367,7 +367,7 @@ evals:
     source_ref: "th_01KF9TPYRCFY86R6R7CJA6NC9E"
     difficulty: "configuration"
     cluster: "agent-setup"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "disconnect-after-idle-timeout"
@@ -385,7 +385,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "getting-started"
     cluster: "hosted-agents"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "managed"
@@ -399,7 +399,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "configuration"
     cluster: "hosted-agents"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "private connectivity"
@@ -412,7 +412,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "getting-started"
     cluster: "hosted-agents"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "fresh VM"
@@ -426,7 +426,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "troubleshooting"
     cluster: "hosted-agents"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: ["buildkite-pipelines"]
     expected_contains:
       - "docker"
@@ -444,7 +444,7 @@ evals:
     source_ref: "th_01KJX6TSS9BEDYTB7EH3W927AD"
     difficulty: "advanced"
     cluster: "kubernetes"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "ConfigMap"
@@ -458,7 +458,7 @@ evals:
     source_ref: "th_01KH7T585JNVQ2N21DBBBNM8TW"
     difficulty: "configuration"
     cluster: "kubernetes"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: []
     expected_contains:
       - "extraEnv"
@@ -476,7 +476,7 @@ evals:
     source_ref: "th_01KC3CS4N4ARMD593VWXJANW2G"
     difficulty: "troubleshooting"
     cluster: "api-graphql"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "complexity"
@@ -491,7 +491,7 @@ evals:
     source_ref: "th_01K9CQ9Q7VE5TAB64XRJJHE7EQ"
     difficulty: "getting-started"
     cluster: "api-graphql"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "graphql.buildkite.com"
@@ -505,7 +505,7 @@ evals:
     source_ref: "th_01KHSRK43K4T6TN3C33BASV9GQ"
     difficulty: "getting-started"
     cluster: "api-rest"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "rate limit"
@@ -519,7 +519,7 @@ evals:
     source_ref: "th_01KJ58YQY7CPXX7HP1BR94VP5G"
     difficulty: "configuration"
     cluster: "api-graphql"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "GraphQL"
@@ -537,7 +537,7 @@ evals:
     source_ref: "th_01KKX4AWH0EMTK7KP3DMTSZBK4"
     difficulty: "getting-started"
     cluster: "webhooks"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "notification"
@@ -551,7 +551,7 @@ evals:
     source_ref: "th_01K7QYP6392K14JBXMGEKDVA2M"
     difficulty: "configuration"
     cluster: "webhooks"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "HMAC"
@@ -566,7 +566,7 @@ evals:
     source_ref: "th_01KHS7VD4VTCWPG4AC46DHJY4H"
     difficulty: "troubleshooting"
     cluster: "webhooks"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "delivery"
@@ -580,7 +580,7 @@ evals:
     source_ref: "th_01KGJ1H5TKEB3B1TSH6B2ZGD4D"
     difficulty: "getting-started"
     cluster: "webhooks"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "GitHub"
@@ -599,7 +599,7 @@ evals:
     source_ref: "th_01KH3XYK68XSEM75B1TAFDCGVN"
     difficulty: "getting-started"
     cluster: "test-engine"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-test-engine"
     secondary_skills: []
     expected_contains:
       - "JUnit XML"
@@ -613,7 +613,7 @@ evals:
     source_ref: "th_01KC77P5BZSQARWCZFZZS43392"
     difficulty: "advanced"
     cluster: "test-engine"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-test-engine"
     secondary_skills: ["buildkite-pipelines"]
     expected_contains:
       - "parallelism"
@@ -627,7 +627,7 @@ evals:
     source_ref: "th_01KK35WSB44FPECPRWBJD4MZN3"
     difficulty: "troubleshooting"
     cluster: "test-engine"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-test-engine"
     secondary_skills: []
     expected_contains:
       - "bktec"
@@ -645,8 +645,8 @@ evals:
     source_ref: "th_01K9R5C9MC72YJ6MCCAQ7HJVX8"
     difficulty: "getting-started"
     cluster: "oidc"
-    primary_skill: "buildkite-platform"
-    secondary_skills: ["buildkite-agent"]
+    primary_skill: "buildkite-secure-delivery"
+    secondary_skills: ["buildkite-agent-runtime"]
     expected_contains:
       - "buildkite-agent oidc request-token"
       - "trust policy"
@@ -660,7 +660,7 @@ evals:
     source_ref: "th_01KKD0Q3WAY436BD3R9SZRJ4MA"
     difficulty: "troubleshooting"
     cluster: "oidc"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-secure-delivery"
     secondary_skills: []
     expected_contains:
       - "--lifetime"
@@ -674,7 +674,7 @@ evals:
     source_ref: "th_01KKX8XZ5VA6QXC93BHW2VX7VM"
     difficulty: "getting-started"
     cluster: "oidc"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-secure-delivery"
     secondary_skills: []
     expected_contains:
       - "cloud provider"
@@ -693,7 +693,7 @@ evals:
     difficulty: "configuration"
     cluster: "hooks-plugins"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent"]
+    secondary_skills: ["buildkite-agent-infrastructure"]
     expected_contains:
       - "pre-command"
       - "hook"
@@ -711,7 +711,7 @@ evals:
     difficulty: "getting-started"
     cluster: "migration"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent"]
+    secondary_skills: ["buildkite-agent-infrastructure"]
     expected_contains:
       - "pipeline.yml"
       - "agent"
@@ -739,7 +739,7 @@ evals:
     difficulty: "getting-started"
     cluster: "migration"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent", "buildkite-platform"]
+    secondary_skills: ["buildkite-agent-infrastructure", "buildkite-api"]
     expected_contains:
       - "agent"
       - "pipeline"
@@ -757,7 +757,7 @@ evals:
     source_ref: "th_01KEWE87BJRPV8WNMCKJQ9EGXX"
     difficulty: "configuration"
     cluster: "secrets"
-    primary_skill: "buildkite-agent"
+    primary_skill: "buildkite-agent-infrastructure"
     secondary_skills: ["buildkite-pipelines"]
     expected_contains:
       - "meta-data"
@@ -771,7 +771,7 @@ evals:
     source_ref: "th_01KCSETY9CNMXWXKAYCFK3HV42"
     difficulty: "getting-started"
     cluster: "secrets"
-    primary_skill: "buildkite-platform"
+    primary_skill: "buildkite-api"
     secondary_skills: []
     expected_contains:
       - "scope"
@@ -805,7 +805,7 @@ evals:
     difficulty: "troubleshooting"
     cluster: "build-debugging"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent"]
+    secondary_skills: ["buildkite-agent-runtime"]
     expected_contains:
       - "agent logs"
       - "YAML"
@@ -823,7 +823,7 @@ evals:
     difficulty: "troubleshooting"
     cluster: "docker"
     primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent"]
+    secondary_skills: ["buildkite-agent-runtime"]
     expected_contains:
       - "artifact download"
       - "before"
