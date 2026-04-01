@@ -103,6 +103,12 @@ python evals/run_quality.py --skill buildkite-pipelines --show-responses
 
 # Skip saving results JSON
 python evals/run_quality.py --skill buildkite-pipelines --no-save
+
+# Run without skill content (baseline — measures what Claude knows without the skill)
+python evals/run_quality.py --skill buildkite-pipelines --baseline
+
+# Run both with-skill and baseline, then print side-by-side comparison
+python evals/run_quality.py --skill buildkite-pipelines --ablation --parallel 5
 ```
 
 ### Results
@@ -112,6 +118,22 @@ Each run saves a JSON file to `evals/results/` (gitignored) containing:
 - The full model response for each eval
 - The original question for easy reading
 - Aggregate stats (pass rate, coverage)
+
+### Browsing Results (Web UI)
+
+For easier browsing of full responses and side-by-side diffs between runs:
+
+```bash
+python evals/server.py
+```
+
+Opens a browser at `http://127.0.0.1:8089` with:
+- Two dropdowns to pick result files A and B (auto-selects the two most recent quality runs)
+- Summary bar with pass rates and delta
+- Filter tabs: All / Fixed / Regressed / Both Fail / Both Pass
+- Click any row to expand full responses side-by-side with markdown rendering
+
+Pass `--port 9000` to change the port. No dependencies beyond Python stdlib.
 
 ### Comparing Runs
 
@@ -141,6 +163,24 @@ This shows which evals flipped (FIXED/REGRESSED) and the pass rate delta.
 - **Boundary violations**: Count of `expected_not_contains` terms found (indicates hallucination or wrong-skill content)
 
 The script exits with code 1 if any eval fails, making it usable in CI.
+
+### Ablation Testing (Skill vs No-Skill)
+
+The `--ablation` flag runs every eval twice — once with the skill content and once without — then compares results to measure whether the skill actually improves answer quality.
+
+```bash
+python evals/run_quality.py --skill buildkite-pipelines --ablation --parallel 5
+```
+
+The comparison categorizes each eval as:
+
+- **Skill-essential** — baseline fails, skill passes. These justify the skill's existence.
+- **Skill-neutral** — both pass or both fail. The skill doesn't affect these questions.
+- **Skill-harmful** — baseline passes, skill fails. The skill content may be misleading for these questions — investigate.
+
+The baseline uses a fully generic system prompt (`You are a helpful AI assistant.`) with no Buildkite-specific priming, testing the skill's value against Claude's unprimed training knowledge.
+
+You can also run just the baseline independently with `--baseline`, which is useful for comparing against previous runs using `--compare`.
 
 ### Trigger Precision Eval Runner
 
