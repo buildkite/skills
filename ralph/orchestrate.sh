@@ -26,6 +26,7 @@ RALPH_DIR="$SKILLS_REPO/ralph"
 EXPRESS_DIR="$RALPH_DIR/express-checkout"
 STATE_BASE="$RALPH_DIR/state"
 STATE_DIR=""  # Set in init_state based on run ID
+RUN_ID=""     # Short unique ID for this run, used in cluster names
 
 MAX_ITERATIONS=20
 PASS_THRESHOLD=90
@@ -140,14 +141,26 @@ init_state() {
       exit 1
     fi
     STATE_DIR="$latest"
-    log "Resuming run: $(basename "$STATE_DIR")"
+    # Recover the run ID from the saved file
+    if [[ -f "$STATE_DIR/run_id.txt" ]]; then
+      RUN_ID=$(cat "$STATE_DIR/run_id.txt")
+    else
+      # Legacy run without a saved ID — generate one from the directory name
+      RUN_ID=$(echo "$(basename "$STATE_DIR")" | md5sum | head -c 5)
+      echo "$RUN_ID" > "$STATE_DIR/run_id.txt"
+    fi
+    log "Resuming run: $(basename "$STATE_DIR") (id: $RUN_ID)"
   else
     # Create a new run directory
-    local run_id
-    run_id="run-$(date +%Y%m%d-%H%M%S)"
-    STATE_DIR="$STATE_BASE/$run_id"
+    local run_ts
+    run_ts="run-$(date +%Y%m%d-%H%M%S)"
+    STATE_DIR="$STATE_BASE/$run_ts"
     mkdir -p "$STATE_DIR"
-    log "New run: $run_id"
+
+    # Generate a short unique ID for cluster naming
+    RUN_ID=$(echo "${run_ts}-$$-${RANDOM}" | md5sum | head -c 5)
+    echo "$RUN_ID" > "$STATE_DIR/run_id.txt"
+    log "New run: $run_ts (id: $RUN_ID)"
 
     echo "[]" > "$STATE_DIR/iterations.json"
     echo "0" > "$STATE_DIR/current_version.txt"
@@ -199,7 +212,7 @@ reset_express() {
 # --- Phase 1: Conversion Agent (Docker) ---
 run_conversion() {
   local version=$1
-  local cluster_name="ralph-express-v${version}"
+  local cluster_name="ralph-express-${RUN_ID}-v${version}"
   local log_file="$STATE_DIR/conversion-v${version}.log"
   local prompt_file="$RALPH_DIR/PROMPT.md"
 
@@ -355,7 +368,7 @@ out.close()
 run_evaluation() {
   local version=$1
   local eval_file="$STATE_DIR/eval-v${version}.json"
-  local cluster_name="ralph-express-v${version}"
+  local cluster_name="ralph-express-${RUN_ID}-v${version}"
 
   log_section "PHASE 2: EVALUATION (v${version})"
   local phase_start=$SECONDS
@@ -472,7 +485,7 @@ record_iteration() {
   local version=$1
   local score=$2
   local duration_secs=${3:-0}
-  local cluster_name="ralph-express-v${version}"
+  local cluster_name="ralph-express-${RUN_ID}-v${version}"
   local timestamp
   timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -640,6 +653,7 @@ main() {
   init_state
 
   log "State dir: $STATE_DIR"
+  log "Run ID: $RUN_ID (cluster prefix: ralph-express-${RUN_ID})"
 
   local plateau_count=0
   local best_score=0
