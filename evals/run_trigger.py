@@ -28,23 +28,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import anthropic
-
 from lib.dataset import (
-    load_trigger_dataset,
-    load_all_skill_descriptions,
     filter_trigger_evals,
+    load_all_skill_descriptions,
+    load_trigger_dataset,
 )
 from lib.graders import grade_trigger
 from lib.reporter import (
+    print_trigger_comparison,
     print_trigger_header,
-    print_trigger_result,
     print_trigger_multi_result,
+    print_trigger_result,
     print_trigger_summary,
     write_trigger_json_results,
-    print_trigger_comparison,
 )
 
-DEFAULT_MODEL = "claude-sonnet-4-20250514"
+DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 def build_system_prompt(skill_descriptions: dict[str, str]) -> str:
@@ -100,22 +99,51 @@ def parse_skill_selection(response: str, valid_skills: list[str]) -> str | None:
         if skill in text:
             return skill
 
-    print(f"  WARNING: Could not parse skill from response: {text[:100]}", file=sys.stderr)
+    print(
+        f"  WARNING: Could not parse skill from response: {text[:100]}", file=sys.stderr
+    )
     return None
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Run trigger precision evals for Buildkite skills")
-    p.add_argument("--skill", help="Filter to evals targeting a specific skill (by expected_skill)")
+    p = argparse.ArgumentParser(
+        description="Run trigger precision evals for Buildkite skills"
+    )
+    p.add_argument(
+        "--skill", help="Filter to evals targeting a specific skill (by expected_skill)"
+    )
     p.add_argument("--tag", action="append", help="Filter by tag (can repeat)")
     p.add_argument("--id", help="Comma-separated eval IDs to run")
-    p.add_argument("--model", default=DEFAULT_MODEL, help=f"Model to use (default: {DEFAULT_MODEL})")
-    p.add_argument("--runs", type=int, default=1, help="Runs per query for trigger rate (default: 1, max 5)")
-    p.add_argument("--parallel", type=int, default=5, metavar="N", help="Run N evals concurrently (default: 5)")
-    p.add_argument("--holdout", action="store_true", help="Only run holdout split (40%%)")
-    p.add_argument("--compare", metavar="FILE", help="Compare against a previous trigger results JSON file")
+    p.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"Model to use (default: {DEFAULT_MODEL})",
+    )
+    p.add_argument(
+        "--runs",
+        type=int,
+        default=1,
+        help="Runs per query for trigger rate (default: 1, max 5)",
+    )
+    p.add_argument(
+        "--parallel",
+        type=int,
+        default=5,
+        metavar="N",
+        help="Run N evals concurrently (default: 5)",
+    )
+    p.add_argument(
+        "--holdout", action="store_true", help="Only run holdout split (40%%)"
+    )
+    p.add_argument(
+        "--compare",
+        metavar="FILE",
+        help="Compare against a previous trigger results JSON file",
+    )
     p.add_argument("--no-save", action="store_true", help="Don't save results to JSON")
-    p.add_argument("--show-responses", action="store_true", help="Print raw model responses")
+    p.add_argument(
+        "--show-responses", action="store_true", help="Print raw model responses"
+    )
     return p.parse_args()
 
 
@@ -149,7 +177,9 @@ async def run_trigger_eval(
     When runs=1, grade is a single dict. When runs>1, it's a list.
     """
     if runs == 1:
-        text = await run_single_trigger(client, model, system_prompt, eval_entry["query"])
+        text = await run_single_trigger(
+            client, model, system_prompt, eval_entry["query"]
+        )
         selected = parse_skill_selection(text, valid_skills)
         grade = grade_trigger(selected, eval_entry)
         return eval_entry, grade, text
@@ -157,7 +187,9 @@ async def run_trigger_eval(
         grades = []
         last_text = ""
         for _ in range(runs):
-            text = await run_single_trigger(client, model, system_prompt, eval_entry["query"])
+            text = await run_single_trigger(
+                client, model, system_prompt, eval_entry["query"]
+            )
             last_text = text
             selected = parse_skill_selection(text, valid_skills)
             grades.append(grade_trigger(selected, eval_entry))
@@ -225,7 +257,10 @@ def main():
     args = parse_args()
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("Error: ANTHROPIC_API_KEY environment variable is required.", file=sys.stderr)
+        print(
+            "Error: ANTHROPIC_API_KEY environment variable is required.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if args.runs < 1 or args.runs > 5:
@@ -270,16 +305,25 @@ def main():
         filter_parts.append("holdout=true")
 
     print_trigger_header(
-        args.model, len(evals), len(skill_names),
-        ", ".join(filter_parts), args.runs,
+        args.model,
+        len(evals),
+        len(skill_names),
+        ", ".join(filter_parts),
+        args.runs,
     )
 
     # Run evals (always async for simplicity since responses are tiny)
     client = anthropic.AsyncAnthropic()
     grades, ordered_evals = asyncio.run(
         run_batch(
-            client, args.model, system_prompt, evals,
-            skill_names, args.parallel, args.runs, args.show_responses,
+            client,
+            args.model,
+            system_prompt,
+            evals,
+            skill_names,
+            args.parallel,
+            args.runs,
+            args.show_responses,
         )
     )
 
@@ -289,7 +333,11 @@ def main():
     # Save results
     if not args.no_save:
         result_path = write_trigger_json_results(
-            grades, ordered_evals, args.model, skill_names, args.runs,
+            grades,
+            ordered_evals,
+            args.model,
+            skill_names,
+            args.runs,
         )
         print(f"Results saved to: {result_path}")
 
