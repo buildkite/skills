@@ -2,7 +2,7 @@
 name: buildkite-preflight
 description: >
   This skill should be used when the user asks to "run preflight",
-  "validate changes before pushing", "check CI locally", "pre-commit validation",
+  "validate changes before pushing",
   "test my changes against CI", or "run a preflight build".
   Also use when the user mentions bk preflight, preflight builds,
   pre-push validation, or asks about validating local changes against
@@ -27,17 +27,18 @@ bk preflight --pipeline my-org/my-pipeline --watch
 
 Preflight executes a five-stage workflow:
 
-1. **Snapshot** — Stashes uncommitted changes (staged, unstaged, untracked), creates a temporary commit, then restores the working tree.
-2. **Push** — Pushes the commit to `refs/heads/bk/preflight/<id>` on origin. Buildkite picks it up via the normal webhook flow.
-3. **Wait** — Polls the Buildkite API until a build appears for the preflight branch (when `--watch` is enabled).
-4. **Monitor** — Polls the build until all jobs reach a terminal state.
+1. **Snapshot** — Captures uncommitted changes (staged, unstaged, untracked) as a temporary commit, without writing to the working tree.
+2. **Push** — Pushes the commit to `refs/heads/bk/preflight/<id>` on origin. Creates a Build via the Create Build API.
+4. **Monitor** — Polls the build on the preflight branch until all jobs reach a terminal state.
 5. **Report** — Outputs a summary of command job results. Wait, block, trigger, and other non-command jobs are excluded.
 
 The working tree is never disrupted — continue editing while the build runs.
 
 ## Enabling the Experiment
 
-The `preflight` subcommand requires the experiment flag. Set it once via config or per-invocation via environment variable:
+Always use the latest version of the Buildkite CLI.
+
+The `bk preflight` subcommand requires the experiment flag. Set it once via config or per-invocation via environment variable:
 
 ```bash
 # Persistent (recommended)
@@ -129,17 +130,6 @@ bk preflight --pipeline my-org/my-pipeline --watch
 git add -A && git commit -m "feat: add new endpoint"
 git push origin HEAD
 ```
-
-## Common Mistakes
-
-| Mistake | What happens | Fix |
-|---------|-------------|-----|
-| Running `bk preflight` without enabling the experiment | Command not found or unrecognized subcommand | Run `bk config set experiments preflight` first |
-| Omitting `--watch` and expecting results | Preflight starts the build and exits immediately without reporting results | Add `--watch` to wait for the build to complete |
-| Running preflight without a clean git remote | Push to `refs/heads/bk/preflight/<id>` fails | Ensure the git remote `origin` is configured and accessible |
-| Confusing preflight exit code 9 with a generic error | Exit code 9 specifically means the build completed with job failures | Check the logged failures rather than treating it as an infrastructure error |
-| Running preflight without `bk configure` | Authentication fails on API calls | Run `bk configure` or `bk auth login` first — see the **buildkite-cli** skill |
-| Expecting non-command jobs in the report | Wait, block, and trigger jobs are excluded | Preflight only reports on command (script) jobs |
 
 ## Further Reading
 
