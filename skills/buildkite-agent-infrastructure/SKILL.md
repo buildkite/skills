@@ -256,6 +256,13 @@ macOS queues accept additional settings: `macosVersion` (`SONOMA`, `SEQUOIA`, `T
 
 Start with the smallest shape that keeps builds under target time. Monitor queue wait time — if consistently above 2 minutes, either scale up or add more queue capacity.
 
+### Queue design patterns
+
+- **Keep 1-2 static (non-autoscaling) instances in the default queue** — pipeline uploads need an available agent immediately; autoscaling queues add cold-start latency to the upload step.
+- **Retire oldest agents first during scale-down** — preserves cache benefits on newer agents.
+- **Trial pattern** — create a separate queue with a subset of agents to test new architectures (e.g., hosted agents, new instance shapes) before migrating all workloads.
+- **Tag builds with team/project metadata** (`buildkite-agent meta-data set "team" "backend"`) for cost attribution by queue or team.
+
 ### Pause and resume queue dispatch
 
 Temporarily stop dispatching jobs to a queue (maintenance, cost control):
@@ -574,6 +581,20 @@ if [[ ! "${BUILDKITE_REPO}" =~ ${ALLOWED_REPOS} ]]; then
 fi
 ```
 
+### Hosted agent caching behavior
+
+**Cache volumes on hosted agents are non-deterministic** — jobs may or may not get a warm cache. Treat cache volumes as performance accelerators, not guarantees. Cache volumes are **pipeline-scoped** (shared across steps within a pipeline, not across pipelines).
+
+For deterministic caching, use Docker images with pre-built dependencies and the internal container registry instead of relying on cache volumes.
+
+**Git mirrors** can be enabled on hosted agents via cache volumes, accelerating checkout without self-hosted infrastructure. Mount `.git/lfs/objects` in cache volumes and pre-install `git-lfs` in the agent image to avoid per-job LFS overhead.
+
+### Hosted agent checkout performance
+
+Buildkite's default checkout **prioritizes completeness over speed** — it may be noticeably slower than GitHub Actions for the same repo. To optimize: use the Sparse Checkout plugin for monorepo upload steps, Git mirrors for frequent builds, or the Git Shallow Clone plugin for repos where full history is unnecessary.
+
+Compare `checkout` and `repo-checkout` OpenTelemetry spans to pinpoint whether slowdowns originate from Git operations or custom hooks.
+
 ### Hosted agent custom hooks
 
 Hosted agents support custom hooks via a custom agent image. Add hooks in a Dockerfile:
@@ -640,6 +661,20 @@ print(f'{len(queues)} queue(s) found: {[q[\"key\"] for q in queues]}')
 ```
 
 If the list is empty after a `clusterQueueCreate` mutation, the mutation may have failed silently — retry using the REST API instead (see the **buildkite-api** skill for queue creation via REST).
+
+## Plugin Security Controls
+
+Restrict which plugins agents can run:
+
+- **Agent-level allowlisting** — use `allowed-plugins` in `buildkite-agent.cfg` to restrict to approved plugins
+- **`no-plugins=true`** — disable all plugins on sensitive agents
+- **Cluster-based policies** — apply different plugin restrictions per cluster based on security requirements
+
+Distinguish three plugin tiers: Buildkite-maintained, vetted community, and private organizational plugins. Maintain an allowlist for community-sourced plugins and audit plugin repositories proactively — Buildkite does not automatically alert to plugin vulnerabilities.
+
+## Configuration Philosophy
+
+**Treat the Buildkite dashboard as read-only** — use it for observability and approvals, never for configuration changes. Manage pipelines, queues, and secrets via code (Terraform, API scripts, or `bk` CLI). This ensures reproducibility, auditability, and prevents configuration drift between environments.
 
 ## Pipeline Templates
 
@@ -947,6 +982,19 @@ Review pipeline metrics to identify:
 
 > For `if_changed` and pipeline optimization patterns, see the **buildkite-pipelines** skill.
 
+## Observability
+
+Buildkite provides two complementary metrics tools — do not confuse them:
+
+| Tool | Purpose | How it works |
+|------|---------|-------------|
+| `buildkite-agent-metrics` | Fleet-level queue and job metrics | Polls the Buildkite API; emits to CloudWatch, Datadog, StatsD |
+| Agent health check service | Per-agent process health | Exposes Prometheus endpoint; scrape from each agent host |
+
+The **OpenTelemetry notification service** (Enterprise) provides traces (spans), not traditional metrics. Agent-side execution traces and notification service traces serve different purposes — notification service shows control-plane lifecycle, while agent tracing reveals execution detail (checkout, plugins, commands).
+
+**Start with queue profiling** — wait time and checkout time are the biggest, cheapest wins for observability ROI. Avoid verbose output of tools by default — oversized logs degrade debugging and UI performance.
+
 ## Queue Monitoring
 
 Monitor queue health to maintain fast feedback loops. Target: queue wait time under 2 minutes.
@@ -1003,6 +1051,10 @@ Jobs already running continue. New jobs queue until dispatch resumes.
 | Editing pipeline template YAML without testing | Broken template affects all pipelines using it | Test YAML as a regular pipeline first, then promote to template |
 | Cluster creation returns HTTP 500 or GraphQL "unknown error" | Cannot create a new cluster; repeated retries also fail | List existing clusters first (`GET /v2/organizations/{org}/clusters`); rename the Default cluster via `PATCH /v2/organizations/{org}/clusters/{id}` with `{"name": "desired-name"}` as a reliable workaround |
 | Hosted queue creation fails with "Upgrade to Platform Pro to access hosted agents" | Plan tier does not include hosted agents; mutation returns an error | Fall back immediately: create a self-hosted queue (omit `hostedAgents`), install `buildkite-agent` locally, and start it with `--token <cluster-token> --tags "queue=default" --spawn 3` |
+| Expecting hosted agent cache volumes to always be warm | Cache misses occur unpredictably — builds fail when they assume cached state | Design builds to work without cache; treat cache volumes as accelerators, not guarantees |
+| Using one IAM role for all queues | CI builds can access production credentials | Assign different IAM roles per queue; scope secrets access by `cluster_queue_key` in secret policies |
+| Relying on cluster insights for historical capacity data | Built-in metrics have limited lookback periods | Export and warehouse queue metrics early if historical capacity planning matters |
+| Scaling down newest agents first | Caches on older agents are cold; freshest caches are destroyed | Configure autoscaler to retire oldest agents first during scale-down |
 | Jobs hang indefinitely in "scheduled" state with self-hosted agents connected | The cluster's `default_queue_id` points to a different queue key than the one in the agent's `queue` tag | Check which queue key the agent uses (`queue=default` → queue with key `default`); update the cluster: `PATCH /v2/organizations/{org}/clusters/{id}` with `{"default_queue_id": "<uuid-of-matching-queue>"}` |
 
 ## Additional Resources
@@ -1022,3 +1074,6 @@ Jobs already running continue. New jobs queue until dispatch resumes.
 - [Audit logging](https://buildkite.com/docs/apis/graphql/schemas/query/organization-audit-events)
 - [Agent configuration](https://buildkite.com/docs/agent/v3/configuration)
 - [Agent hooks](https://buildkite.com/docs/agent/v3/hooks)
+- [Agent management best practices](https://buildkite.com/docs/pipelines/best-practices/agent-management.md)
+- [Monitoring and observability best practices](https://buildkite.com/docs/pipelines/best-practices/monitoring-and-observability.md)
+- [Security controls best practices](https://buildkite.com/docs/pipelines/best-practices/security-controls.md)

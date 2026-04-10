@@ -758,6 +758,7 @@ buildkite-agent tool verify --jwks-file /etc/buildkite-agent/verification-key.js
 | Passing `--audience` that doesn't match OIDC provider config | Token rejected by the target service | Audience must exactly match the provider's configured audience URL |
 | Using `--skip-redaction` with actual secrets | Secret values appear in plain text in build logs | Only use `--skip-redaction` for non-sensitive configuration values |
 | Calling `env set` expecting it to affect the current shell | Variable is set for subsequent hooks/phases, not the current script | Use `export VAR=value` for current-script variables; `env set` for cross-phase |
+| Passing large values via environment variables | OS-level env size limits cause silent truncation or job failure | Switch to file-based approaches (artifacts, meta-data with files) for payloads larger than a few KB |
 | Uploading pipeline YAML with unescaped `$` in `--no-interpolation` mode off | Variables interpolated unexpectedly, producing malformed YAML | Use `--no-interpolation` when YAML contains literal `$` characters |
 
 ## Additional Resources

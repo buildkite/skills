@@ -503,6 +503,8 @@ All payloads contain top-level `event`, `build`, `pipeline`, and `sender` fields
 
 Job events (`job.*`) add a `job` field with `id`, `type`, `name`, `state`, `exit_status`, `started_at`, `finished_at`, and `agent` object.
 
+**Webhook payload gaps:** Webhook payloads lack retry context (whether a job is a retry, original vs. retried) and manual-vs-automatic action flags. For complete build/job context including retry metadata, query the GraphQL API using the IDs from the webhook payload.
+
 ### HTTP Headers
 
 Every webhook request includes:

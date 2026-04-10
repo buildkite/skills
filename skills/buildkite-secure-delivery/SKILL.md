@@ -614,6 +614,7 @@ Use this checklist when reviewing a pipeline's security posture:
 | OIDC trust policy too broad (`sub: organization:*`) | Any pipeline in the org can assume the cloud role — no isolation | Scope trust policy to specific `pipeline_slug` and `build_branch` |
 | Forgetting to sign Pipeline Settings steps | Steps defined in UI are unsigned — verification-enabled agents reject them | Run `buildkite-agent tool sign --update` for every pipeline with UI-defined steps |
 | Terraform module filename doesn't follow convention | Package Registry rejects the upload with a naming error | Use the `terraform-{provider}-{module}-{major.minor.patch}.tgz` format |
+| Using unversioned or loosely-pinned plugins | Supply chain attack — a compromised plugin update runs in every build | Always pin plugins to an exact version (`plugin#v1.2.0`), never use `latest` or omit the version |
 
 ## Further Reading
 

@@ -92,6 +92,29 @@ steps:
 
 > Hosted agent setup and instance shapes are covered by the **buildkite-agent-infrastructure** skill.
 
+## Fast-Fail and Non-Blocking Steps
+
+Cancel remaining jobs immediately when any job fails:
+
+```yaml
+steps:
+  - label: ":rspec: Tests"
+    command: "bundle exec rspec"
+    cancel_on_build_failing: true
+```
+
+Use `soft_fail` for steps that should not block the build (security scans, linting, coverage):
+
+```yaml
+steps:
+  - label: ":shield: Security Scan"
+    command: "scripts/security-scan.sh"
+    soft_fail:
+      - exit_status: 1
+```
+
+A soft-failed step shows as a warning in the UI but does not fail the build. Combine with `continue_on_failure: true` on a wait step to let downstream steps run regardless.
+
 ## Parallelism and Dependencies
 
 ### Parallel execution
@@ -205,6 +228,19 @@ steps:
       .buildkite/generate-pipeline.sh | buildkite-agent pipeline upload
 ```
 
+For debugging, upload the generated YAML as an artifact before piping to upload:
+
+```yaml
+steps:
+  - label: ":pipeline: Generate"
+    command: |
+      .buildkite/generate-pipeline.sh | tee generated-pipeline.yml
+      buildkite-agent artifact upload generated-pipeline.yml
+      cat generated-pipeline.yml | buildkite-agent pipeline upload
+```
+
+Keep dynamically generated pipelines under **~500 steps** for optimal UI and processing performance. For larger monorepos, use orchestrator pipelines with trigger steps to spawn child pipelines.
+
 Example generator script that runs tests only for changed services:
 
 ```bash
@@ -258,6 +294,8 @@ steps:
 ```
 
 For exclude patterns and monorepo configurations, see `references/advanced-patterns.md`.
+
+For large monorepos, use the [Sparse Checkout plugin](https://github.com/buildkite-plugins/sparse-checkout-buildkite-plugin) to check out only `.buildkite/` for the upload step — dramatically faster pipeline uploads.
 
 ### Conditionally running plugins
 
@@ -322,6 +360,14 @@ plugins:
 
 Always pin plugin versions (e.g., `docker#v5.12.0` not `docker#v5`). Unpinned versions can break builds when plugins release new major versions.
 
+For **private organizational plugins**, use full Git URLs — the shorthand syntax only works for public plugins:
+
+```yaml
+plugins:
+  - ssh://git@github.com/my-org/my-plugin.git#v1.0.0:
+      config: value
+```
+
 ## Notifications and Artifacts
 
 Add pipeline-level `notify:` above `steps:` to send Slack, email, or webhook notifications on build state changes. See [Notifications](https://buildkite.com/docs/pipelines/configure/notifications.md) for syntax.
@@ -369,6 +415,8 @@ steps:
 
 Use `concurrency_method: "eager"` (next available) for independent jobs like deploys. Use the default `"ordered"` (FIFO) when execution order matters. Set `priority` (default `0`, higher = first) to control which queued jobs run next.
 
+For full concurrency configuration options, see [Controlling Concurrency](https://buildkite.com/docs/pipelines/configure/workflows/controlling-concurrency.md).
+
 > For triggering, watching, and debugging pipelines from the terminal, see the **buildkite-cli** skill.
 
 ## Common Mistakes
@@ -388,6 +436,9 @@ Use `concurrency_method: "eager"` (next available) for independent jobs like dep
 | Using `agents:` inside `matrix.adjustments` | Pipeline upload fails: "agents is not a valid property on the matrix.adjustments configuration" | Remove `agents:` from `adjustments`; use separate steps per platform or a dynamic pipeline generator for per-combination queue routing |
 | Build fails but all visible steps passed | A trigger step started a child pipeline that failed, or a step was cancelled rather than unblocked | Check the triggered pipeline's build status; inspect block steps for cancellations |
 | Pipeline upload fails with no clear error | YAML syntax error or agent-side issue not shown in build logs | Validate YAML locally; check agent logs on the host machine for detailed upload errors; run `buildkite-agent pipeline upload --debug` |
+| Fork builds enabled on public pipelines | Contributors can modify `pipeline.yml` to extract secrets | Disable fork builds in pipeline settings for public repos; use a separate pipeline for external PRs with no secret access |
+| Docker Compose steps produce artifacts but agent can't find them | Files created inside containers are invisible to the host agent | Mount the working directory as a volume in `docker-compose.yml` so container outputs are visible for `artifact_paths:` |
+| Dynamic pipeline generates 1000+ steps | UI becomes slow, pipeline processing degrades | Keep generated pipelines under ~500 steps; use orchestrator pipelines with trigger steps for larger monorepos |
 
 ## Additional Resources
 
@@ -408,3 +459,4 @@ Use `concurrency_method: "eager"` (next available) for independent jobs like dep
 - [Pipeline upload](https://buildkite.com/docs/agent/v3/cli-pipeline.md)
 - [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals.md)
 - [Managing pipeline secrets](https://buildkite.com/docs/pipelines/security/secrets/managing.md)
+- [Pipeline design best practices](https://buildkite.com/docs/pipelines/best-practices/pipeline-design-and-structure.md)
