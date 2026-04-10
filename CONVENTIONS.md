@@ -36,7 +36,7 @@ Before writing, state aloud (in your response or thinking):
 1. The frontmatter you will use (copy the template below)
 2. Your assigned skill name
 3. Three topics you will NOT cover (per the boundary table below)
-4. Your SKILL.md size target (6-8KB body, with overflow in `references/`)
+4. Your SKILL.md size target (10-18KB body, with overflow in `references/`)
 
 ---
 
@@ -46,13 +46,34 @@ Each skill lives in its own directory with this structure:
 
 ```
 skills/<skill-name>/
-├── SKILL.md              (required — core skill, 6-8KB target)
+├── SKILL.md              (required — core skill, 10-18KB typical)
 ├── references/           (optional — detailed content loaded on demand)
 │   ├── flag-reference.md
 │   └── advanced-examples.md
 ├── examples/             (optional — complete, runnable example files)
-└── scripts/              (optional — utility scripts for validation, etc.)
+├── agents/               (required — multi-agent platform metadata)
+│   └── openai.yaml
+└── assets/               (required — icon and brand assets for agent marketplaces)
+    └── .gitkeep
 ```
+
+### Agent Platform Metadata
+
+Every skill must include `agents/openai.yaml` for multi-agent platform support.
+This metadata controls how the skill appears when installed via `npx skills add`
+into agent platforms (OpenAI, Cursor, etc.).
+
+```yaml
+interface:
+  display_name: "Buildkite <Area>"
+  short_description: "<one-line summary matching SKILL.md frontmatter>"
+  icon_small: "./assets/buildkite-icon-small.png"
+  icon_large: "./assets/buildkite-icon-large.png"
+  brand_color: "#00D974"
+```
+
+The `assets/` directory holds icon PNGs for marketplace display. Include a
+`.gitkeep` until actual icon files are added.
 
 ### Progressive Disclosure
 
@@ -152,6 +173,8 @@ SKILL.md; move exhaustive tables to `references/`.
 | `--branch` | `-b` | current branch | Git branch to build |
 | `--commit` | `-c` | HEAD | Git commit SHA |
 
+The `Short` column is optional — omit it when commands have no short flags.
+
 Always include the Default column. Agents use defaults to fill in omitted arguments.
 
 **YAML examples:**
@@ -166,17 +189,17 @@ When your topic touches another skill's territory, use exactly this pattern:
 Never duplicate content owned by another skill. One sentence + pointer.
 
 **Size targets:**
-- SKILL.md body: **6-8KB** (~1,500-2,500 words). Contains core knowledge for common tasks.
+- SKILL.md body: **10-18KB** typical. Contains core knowledge for common tasks.
 - References: **unlimited**. Move detailed flag tables, advanced examples, and edge cases here.
-- Total skill content (SKILL.md + references): **10-15KB** typical.
+- Total skill content (SKILL.md + references): **15-45KB** typical.
 
 Note: Anthropic's official guidance recommends skills under ~2,000 tokens / 500 lines.
-Our skills are larger because Buildkite-specific domain knowledge is niche and unlikely
-to be in model training data. This is a deliberate trade-off — but it means every line
-must earn its place. Prefer moving detail to `references/` over inflating SKILL.md.
+Our skills are significantly larger because Buildkite-specific domain knowledge is niche
+and unlikely to be in model training data. This is a deliberate trade-off — but it means
+every line must earn its place. Prefer moving detail to `references/` over inflating SKILL.md.
 
-If your SKILL.md first draft exceeds 8KB, identify sections to extract into `references/`.
-If it's under 4KB, it's too thin — expand quick start, add more inline examples, deepen
+If your SKILL.md first draft exceeds 18KB, identify sections to extract into `references/`.
+If it's under 8KB, it's too thin — expand quick start, add more inline examples, deepen
 common mistakes.
 
 ---
@@ -249,14 +272,15 @@ Before you consider your skill done, verify:
 - [ ] Description uses third person ("This skill should be used when...")
 - [ ] Description contains specific quoted trigger phrases
 - [ ] Follows section order exactly (Quick Start before feature sections, Common Mistakes near end)
-- [ ] SKILL.md body is 6-8KB; detailed content moved to `references/`
+- [ ] SKILL.md body is 10-18KB; detailed content moved to `references/`
 - [ ] All referenced `references/` and `examples/` files exist
+- [ ] `agents/openai.yaml` exists with correct metadata
 
 **Content:**
 - [ ] Encodes expertise (patterns, defaults, pitfalls) — not a docs rewrite
 - [ ] Does not explain general concepts the agent already knows (YAML, CI/CD, etc.)
 - [ ] Written in imperative/infinitive form — no second person ("you")
-- [ ] Every inline CLI command has a flag table
+- [ ] Every inline CLI command has a flag table (inline or in `references/`)
 - [ ] Flag tables include Default column
 - [ ] All code blocks are syntactically correct and copy-paste ready
 - [ ] No topics that belong to other skills (check boundary table)
@@ -268,7 +292,7 @@ Before you consider your skill done, verify:
 - [ ] Core concepts and common patterns in SKILL.md
 - [ ] Exhaustive flag tables, advanced examples in `references/`
 - [ ] Additional Resources section points to bundled files
-- [ ] Total skill content (SKILL.md + references) is 10-15KB
+- [ ] Total skill content (SKILL.md + references) is 15-45KB
 
 ---
 

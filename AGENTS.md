@@ -15,16 +15,17 @@ skills/                              # All skills live here
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
 evals/                               # Quality eval dataset and runner
-references/                          # Shared reference materials
 ```
 
 ## Skill Architecture
 
 Each skill directory contains:
 
-- `SKILL.md` (required) — core skill content, 6-8KB target
+- `SKILL.md` (required) — core skill content, 10-18KB typical
 - `references/` (optional) — detailed content loaded on demand
 - `examples/` (optional) — complete runnable examples
+- `agents/openai.yaml` (required) — multi-agent platform metadata
+- `assets/` (required) — icon and brand assets for agent marketplaces
 
 Skills use progressive disclosure:
 1. **Metadata** (name + description) — always in context (~100 words)
@@ -47,7 +48,7 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 - Cross-references use: `> For [topic], see the **buildkite-[skill]** skill.`
 - Style: imperative voice, no second person, no marketing language
 - All code blocks must be syntactically correct and copy-paste ready
-- SKILL.md body target: 6-8KB; total with references: 10-15KB
+- SKILL.md body target: 10-18KB; total with references: 15-45KB
 
 ## Quality Evaluation
 
