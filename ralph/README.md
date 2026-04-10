@@ -4,6 +4,9 @@ An iterative self-improvement loop that tests and improves the Buildkite skills 
 
 Named after the [Ralph Wiggum pattern](https://ghuntley.com/ralph/) -- each iteration starts completely fresh with no memory of previous attempts. The skills themselves are the only thing that improves between iterations.
 
+> [!NOTE]
+> This was an experiment. It actually works quite well at trying to automate the migration of a public repo GHA CI to Buildkite. But the skills were not well developed enough. And not enough of the setup could be done by agents. 
+
 ## How it works
 
 ```
