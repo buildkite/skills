@@ -71,3 +71,6 @@ ralph/state/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# BK CLI
+.bk.yaml
