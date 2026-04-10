@@ -184,6 +184,35 @@ bk job log <job-id> --pipeline my-app --build 42
 
 Manage pipeline configuration — list, create, and update pipelines.
 
+> For converting pipelines from other CI systems, see the **buildkite-migration** skill.
+
+### Convert a pipeline from another CI system
+
+Convert a GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab, Harness, or Bitrise pipeline to Buildkite YAML. No login required — uses a public API.
+
+```bash
+# Auto-detect vendor from file path and save to .buildkite/pipeline.<vendor>.yml
+bk pipeline convert -F .github/workflows/ci.yml
+bk pipeline convert -F .circleci/config.yml
+bk pipeline convert -F Jenkinsfile
+
+# Specify vendor explicitly (required for gitlab, harness, bitrise)
+bk pipeline convert -F .gitlab-ci.yml --vendor gitlab
+
+# Custom output path
+bk pipeline convert -F .github/workflows/ci.yml --output .buildkite/pipeline.yml
+
+# Read from stdin
+cat .github/workflows/ci.yml | bk pipeline convert --vendor github
+```
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--file` | `-F` | — | Path to source pipeline file (required unless using stdin) |
+| `--vendor` | `-v` | auto-detected | Source CI vendor: `github`, `bitbucket`, `circleci`, `jenkins`, `gitlab`, `harness`, `bitrise` |
+| `--output` | `-o` | `.buildkite/pipeline.<vendor>.yml` | Output file path |
+| `--timeout` | — | `300` | Cancellation timeout in seconds |
+
 ### List pipelines
 
 ```bash

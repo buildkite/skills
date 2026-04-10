@@ -552,8 +552,8 @@ evals:
     source_ref: "th_01KH4RRQKQYWN3BGF5EGFNZ430"
     difficulty: "getting-started"
     cluster: "migration"
-    primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent-infrastructure"]
+    primary_skill: "buildkite-migration"
+    secondary_skills: ["buildkite-pipelines", "buildkite-agent-infrastructure"]
     expected_contains:
       - "pipeline.yml"
       - "agent"
@@ -580,14 +580,28 @@ evals:
     source_ref: ""
     difficulty: "getting-started"
     cluster: "migration"
-    primary_skill: "buildkite-pipelines"
-    secondary_skills: ["buildkite-agent-infrastructure", "buildkite-api"]
+    primary_skill: "buildkite-migration"
+    secondary_skills: ["buildkite-pipelines", "buildkite-agent-infrastructure", "buildkite-api"]
     expected_contains:
       - "agent"
       - "pipeline"
       - "secrets"
     expected_not_contains: []
     tags: ["migration", "architecture", "cross-skill"]
+
+  - id: "migration-004"
+    question: "Can you help me convert my GitHub Actions steps to Buildkite?"
+    source: "synthetic"
+    source_ref: ""
+    difficulty: "getting-started"
+    cluster: "migration"
+    primary_skill: "buildkite-migration"
+    secondary_skills: ["buildkite-pipelines"]
+    expected_contains:
+      - "bk pipeline convert"
+      - "github"
+    expected_not_contains: []
+    tags: ["migration", "github-actions"]
 
   # ============================================================
   # SECRETS & SECURITY

@@ -451,6 +451,8 @@ For full concurrency configuration options, see [Controlling Concurrency](https:
 - **`examples/basic-pipeline.yml`** — Minimal working pipeline (test, wait, deploy)
 - **`examples/optimized-pipeline.yml`** — Full-featured pipeline with caching, parallelism, annotations, retry, artifacts, and notifications
 
+> For migrating pipelines from other CI systems, see the **buildkite-migration** skill.
+
 ## Further Reading
 
 - [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)

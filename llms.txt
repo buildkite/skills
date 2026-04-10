@@ -22,6 +22,10 @@ Topics: OIDC authentication, Package Registry, SLSA provenance, pipeline signing
 Path: skills/buildkite-agent-infrastructure/SKILL.md
 Topics: clusters, queues, hosted agent instance shapes, cluster secrets, buildkite-agent.cfg, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization
 
+### buildkite-migration
+Path: skills/buildkite-migration/SKILL.md
+Topics: CI migration planning, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket Pipelines, GitLab CI, vendor auto-detection, pipeline best practices for migrated pipelines
+
 ## Cross-Cutting Skills
 
 ### buildkite-agent-runtime
@@ -30,7 +34,7 @@ Topics: buildkite-agent annotate, artifact upload/download, meta-data set/get, p
 
 ### buildkite-cli
 Path: skills/buildkite-cli/SKILL.md
-Topics: bk build create/list/view/watch, bk job log/retry/cancel, bk pipeline, bk secret, bk artifact, bk cluster, bk package, bk auth, bk configure, bk init
+Topics: bk build create/list/view/watch, bk job log/retry/cancel, bk pipeline, bk pipeline convert, bk secret, bk artifact, bk cluster, bk package, bk auth, bk configure, bk init
 
 ### buildkite-api
 Path: skills/buildkite-api/SKILL.md
