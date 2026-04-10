@@ -72,9 +72,9 @@ trigger_evals:
 
   - id: "t-pipelines-n01"
     query: "How do I install the buildkite-agent on Ubuntu?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-pipelines"]
-    tags: ["near-miss", "pipelines-vs-agent"]
+    tags: ["near-miss", "pipelines-vs-agent-infrastructure"]
 
   - id: "t-pipelines-n02"
     query: "I want to upload an artifact from inside my running build step"
@@ -96,9 +96,9 @@ trigger_evals:
 
   - id: "t-pipelines-n05"
     query: "How do I configure agent tags for routing jobs to specific machines?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-pipelines"]
-    tags: ["near-miss", "pipelines-vs-agent"]
+    tags: ["near-miss", "pipelines-vs-agent-infrastructure"]
 
   - id: "t-pipelines-n06"
     query: "I want to trigger a build from the command line"
@@ -108,9 +108,9 @@ trigger_evals:
 
   - id: "t-pipelines-n07"
     query: "How do I set up a webhook to get notified when builds finish?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     expected_not_skills: ["buildkite-pipelines"]
-    tags: ["near-miss", "pipelines-vs-platform"]
+    tags: ["near-miss", "pipelines-vs-api"]
 
   - id: "t-pipelines-n08"
     query: "How do I split my test suite across parallel agents using bktec?"
@@ -126,9 +126,9 @@ trigger_evals:
 
   - id: "t-pipelines-n10"
     query: "How do I write a pre-command hook that runs before every job on my agent?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-pipelines"]
-    tags: ["near-miss", "pipelines-vs-agent"]
+    tags: ["near-miss", "pipelines-vs-agent-infrastructure"]
 
   # ============================================================
   # BUILDKITE-CLI — should trigger
@@ -202,9 +202,9 @@ trigger_evals:
 
   - id: "t-cli-n03"
     query: "How do I make a REST API call to Buildkite to list builds?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     expected_not_skills: ["buildkite-cli"]
-    tags: ["near-miss", "cli-vs-platform"]
+    tags: ["near-miss", "cli-vs-api"]
 
   - id: "t-cli-n04"
     query: "How do I create a pipeline in my pipeline YAML using a trigger step?"
@@ -214,15 +214,15 @@ trigger_evals:
 
   - id: "t-cli-n05"
     query: "How do I upload secrets to Buildkite using the agent's environment hook?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-cli"]
-    tags: ["near-miss", "cli-vs-agent"]
+    tags: ["near-miss", "cli-vs-agent-infrastructure"]
 
   - id: "t-cli-n06"
     query: "How do I install the buildkite-agent binary on Linux?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-cli"]
-    tags: ["near-miss", "cli-vs-agent"]
+    tags: ["near-miss", "cli-vs-agent-infrastructure"]
 
   - id: "t-cli-n07"
     query: "I want to cancel a step from within a running job using buildkite-agent step cancel"
@@ -232,9 +232,9 @@ trigger_evals:
 
   - id: "t-cli-n08"
     query: "How do I use the Buildkite GraphQL explorer?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     expected_not_skills: ["buildkite-cli"]
-    tags: ["near-miss", "cli-vs-platform"]
+    tags: ["near-miss", "cli-vs-api"]
 
   # ============================================================
   # BUILDKITE-AGENT-RUNTIME — should trigger
@@ -314,27 +314,27 @@ trigger_evals:
 
   - id: "t-runtime-n04"
     query: "How do I configure the agent's environment hook to inject secrets?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-agent-runtime"]
-    tags: ["near-miss", "runtime-vs-agent"]
+    tags: ["near-miss", "runtime-vs-agent-infrastructure"]
 
   - id: "t-runtime-n05"
     query: "How do I set up OIDC trust policies in AWS for Buildkite?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-secure-delivery"
     expected_not_skills: ["buildkite-agent-runtime"]
-    tags: ["near-miss", "runtime-vs-platform"]
+    tags: ["near-miss", "runtime-vs-secure-delivery"]
 
   - id: "t-runtime-n06"
     query: "How do I configure the agent to disconnect after being idle?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-agent-runtime"]
-    tags: ["near-miss", "runtime-vs-agent"]
+    tags: ["near-miss", "runtime-vs-agent-infrastructure"]
 
   - id: "t-runtime-n07"
     query: "I need to set environment variables globally across all my pipelines"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-agent-runtime"]
-    tags: ["near-miss", "runtime-vs-agent"]
+    tags: ["near-miss", "runtime-vs-agent-infrastructure"]
 
   - id: "t-runtime-n08"
     query: "How do I upload artifacts using the bk CLI after a build finishes?"
@@ -438,9 +438,9 @@ trigger_evals:
 
   - id: "t-test-n05"
     query: "How do I configure test analytics in the Buildkite API?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     expected_not_skills: ["buildkite-test-engine"]
-    tags: ["near-miss", "test-engine-vs-platform"]
+    tags: ["near-miss", "test-engine-vs-api"]
 
   - id: "t-test-n06"
     query: "My tests keep failing intermittently but it's a Docker networking issue"
@@ -456,209 +456,209 @@ trigger_evals:
 
   - id: "t-test-n08"
     query: "How do I configure BUILDKITE_ANALYTICS_TOKEN in my agent's environment hook?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-test-engine"]
-    tags: ["near-miss", "test-engine-vs-agent"]
+    tags: ["near-miss", "test-engine-vs-agent-infrastructure"]
 
   # ============================================================
-  # BUILDKITE-AGENT — should trigger
+  # BUILDKITE-AGENT-INFRASTRUCTURE — should trigger
   # ============================================================
 
   - id: "t-agent-001"
     query: "How do I install the Buildkite agent on Ubuntu?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-002"
     query: "How do I configure agent tags and queue routing?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-003"
     query: "How do I edit buildkite-agent.cfg?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-004"
     query: "What's the difference between hosted and self-hosted agents?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-005"
     query: "My agent is connected but not picking up any jobs"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-006"
     query: "How do I set up clusters and manage agent tokens?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-007"
     query: "How do I write an environment hook for my agent?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-008"
     query: "How do I configure agent disconnect and idle timeout settings?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-009"
     query: "How do I set up hosted agents with Docker-in-Docker support?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-agent-010"
     query: "How do I add agent hooks when using agent-stack-k8s?"
-    expected_skill: "buildkite-agent"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   # ============================================================
-  # BUILDKITE-AGENT — near-miss (should NOT trigger agent)
+  # BUILDKITE-AGENT-INFRASTRUCTURE — near-miss (should NOT trigger agent-infrastructure)
   # ============================================================
 
   - id: "t-agent-n01"
     query: "How do I use buildkite-agent meta-data set inside a step script?"
     expected_skill: "buildkite-agent-runtime"
-    expected_not_skills: ["buildkite-agent"]
-    tags: ["near-miss", "agent-vs-runtime"]
+    expected_not_skills: ["buildkite-agent-infrastructure"]
+    tags: ["near-miss", "agent-infrastructure-vs-runtime"]
 
   - id: "t-agent-n02"
     query: "How do I use buildkite-agent annotate to add test failure summaries?"
     expected_skill: "buildkite-agent-runtime"
-    expected_not_skills: ["buildkite-agent"]
-    tags: ["near-miss", "agent-vs-runtime"]
+    expected_not_skills: ["buildkite-agent-infrastructure"]
+    tags: ["near-miss", "agent-infrastructure-vs-runtime"]
 
   - id: "t-agent-n03"
     query: "How do I set the queue for a step in my pipeline YAML?"
     expected_skill: "buildkite-pipelines"
-    expected_not_skills: ["buildkite-agent"]
-    tags: ["near-miss", "agent-vs-pipelines"]
+    expected_not_skills: ["buildkite-agent-infrastructure"]
+    tags: ["near-miss", "agent-infrastructure-vs-pipelines"]
 
   - id: "t-agent-n04"
     query: "How do I configure agent token scoping via the REST API?"
-    expected_skill: "buildkite-platform"
-    expected_not_skills: ["buildkite-agent"]
-    tags: ["near-miss", "agent-vs-platform"]
+    expected_skill: "buildkite-api"
+    expected_not_skills: ["buildkite-agent-infrastructure"]
+    tags: ["near-miss", "agent-infrastructure-vs-api"]
 
   - id: "t-agent-n05"
     query: "How do I use buildkite-agent secret get to fetch a cluster secret at runtime?"
     expected_skill: "buildkite-agent-runtime"
-    expected_not_skills: ["buildkite-agent"]
-    tags: ["near-miss", "agent-vs-runtime"]
+    expected_not_skills: ["buildkite-agent-infrastructure"]
+    tags: ["near-miss", "agent-infrastructure-vs-runtime"]
 
   - id: "t-agent-n06"
     query: "How do I use buildkite-agent env dump to debug environment variables?"
     expected_skill: "buildkite-agent-runtime"
-    expected_not_skills: ["buildkite-agent"]
-    tags: ["near-miss", "agent-vs-runtime"]
+    expected_not_skills: ["buildkite-agent-infrastructure"]
+    tags: ["near-miss", "agent-infrastructure-vs-runtime"]
 
   # ============================================================
-  # BUILDKITE-PLATFORM — should trigger
+  # BUILDKITE-API — should trigger
   # ============================================================
 
   - id: "t-platform-001"
     query: "How do I use the Buildkite GraphQL API to query builds?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-002"
     query: "What are the REST API rate limits?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-003"
     query: "How do I set up a webhook to receive build notifications?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-004"
     query: "How do I verify webhook signatures using HMAC?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-005"
     query: "How do I set up SSO/SAML for my Buildkite organization?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-agent-infrastructure"
     tags: ["should-trigger"]
 
   - id: "t-platform-006"
     query: "How do I scope API tokens for read-only access?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-007"
     query: "How do I publish packages to the Buildkite Packages registry?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-secure-delivery"
     tags: ["should-trigger"]
 
   - id: "t-platform-008"
     query: "How do I integrate Buildkite with an external notification system?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-009"
     query: "I'm getting GraphQL query complexity errors, how do I fix them?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-api"
     tags: ["should-trigger"]
 
   - id: "t-platform-010"
     query: "How do I set up OIDC token management for cloud provider authentication?"
-    expected_skill: "buildkite-platform"
+    expected_skill: "buildkite-secure-delivery"
     tags: ["should-trigger"]
 
   # ============================================================
-  # BUILDKITE-PLATFORM — near-miss (should NOT trigger platform)
+  # BUILDKITE-API / BUILDKITE-AGENT-INFRASTRUCTURE / BUILDKITE-SECURE-DELIVERY
+  # — near-miss (should NOT trigger the above skills)
   # ============================================================
 
   - id: "t-platform-n01"
     query: "How do I use bk api to make a GraphQL query from the CLI?"
     expected_skill: "buildkite-cli"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-cli"]
+    expected_not_skills: ["buildkite-api"]
+    tags: ["near-miss", "api-vs-cli"]
 
   - id: "t-platform-n02"
     query: "How do I request an OIDC token using buildkite-agent oidc request-token?"
     expected_skill: "buildkite-agent-runtime"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-runtime"]
+    expected_not_skills: ["buildkite-secure-delivery"]
+    tags: ["near-miss", "secure-delivery-vs-runtime"]
 
   - id: "t-platform-n03"
     query: "How do I split tests using bktec?"
     expected_skill: "buildkite-test-engine"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-test-engine"]
+    expected_not_skills: ["buildkite-pipelines"]
+    tags: ["near-miss", "test-engine-vs-pipelines"]
 
   - id: "t-platform-n04"
     query: "How do I add Slack notification to my pipeline YAML?"
     expected_skill: "buildkite-pipelines"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-pipelines"]
+    expected_not_skills: ["buildkite-api"]
+    tags: ["near-miss", "pipelines-vs-api"]
 
   - id: "t-platform-n05"
     query: "How do I manage agent tokens in agent-stack-k8s?"
-    expected_skill: "buildkite-agent"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-agent"]
+    expected_skill: "buildkite-agent-infrastructure"
+    tags: ["should-trigger"]
 
   - id: "t-platform-n06"
     query: "How do I configure the test-collector plugin to send data to Test Engine?"
     expected_skill: "buildkite-test-engine"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-test-engine"]
+    expected_not_skills: ["buildkite-pipelines"]
+    tags: ["near-miss", "test-engine-vs-pipelines"]
 
   - id: "t-platform-n07"
     query: "How do I list builds for a pipeline using the bk CLI?"
     expected_skill: "buildkite-cli"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-cli"]
+    expected_not_skills: ["buildkite-api"]
+    tags: ["near-miss", "cli-vs-api"]
 
   - id: "t-platform-n08"
     query: "How do I use buildkite-agent tool sign to verify pipeline steps?"
     expected_skill: "buildkite-agent-runtime"
-    expected_not_skills: ["buildkite-platform"]
-    tags: ["near-miss", "platform-vs-runtime"]
+    expected_not_skills: ["buildkite-secure-delivery"]
+    tags: ["near-miss", "runtime-vs-secure-delivery"]
 
   # ============================================================
   # BUILDKITE-MIGRATION — should trigger
@@ -711,7 +711,7 @@ trigger_evals:
 
   - id: "t-migration-n02"
     query: "How do I set up a new Buildkite agent on Ubuntu?"
-    expected_skill: "buildkite-platform-engineering"
+    expected_skill: "buildkite-agent-infrastructure"
     expected_not_skills: ["buildkite-migration"]
     tags: ["near-miss", "migration-vs-platform"]
 

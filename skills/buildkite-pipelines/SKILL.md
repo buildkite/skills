@@ -43,34 +43,10 @@ steps:
 
 The agent reads `.buildkite/pipeline.yml` and uploads the steps to Buildkite for execution.
 
-## Getting Started
-
-### Directory structure
-
-```
-repo/
-└── .buildkite/
-    └── pipeline.yml    # Pipeline definition (required)
-```
-
 Buildkite looks for `.buildkite/pipeline.yml` by default. Override the path with `buildkite-agent pipeline upload path/to/other.yml`.
 
-### How pipeline upload works
-
-1. A build starts with a single step: `buildkite-agent pipeline upload`
-2. The agent runs on the machine, reads `pipeline.yml`, and uploads steps to the Buildkite API
-3. Buildkite schedules the uploaded steps across available agents
-4. Steps run in parallel unless separated by `wait` steps or linked with `depends_on`
-
-### First pipeline setup
-
-1. Create a pipeline in Buildkite (UI or API)
-2. Set the initial command to `buildkite-agent pipeline upload`
-3. Commit `.buildkite/pipeline.yml` to the repository
-4. Push — Buildkite triggers a build automatically via webhook
-
 > For creating pipelines programmatically, see the **buildkite-api** skill.
-> For agent and queue setup, see the **buildkite-platform-engineering** skill.
+> For agent and queue setup, see the **buildkite-agent-infrastructure** skill.
 
 ## Step Types
 
@@ -114,7 +90,30 @@ steps:
       key: "v1-deps-{{ checksum 'package-lock.json' }}"
 ```
 
-> Hosted agent setup and instance shapes are covered by the **buildkite-platform-engineering** skill.
+> Hosted agent setup and instance shapes are covered by the **buildkite-agent-infrastructure** skill.
+
+## Fast-Fail and Non-Blocking Steps
+
+Cancel remaining jobs immediately when any job fails:
+
+```yaml
+steps:
+  - label: ":rspec: Tests"
+    command: "bundle exec rspec"
+    cancel_on_build_failing: true
+```
+
+Use `soft_fail` for steps that should not block the build (security scans, linting, coverage):
+
+```yaml
+steps:
+  - label: ":shield: Security Scan"
+    command: "scripts/security-scan.sh"
+    soft_fail:
+      - exit_status: 1
+```
+
+A soft-failed step shows as a warning in the UI but does not fail the build. Combine with `continue_on_failure: true` on a wait step to let downstream steps run regardless.
 
 ## Parallelism and Dependencies
 
@@ -229,6 +228,19 @@ steps:
       .buildkite/generate-pipeline.sh | buildkite-agent pipeline upload
 ```
 
+For debugging, upload the generated YAML as an artifact before piping to upload:
+
+```yaml
+steps:
+  - label: ":pipeline: Generate"
+    command: |
+      .buildkite/generate-pipeline.sh | tee generated-pipeline.yml
+      buildkite-agent artifact upload generated-pipeline.yml
+      cat generated-pipeline.yml | buildkite-agent pipeline upload
+```
+
+Keep dynamically generated pipelines under **~500 steps** for optimal UI and processing performance. For larger monorepos, use orchestrator pipelines with trigger steps to spawn child pipelines.
+
 Example generator script that runs tests only for changed services:
 
 ```bash
@@ -264,7 +276,26 @@ steps:
     if: build.branch == "main" && build.message !~ /\[skip deploy\]/
 ```
 
-Common expressions: `build.branch`, `build.tag`, `build.message`, `build.source`, `build.env("VAR")`, `pipeline.default_branch`.
+For the full list of condition expressions, see [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals.md).
+
+**`[skip ci]` gotcha:** Buildkite only checks the HEAD commit message for `[skip ci]` / `[ci skip]`. If the tag is in an earlier commit in a multi-commit push, the build still triggers.
+
+### Directory-based step filtering (if_changed)
+
+Skip steps when relevant files haven't changed. Only applied by the Buildkite agent when uploading a pipeline. See https://buildkite.com/docs/pipelines/configure/dynamic-pipelines/if-changed.md.
+
+```yaml
+steps:
+  - label: ":nodejs: Frontend tests"
+    command: "npm test"
+    if_changed:
+      - "src/frontend/**"
+      - "package.json"
+```
+
+For exclude patterns and monorepo configurations, see `references/advanced-patterns.md`.
+
+For large monorepos, use the [Sparse Checkout plugin](https://github.com/buildkite-plugins/sparse-checkout-buildkite-plugin) to check out only `.buildkite/` for the upload step — dramatically faster pipeline uploads.
 
 ### Conditionally running plugins
 
@@ -306,6 +337,8 @@ steps:
           skip: true  # Known incompatible
 ```
 
+Valid properties inside each `adjustments` entry: `with`, `skip`, `soft_fail`, `env`. The `agents:` key is **not valid** inside `adjustments` — Buildkite rejects the pipeline with "agents is not a valid property on the matrix.adjustments configuration". To route matrix combinations to different queues (e.g., Linux vs Windows agents), use separate steps or a dynamic pipeline generator.
+
 ## Plugins
 
 Add capabilities with 3-line YAML blocks. Pin versions for reproducibility:
@@ -327,21 +360,17 @@ plugins:
 
 Always pin plugin versions (e.g., `docker#v5.12.0` not `docker#v5`). Unpinned versions can break builds when plugins release new major versions.
 
-## Notifications and Artifacts
-
-### Pipeline-level notifications
+For **private organizational plugins**, use full Git URLs — the shorthand syntax only works for public plugins:
 
 ```yaml
-notify:
-  - slack:
-      channels:
-        - "#builds"
-      message: "Build {{build.number}} {{build.state}}"
-    if: build.state == "failed"
-
-steps:
-  - command: "make test"
+plugins:
+  - ssh://git@github.com/my-org/my-plugin.git#v1.0.0:
+      config: value
 ```
+
+## Notifications and Artifacts
+
+Add pipeline-level `notify:` above `steps:` to send Slack, email, or webhook notifications on build state changes. See [Notifications](https://buildkite.com/docs/pipelines/configure/notifications.md) for syntax.
 
 ### Artifact upload and download
 
@@ -361,9 +390,19 @@ steps:
       make package
 ```
 
+When using artifacts in a Docker build, download artifacts before starting the Docker build since `buildkite-agent` is not available inside the container:
+
+```yaml
+steps:
+  - label: "Docker build"
+    command: |
+      buildkite-agent artifact download "dist/*" .
+      docker build -t myapp .
+```
+
 ## Concurrency
 
-Limit parallel execution of steps sharing a resource:
+Limit parallel execution of steps sharing a resource. Always pair `concurrency` with `concurrency_group` — without a group name, the limit is silently ignored.
 
 ```yaml
 steps:
@@ -374,18 +413,19 @@ steps:
     concurrency_method: "eager"
 ```
 
-| Attribute | Default | Description |
-|-----------|---------|-------------|
-| `concurrency` | unlimited | Max parallel jobs in this group |
-| `concurrency_group` | — | Shared name across pipelines (required with `concurrency`) |
-| `concurrency_method` | `ordered` | `ordered` (FIFO) or `eager` (next available) |
-| `priority` | `0` | Higher numbers run first when queued |
+Use `concurrency_method: "eager"` (next available) for independent jobs like deploys. Use the default `"ordered"` (FIFO) when execution order matters. Set `priority` (default `0`, higher = first) to control which queued jobs run next.
+
+For full concurrency configuration options, see [Controlling Concurrency](https://buildkite.com/docs/pipelines/configure/workflows/controlling-concurrency.md).
+
+> For triggering, watching, and debugging pipelines from the terminal, see the **buildkite-cli** skill.
 
 ## Common Mistakes
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
-| Missing `wait` between dependent steps | Steps run in parallel, second step fails because first hasn't finished | Add `- wait` or use `depends_on` |
+| Missing `wait` between dependent steps | Steps run in parallel, second step fails because first hasn't finished | Add `- wait` or use `depends_on:` |
+| Using only `wait` steps for all dependencies | Valid but non-idiomatic; `wait` blocks ALL prior steps, making it impossible to run independent steps in parallel | Give named steps a `key:` and use `depends_on: "key"` to express fine-grained dependencies; reserve `wait` for unconditional barriers |
+| No `plugins:` in pipeline for package install steps | Dependencies reinstalled from scratch on every build, slowing builds and inflating costs | Add `cache` plugin (or the built-in `cache:` key for hosted agents) to cache `node_modules/`, `.gradle/`, etc. See the Caching section above |
 | Using step-level `if` to skip plugins | Plugins still execute (they run before `if` is evaluated) | Wrap in a `group` with the `if` condition |
 | Not pinning plugin versions | Builds break when plugin releases breaking change | Always use full semver: `plugin#v1.2.3` |
 | Forgetting `concurrency_group` with `concurrency` | `concurrency` is ignored without a group name | Always pair `concurrency` with `concurrency_group` |
@@ -393,6 +433,12 @@ steps:
 | Hardcoding parallel job split logic | Uneven test distribution, one slow job blocks the build | Use `parallelism: N` with timing-based splitting via Test Engine |
 | Inline secrets in pipeline YAML | Secrets visible in build logs and Buildkite UI | Use cluster secrets or agent environment hooks |
 | Using `retry.automatic` with `exit_status: "*"` and high limit | Genuine bugs retry repeatedly, wasting compute | Target specific exit codes; keep wildcard limit at 1 |
+| Using `agents:` inside `matrix.adjustments` | Pipeline upload fails: "agents is not a valid property on the matrix.adjustments configuration" | Remove `agents:` from `adjustments`; use separate steps per platform or a dynamic pipeline generator for per-combination queue routing |
+| Build fails but all visible steps passed | A trigger step started a child pipeline that failed, or a step was cancelled rather than unblocked | Check the triggered pipeline's build status; inspect block steps for cancellations |
+| Pipeline upload fails with no clear error | YAML syntax error or agent-side issue not shown in build logs | Validate YAML locally; check agent logs on the host machine for detailed upload errors; run `buildkite-agent pipeline upload --debug` |
+| Fork builds enabled on public pipelines | Contributors can modify `pipeline.yml` to extract secrets | Disable fork builds in pipeline settings for public repos; use a separate pipeline for external PRs with no secret access |
+| Docker Compose steps produce artifacts but agent can't find them | Files created inside containers are invisible to the host agent | Mount the working directory as a volume in `docker-compose.yml` so container outputs are visible for `artifact_paths:` |
+| Dynamic pipeline generates 1000+ steps | UI becomes slow, pipeline processing degrades | Keep generated pipelines under ~500 steps; use orchestrator pipelines with trigger steps for larger monorepos |
 
 ## Additional Resources
 
@@ -409,8 +455,10 @@ steps:
 
 ## Further Reading
 
-- [Defining pipeline steps](https://buildkite.com/docs/pipelines/configure/defining-steps)
-- [Step types reference](https://buildkite.com/docs/pipelines/configure/step-types)
-- [Pipeline upload](https://buildkite.com/docs/agent/v3/cli-pipeline)
-- [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals)
-- [Managing pipeline secrets](https://buildkite.com/docs/pipelines/security/secrets/managing)
+- [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
+- [Defining pipeline steps](https://buildkite.com/docs/pipelines/configure/defining-steps.md)
+- [Step types reference](https://buildkite.com/docs/pipelines/configure/step-types.md)
+- [Pipeline upload](https://buildkite.com/docs/agent/v3/cli-pipeline.md)
+- [Conditionals](https://buildkite.com/docs/pipelines/configure/conditionals.md)
+- [Managing pipeline secrets](https://buildkite.com/docs/pipelines/security/secrets/managing.md)
+- [Pipeline design best practices](https://buildkite.com/docs/pipelines/best-practices/pipeline-design-and-structure.md)

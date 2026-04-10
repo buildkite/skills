@@ -10,7 +10,9 @@ def check_contains(response: str, expected: list[str]) -> tuple[list[str], list[
     matched = []
     missed = []
     for term in expected:
-        if term.lower() in response_lower:
+        # Support alternation with | (e.g. "latest attempt|final attempt")
+        alternatives = [t.strip() for t in term.split("|")]
+        if any(alt.lower() in response_lower for alt in alternatives):
             matched.append(term)
         else:
             missed.append(term)

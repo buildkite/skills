@@ -1,5 +1,6 @@
 {
   "name": "buildkite",
-  "description": "Buildkite skills for pipelines, agent runtime, CLI, API, platform engineering, secure delivery, and test engine",
-  "version": "1.0.0"
+  "description": "Buildkite skills for pipelines, agent infrastructure, agent runtime, CLI, API, secure delivery, and test engine",
+  "version": "1.0.0",
+  "skills": "./skills/"
 }

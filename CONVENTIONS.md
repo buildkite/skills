@@ -9,13 +9,34 @@ Copilot, Windsurf, Gemini CLI) via `npx skills add buildkite/skills`.
 
 ---
 
+## Skills Are Not Documentation
+
+Skills teach agents *how to do things correctly*. Buildkite docs explain *what features exist*.
+Do not rewrite documentation into skill format. Instead, encode the expertise that makes
+the difference between a working pipeline and a correct one.
+
+**Content strategy principles:**
+
+1. **Assume the agent is smart.** Do not explain YAML, CI/CD concepts, or general programming.
+   Only add context the agent cannot already infer. Challenge every paragraph: does this
+   justify its token cost?
+2. **Encode expertise, not reference material.** Capture the judgment calls, default
+   recommendations, and common mistakes that an experienced Buildkite user knows —
+   not exhaustive option lists.
+3. **Link to docs, don't duplicate them.** Use the Further Reading section to point at
+   canonical Buildkite documentation. One cross-reference is better than a reproduced page.
+4. **Test with real usage.** Build evaluations before writing extensive content. Observe what
+   agents actually need, not what you assume they need.
+
+---
+
 ## Required: Confirm Your Understanding First
 
 Before writing, state aloud (in your response or thinking):
 1. The frontmatter you will use (copy the template below)
 2. Your assigned skill name
 3. Three topics you will NOT cover (per the boundary table below)
-4. Your SKILL.md size target (6-8KB body, with overflow in `references/`)
+4. Your SKILL.md size target (10-18KB body, with overflow in `references/`)
 
 ---
 
@@ -25,13 +46,34 @@ Each skill lives in its own directory with this structure:
 
 ```
 skills/<skill-name>/
-├── SKILL.md              (required — core skill, 6-8KB target)
+├── SKILL.md              (required — core skill, 10-18KB typical)
 ├── references/           (optional — detailed content loaded on demand)
 │   ├── flag-reference.md
 │   └── advanced-examples.md
 ├── examples/             (optional — complete, runnable example files)
-└── scripts/              (optional — utility scripts for validation, etc.)
+├── agents/               (required — multi-agent platform metadata)
+│   └── openai.yaml
+└── assets/               (required — icon and brand assets for agent marketplaces)
+    └── .gitkeep
 ```
+
+### Agent Platform Metadata
+
+Every skill must include `agents/openai.yaml` for multi-agent platform support.
+This metadata controls how the skill appears when installed via `npx skills add`
+into agent platforms (OpenAI, Cursor, etc.).
+
+```yaml
+interface:
+  display_name: "Buildkite <Area>"
+  short_description: "<one-line summary matching SKILL.md frontmatter>"
+  icon_small: "./assets/buildkite-icon-small.png"
+  icon_large: "./assets/buildkite-icon-large.png"
+  brand_color: "#00D974"
+```
+
+The `assets/` directory holds icon PNGs for marketplace display. Include a
+`.gitkeep` until actual icon files are added.
 
 ### Progressive Disclosure
 
@@ -41,9 +83,10 @@ Skills use a three-tier loading system to manage context efficiently:
 2. **SKILL.md body** — loaded when skill triggers (~1,500-2,500 words)
 3. **Bundled resources** — loaded as needed by the agent (unlimited)
 
-This means SKILL.md should contain the **essential** knowledge an agent needs for
-common tasks. Move exhaustive flag tables, advanced examples, edge cases, and deep
-reference material into `references/` files. The agent will read them when needed.
+SKILL.md should contain the expertise an agent needs for common tasks — recommended
+patterns, quick starts, and pitfalls. Move exhaustive flag tables, advanced examples,
+edge cases, and deep reference material into `references/` files. These cost zero
+tokens until the agent reads them for a specific task.
 
 ### What goes where
 
@@ -130,6 +173,8 @@ SKILL.md; move exhaustive tables to `references/`.
 | `--branch` | `-b` | current branch | Git branch to build |
 | `--commit` | `-c` | HEAD | Git commit SHA |
 
+The `Short` column is optional — omit it when commands have no short flags.
+
 Always include the Default column. Agents use defaults to fill in omitted arguments.
 
 **YAML examples:**
@@ -144,12 +189,17 @@ When your topic touches another skill's territory, use exactly this pattern:
 Never duplicate content owned by another skill. One sentence + pointer.
 
 **Size targets:**
-- SKILL.md body: **6-8KB** (~1,500-2,500 words). Contains core knowledge for common tasks.
+- SKILL.md body: **10-18KB** typical. Contains core knowledge for common tasks.
 - References: **unlimited**. Move detailed flag tables, advanced examples, and edge cases here.
-- Total skill content (SKILL.md + references): **10-15KB** typical.
+- Total skill content (SKILL.md + references): **15-45KB** typical.
 
-If your SKILL.md first draft exceeds 8KB, identify sections to extract into `references/`.
-If it's under 4KB, it's too thin — expand quick start, add more inline examples, deepen
+Note: Anthropic's official guidance recommends skills under ~2,000 tokens / 500 lines.
+Our skills are significantly larger because Buildkite-specific domain knowledge is niche
+and unlikely to be in model training data. This is a deliberate trade-off — but it means
+every line must earn its place. Prefer moving detail to `references/` over inflating SKILL.md.
+
+If your SKILL.md first draft exceeds 18KB, identify sections to extract into `references/`.
+If it's under 8KB, it's too thin — expand quick start, add more inline examples, deepen
 common mistakes.
 
 ---
@@ -184,7 +234,7 @@ Each skill owns specific topics exclusively. Do not cover topics outside your bo
 | `pipeline.yml` syntax, step types, plugins, caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, `notify:`, `artifact_paths:`, concurrency, `agents:` routing, `secrets:` | **buildkite-pipelines** | Reference only |
 | Test Engine suites, `bktec` CLI, test splitting, flaky detection, quarantine, test collectors, `BUILDKITE_TEST_ENGINE_*` env vars | **buildkite-test-engine** | Reference only |
 | OIDC auth flows, Package Registry setup, SLSA provenance, pipeline signing (JWKS), verification rollout | **buildkite-secure-delivery** | Reference only |
-| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | **buildkite-platform-engineering** | Reference only |
+| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | **buildkite-agent-infrastructure** | Reference only |
 | `buildkite-agent` subcommands inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor, tool sign/verify | **buildkite-agent-runtime** | Reference only |
 | `bk build`, `bk job`, `bk pipeline`, `bk pipeline convert`, `bk secret`, `bk artifact`, `bk auth`, `bk cluster`, `bk package` commands | **buildkite-cli** | Reference only |
 | REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Reference only |
@@ -223,12 +273,15 @@ Before you consider your skill done, verify:
 - [ ] Description uses third person ("This skill should be used when...")
 - [ ] Description contains specific quoted trigger phrases
 - [ ] Follows section order exactly (Quick Start before feature sections, Common Mistakes near end)
-- [ ] SKILL.md body is 6-8KB; detailed content moved to `references/`
+- [ ] SKILL.md body is 10-18KB; detailed content moved to `references/`
 - [ ] All referenced `references/` and `examples/` files exist
+- [ ] `agents/openai.yaml` exists with correct metadata
 
 **Content:**
+- [ ] Encodes expertise (patterns, defaults, pitfalls) — not a docs rewrite
+- [ ] Does not explain general concepts the agent already knows (YAML, CI/CD, etc.)
 - [ ] Written in imperative/infinitive form — no second person ("you")
-- [ ] Every inline CLI command has a flag table
+- [ ] Every inline CLI command has a flag table (inline or in `references/`)
 - [ ] Flag tables include Default column
 - [ ] All code blocks are syntactically correct and copy-paste ready
 - [ ] No topics that belong to other skills (check boundary table)
@@ -240,7 +293,7 @@ Before you consider your skill done, verify:
 - [ ] Core concepts and common patterns in SKILL.md
 - [ ] Exhaustive flag tables, advanced examples in `references/`
 - [ ] Additional Resources section points to bundled files
-- [ ] Total skill content (SKILL.md + references) is 10-15KB
+- [ ] Total skill content (SKILL.md + references) is 15-45KB
 
 ---
 

@@ -11,26 +11,36 @@ skills/                              # All skills live here
   buildkite-test-engine/             # Journey — test splitting, flaky detection, bktec CLI
   buildkite-secure-delivery/         # Journey — OIDC, Package Registry, SLSA provenance
   buildkite-migration/               # Journey — CI migration, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI
-  buildkite-platform-engineering/    # Journey — clusters, queues, hosted agents, SSO, audit
+  buildkite-agent-infrastructure/    # Journey — clusters, queues, hosted agents, SSO, audit
   buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
 evals/                               # Quality eval dataset and runner
-references/                          # Shared reference materials
 ```
 
 ## Skill Architecture
 
 Each skill directory contains:
 
-- `SKILL.md` (required) — core skill content, 6-8KB target
+- `SKILL.md` (required) — core skill content, 10-18KB typical
 - `references/` (optional) — detailed content loaded on demand
 - `examples/` (optional) — complete runnable examples
+- `agents/openai.yaml` (required) — multi-agent platform metadata
+- `assets/` (required) — icon and brand assets for agent marketplaces
 
 Skills use progressive disclosure:
 1. **Metadata** (name + description) — always in context (~100 words)
 2. **SKILL.md body** — loaded when skill triggers (~1,500-2,500 words)
 3. **Bundled resources** — loaded as needed by the agent (unlimited)
+
+## Skills vs. Documentation
+
+Skills are not documentation rewrites. They encode *expertise* — the judgment calls,
+defaults, and pitfalls that experienced Buildkite users know — rather than cataloguing
+features. Buildkite docs explain what's possible; skills teach agents how to do it correctly.
+
+Assume the agent is already smart. Only include context it cannot infer on its own.
+Link to Buildkite docs for canonical reference; do not reproduce them.
 
 ## Key Conventions
 
@@ -39,7 +49,7 @@ Skills use progressive disclosure:
 - Cross-references use: `> For [topic], see the **buildkite-[skill]** skill.`
 - Style: imperative voice, no second person, no marketing language
 - All code blocks must be syntactically correct and copy-paste ready
-- SKILL.md body target: 6-8KB; total with references: 10-15KB
+- SKILL.md body target: 10-18KB; total with references: 15-45KB
 
 ## Quality Evaluation
 

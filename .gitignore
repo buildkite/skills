@@ -59,6 +59,10 @@ Thumbs.db
 evals/results/*.json
 **/__pycache__
 
+# Ralph Wiggum loop artifacts
+ralph/express-checkout/
+ralph/state/
+
 # Yarn
 .pnp.*
 .yarn/*
@@ -67,3 +71,6 @@ evals/results/*.json
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# BK CLI
+.bk.yaml

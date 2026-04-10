@@ -28,7 +28,7 @@ cp -r skills/buildkite-agent-runtime .claude/skills/
 cp -r skills/buildkite-cli .claude/skills/
 cp -r skills/buildkite-api .claude/skills/
 cp -r skills/buildkite-migration .claude/skills/
-cp -r skills/buildkite-platform-engineering .claude/skills/
+cp -r skills/buildkite-agent-infrastructure .claude/skills/
 cp -r skills/buildkite-secure-delivery .claude/skills/
 cp -r skills/buildkite-test-engine .claude/skills/
 
@@ -39,7 +39,7 @@ cp -r skills/buildkite-agent-runtime .cursor/skills/
 cp -r skills/buildkite-cli .cursor/skills/
 cp -r skills/buildkite-api .cursor/skills/
 cp -r skills/buildkite-migration .cursor/skills/
-cp -r skills/buildkite-platform-engineering .cursor/skills/
+cp -r skills/buildkite-agent-infrastructure .cursor/skills/
 cp -r skills/buildkite-secure-delivery .cursor/skills/
 cp -r skills/buildkite-test-engine .cursor/skills/
 ```
@@ -56,7 +56,7 @@ Skills organized by what you are trying to accomplish.
 | **Test Engine** | [skills/buildkite-test-engine/](skills/buildkite-test-engine/SKILL.md) | Test splitting, flaky detection, quarantine, bktec CLI, test collectors |
 | **Secure Delivery** | [skills/buildkite-secure-delivery/](skills/buildkite-secure-delivery/SKILL.md) | OIDC authentication, Package Registry, SLSA provenance, pipeline signing |
 | **Migration** | [skills/buildkite-migration/](skills/buildkite-migration/SKILL.md) | CI migration planning, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket Pipelines, GitLab CI using `bk pipeline convert` |
-| **Platform Engineering** | [skills/buildkite-platform-engineering/](skills/buildkite-platform-engineering/SKILL.md) | Clusters, queues, hosted agents, agent config, pipeline templates, SSO, audit logging |
+| **Platform Engineering** | [skills/buildkite-agent-infrastructure/](skills/buildkite-agent-infrastructure/SKILL.md) | Clusters, queues, hosted agents, agent config, pipeline templates, SSO, audit logging |
 
 ### Cross-Cutting Skills
 
@@ -67,6 +67,24 @@ Skills needed across all journeys.
 | **Agent Runtime** | [skills/buildkite-agent-runtime/](skills/buildkite-agent-runtime/SKILL.md) | `buildkite-agent` subcommands inside running job steps — annotate, artifact, meta-data, pipeline upload, OIDC, locks |
 | **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
 | **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
+
+## How Skills Differ from Docs
+
+Buildkite docs at [buildkite.com/docs](https://buildkite.com/docs) are the canonical
+reference for what Buildkite features exist and how they work.
+
+Skills serve a different purpose: they encode **expertise**. Where docs explain every
+option, skills teach agents the right defaults, common patterns, and mistakes to avoid.
+A skill captures the judgment an experienced Buildkite user applies — which step type to
+reach for, how to structure a dynamic pipeline, when to use OIDC instead of static tokens.
+
+In practice this means:
+- Skills assume the agent already understands YAML, CI/CD concepts, and general programming
+- SKILL.md files focus on quick starts, recommended patterns, and pitfall tables — not exhaustive option lists
+- Detailed reference material lives in `references/` subdirectories, loaded only when needed
+- Skills link to Buildkite docs rather than reproducing them
+
+For more on content strategy, see [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Contributing
 
