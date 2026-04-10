@@ -16,15 +16,13 @@ description: >
 
 # Buildkite Platform Engineering
 
-Provision and govern Buildkite CI infrastructure at scale. This skill covers clusters, queues, hosted agent sizing, cluster secrets, agent tokens, self-hosted agent configuration, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, and cost optimization — everything a platform team needs to run CI for the organization.
+Provision and govern Buildkite CI infrastructure at scale: clusters, queues, hosted agent sizing, secrets, agent tokens, self-hosted configuration, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, and cost optimization.
 
 ## Quick Start
 
-Create a cluster with a hosted queue to get builds running immediately. Hosted queues use Buildkite-managed compute — agents are provisioned automatically. Self-hosted queues require provisioning your own agents; builds will hang in a "scheduled" state until agents connect.
+Create a cluster with a hosted queue to get builds running immediately. **Start with hosted agents unless there is a specific reason to self-host** (GPU workloads, on-prem, custom hardware). Self-hosted queues require provisioning your own agents; builds hang "scheduled" until agents connect.
 
-**Start with hosted agents unless there is a specific reason to self-host** (e.g., GPU workloads, on-prem requirements, custom hardware).
-
-All GraphQL mutations go to `https://graphql.buildkite.com/v1` with a Bearer token. The examples below show the GraphQL operations — execute them via curl:
+All GraphQL mutations go to `https://graphql.buildkite.com/v1` with a Bearer token:
 
 ```bash
 curl -sS -X POST "https://graphql.buildkite.com/v1" \
@@ -33,17 +31,9 @@ curl -sS -X POST "https://graphql.buildkite.com/v1" \
   -d '{"query": "<GRAPHQL_QUERY_OR_MUTATION>", "variables": { ... }}'
 ```
 
-**Step 1: Get the organization ID** (required for all mutations):
+**Step 1:** Get the organization ID: `query { organization(slug: "my-org") { id } }`
 
-```graphql
-query {
-  organization(slug: "my-org") {
-    id
-  }
-}
-```
-
-**Step 2: Create a cluster:**
+**Step 2:** Create a cluster:
 
 ```graphql
 mutation {
@@ -53,18 +43,11 @@ mutation {
     description: "Production CI cluster"
     emoji: ":rocket:"
     color: "#14CC80"
-  }) {
-    cluster {
-      id
-      uuid
-      name
-      defaultQueue { id }
-    }
-  }
+  }) { cluster { id uuid name } }
 }
 ```
 
-**Step 3: Create a hosted queue** with a specific instance shape:
+**Step 3:** Create a hosted queue with a specific instance shape:
 
 ```graphql
 mutation {
@@ -73,38 +56,14 @@ mutation {
     clusterId: "cluster-id"
     key: "linux-large"
     description: "Linux 8 vCPU / 32 GB for heavy compilation"
-    hostedAgents: {
-      instanceShape: LINUX_AMD64_8X32
-    }
-  }) {
-    clusterQueue {
-      id
-      uuid
-      key
-      hostedAgents { instanceShape { name size vcpu memory } }
-    }
-  }
+    hostedAgents: { instanceShape: LINUX_AMD64_8X32 }
+  }) { clusterQueue { id key } }
 }
 ```
 
-**Step 4: Create a pipeline** in the cluster, then trigger a build:
+**Step 4:** Create a pipeline in the cluster via GraphQL `pipelineCreate` or the REST API, then trigger a build.
 
-```graphql
-mutation {
-  pipelineCreate(input: {
-    organizationId: "org-id"
-    clusterId: "cluster-id"
-    name: "My Pipeline"
-    repository: { url: "https://github.com/my-org/my-repo" }
-    steps: { yaml: "steps:\n  - label: ':pipeline:'\n    command: 'buildkite-agent pipeline upload'" }
-    defaultBranch: "main"
-  }) {
-    pipeline { id slug url }
-  }
-}
-```
-
-Target the queue from pipeline YAML with `agents: { queue: "linux-large" }`.
+> For pipeline creation via REST and GraphQL, see the **buildkite-api** skill.
 
 > For pipeline YAML syntax including `agents:` routing and `secrets:` access, see the **buildkite-pipelines** skill.
 > For `bk cluster` CLI commands, see the **buildkite-cli** skill.
@@ -114,24 +73,6 @@ Target the queue from pipeline YAML with `agents: { queue: "linux-large" }`.
 A cluster is the top-level container for queues, agent tokens, and secrets. Every organization starts with one default cluster; create additional clusters to isolate workloads (e.g., production vs. staging, team-specific).
 
 ### Create a cluster
-
-**GraphQL:**
-
-```graphql
-mutation {
-  clusterCreate(input: {
-    organizationId: "org-id"
-    name: "Backend"
-    description: "Backend team CI cluster"
-    emoji: ":gear:"
-    color: "#0B79CE"
-  }) {
-    cluster { id uuid name }
-  }
-}
-```
-
-**REST API:**
 
 ```bash
 curl -s -X POST "https://api.buildkite.com/v2/organizations/my-org/clusters" \
@@ -145,181 +86,42 @@ curl -s -X POST "https://api.buildkite.com/v2/organizations/my-org/clusters" \
   }'
 ```
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Human-readable cluster name |
-| `description` | No | Purpose of the cluster |
-| `emoji` | No | Emoji shortcode for UI display |
-| `color` | No | Hex color for UI display |
-| `default_queue_id` | No | UUID of the default queue for this cluster |
-
-### Inspect clusters
-
-Use the Buildkite MCP server's `list_clusters` and `get_cluster` tools to inspect clusters directly. To check cluster queues, use `list_cluster_queues` and `get_cluster_queue`.
+Fields: `name` (required), `description`, `emoji`, `color`, `default_queue_id` (optional).
 
 > For full REST and GraphQL API reference, see the **buildkite-api** skill.
 
 ## Queues and Hosted Agents
 
-Queues route builds to agents. Each queue runs either **hosted agents** (Buildkite-managed compute) or **self-hosted agents** (agents on your own infrastructure). Create specialized queues to isolate workloads by resource needs.
+Queues route builds to agents. **Hosted queues** (Buildkite-managed compute) are the recommended starting point — builds run immediately. **Self-hosted queues** require connecting your own agents; builds remain "scheduled" until agents connect.
 
-**Hosted queues** are the recommended starting point. Buildkite provisions and manages the compute — builds start running immediately after queue creation. **Self-hosted queues** require connecting your own agents; until agents connect, builds remain in "scheduled" state indefinitely.
+Create queues with the `clusterQueueCreate` GraphQL mutation (shown in Quick Start above). To create a **self-hosted queue**, omit `hostedAgents`. Self-hosted agents connect by targeting the queue key in their configuration.
 
-### Create a hosted queue
+### Instance shapes and sizing guide
 
-```graphql
-mutation {
-  clusterQueueCreate(input: {
-    organizationId: "org-id"
-    clusterId: "cluster-id"
-    key: "default"
-    description: "General-purpose Linux queue"
-    hostedAgents: {
-      instanceShape: LINUX_AMD64_4X16
-    }
-  }) {
-    clusterQueue {
-      id
-      key
-      hostedAgents { instanceShape { name vcpu memory } }
-    }
-  }
-}
-```
+Full list: `references/instance-shapes.md`. Quick sizing:
 
-### Create a self-hosted queue
+| Workload | Shape |
+|----------|-------|
+| Linting, unit tests | `LINUX_AMD64_2X4` |
+| Monorepos, multi-service | `LINUX_AMD64_4X16` |
+| Heavy compilation (C++, Rust) | `LINUX_AMD64_8X32` |
+| Docker builds, ML prep | `LINUX_AMD64_16X64` |
+| iOS / macOS | `MACOS_M4_6X28` or `MACOS_M4_12X56` |
 
-Omit `hostedAgents` — self-hosted agents connect by targeting the queue key in their configuration:
-
-```graphql
-mutation {
-  clusterQueueCreate(input: {
-    organizationId: "org-id"
-    clusterId: "cluster-id"
-    key: "gpu-runners"
-    description: "GPU-equipped self-hosted agents"
-  }) {
-    clusterQueue { id key }
-  }
-}
-```
-
-### Instance shapes
-
-Hosted agent compute sizes available for queue creation:
-
-**Linux AMD64:**
-
-| Shape | vCPU | Memory |
-|-------|------|--------|
-| `LINUX_AMD64_2X4` | 2 | 4 GB |
-| `LINUX_AMD64_4X16` | 4 | 16 GB |
-| `LINUX_AMD64_8X32` | 8 | 32 GB |
-| `LINUX_AMD64_16X64` | 16 | 64 GB |
-
-**Linux ARM64:**
-
-| Shape | vCPU | Memory |
-|-------|------|--------|
-| `LINUX_ARM64_2X4` | 2 | 4 GB |
-| `LINUX_ARM64_4X16` | 4 | 16 GB |
-| `LINUX_ARM64_8X32` | 8 | 32 GB |
-| `LINUX_ARM64_16X64` | 16 | 64 GB |
-
-**macOS M2:**
-
-| Shape | vCPU | Memory |
-|-------|------|--------|
-| `MACOS_M2_4X7` | 4 | 7 GB |
-| `MACOS_M2_6X14` | 6 | 14 GB |
-| `MACOS_M2_12X28` | 12 | 28 GB |
-
-**macOS M4:**
-
-| Shape | vCPU | Memory |
-|-------|------|--------|
-| `MACOS_M4_6X28` | 6 | 28 GB |
-| `MACOS_M4_12X56` | 12 | 56 GB |
-
-macOS queues accept additional settings: `macosVersion` (`SONOMA`, `SEQUOIA`, `TAHOE`) and `xcodeVersion`. Linux queues accept `agentImageRef` for custom Docker images.
-
-### Sizing guide
-
-| Workload | Recommended shape | Why |
-|----------|------------------|-----|
-| Basic apps, linting, unit tests | `LINUX_AMD64_2X4` | Minimal resource needs, lowest cost |
-| Monorepos, multi-service builds | `LINUX_AMD64_4X16` | Parallel compilation needs more memory |
-| Heavy compilation (C++, Rust, large Java) | `LINUX_AMD64_8X32` | CPU-bound builds benefit from more cores |
-| Docker image builds, ML training prep | `LINUX_AMD64_16X64` | Large images need disk I/O and memory |
-| iOS / macOS builds | `MACOS_M4_6X28` | Native Apple Silicon for Xcode builds |
-| iOS / macOS CI (large projects) | `MACOS_M4_12X56` | Full Xcode parallelism |
-
-Start with the smallest shape that keeps builds under target time. Monitor queue wait time — if consistently above 2 minutes, either scale up or add more queue capacity.
+Start with the smallest shape that keeps builds under target time. Scale up if queue wait exceeds 2 minutes.
 
 ### Queue design patterns
 
-- **Keep 1-2 static (non-autoscaling) instances in the default queue** — pipeline uploads need an available agent immediately; autoscaling queues add cold-start latency to the upload step.
-- **Retire oldest agents first during scale-down** — preserves cache benefits on newer agents.
-- **Trial pattern** — create a separate queue with a subset of agents to test new architectures (e.g., hosted agents, new instance shapes) before migrating all workloads.
-- **Tag builds with team/project metadata** (`buildkite-agent meta-data set "team" "backend"`) for cost attribution by queue or team.
+- **Keep 1-2 static instances in the default queue** — avoids cold-start latency on pipeline uploads
+- **Retire oldest agents first during scale-down** — preserves warm caches
+- **Trial pattern** — test new shapes/architectures on a separate queue before migrating
+- **Tag builds with metadata** for cost attribution by queue or team
 
-### Pause and resume queue dispatch
-
-Temporarily stop dispatching jobs to a queue (maintenance, cost control):
-
-```graphql
-mutation {
-  clusterQueuePauseDispatch(input: {
-    organizationId: "org-id"
-    id: "queue-id"
-    note: "Maintenance window 2026-03-26 22:00-23:00 UTC"
-  }) {
-    clusterQueue { id dispatchPaused }
-  }
-}
-
-mutation {
-  clusterQueueResumeDispatch(input: {
-    organizationId: "org-id"
-    id: "queue-id"
-  }) {
-    clusterQueue { id dispatchPaused }
-  }
-}
-```
-
-### Queue routing from pipelines
-
-Pipelines target queues using the `agents` block:
-
-```yaml
-steps:
-  - label: ":hammer: Build"
-    command: "make build"
-    agents:
-      queue: "linux-large"
-```
-
-> For full `agents:` syntax and queue routing patterns, see the **buildkite-pipelines** skill.
+Temporarily pause dispatch to a queue for maintenance or cost control using `clusterQueuePauseDispatch` / `clusterQueueResumeDispatch` GraphQL mutations. See `references/graphql-mutations.md` for examples.
 
 ## Cluster Secrets
 
-Cluster secrets are encrypted, cluster-scoped values accessible from pipeline steps. They replace hardcoded credentials and environment-hook-based secret injection.
-
-### Create a secret
-
-**REST API:**
-
-```bash
-curl -s -X POST "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLUSTER_ID/secrets" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key": "NPM_TOKEN",
-    "value": "'"$NPM_TOKEN"'",
-    "description": "npm registry authentication token"
-  }'
-```
+Cluster secrets are encrypted, cluster-scoped values accessible from pipeline steps. They replace hardcoded credentials and environment-hook-based secret injection. Create, update, and rotate secrets via the REST API at `/v2/organizations/{org}/clusters/{cluster_id}/secrets`.
 
 ### Secret key constraints
 
@@ -333,91 +135,17 @@ curl -s -X POST "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLU
 
 ### Access policies
 
-Restrict which pipelines and branches can access a secret using policy claims:
+Restrict which pipelines and branches can access a secret by adding a `policy` object with `claims`. Available claim types: `pipeline_slug`, `build_branch`, `build_creator`, `build_source`, `build_creator_team`, `cluster_queue_key`. Claims support `*` wildcards. See [Buildkite Secrets docs](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets.md) for policy examples.
 
-```json
-{
-  "key": "DEPLOY_KEY",
-  "value": "...",
-  "description": "Production deploy key",
-  "policy": {
-    "claims": {
-      "pipeline_slug": ["deploy-*"],
-      "build_branch": ["main", "release/*"]
-    }
-  }
-}
-```
+Value rotation uses a separate endpoint (`PUT .../secrets/{id}/value`) from description/policy updates (`PUT .../secrets/{id}`).
 
-| Claim | Description |
-|-------|-------------|
-| `pipeline_slug` | Pipeline slug patterns (supports `*` wildcard) |
-| `build_branch` | Branch patterns that can access this secret |
-| `build_creator` | UUIDs of users allowed to trigger builds accessing this secret |
-| `build_source` | Build sources (`ui`, `api`, `webhook`, `schedule`, `trigger_job`) |
-| `build_creator_team` | Team UUIDs whose members can access this secret |
-| `cluster_queue_key` | Queue keys where jobs can access this secret |
-
-### Update a secret
-
-Description and policy updates are separate from value updates:
-
-```bash
-# Update description and policy
-curl -s -X PUT "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLUSTER_ID/secrets/$SECRET_ID" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"description": "Updated description", "policy": {"claims": {"build_branch": ["main"]}}}'
-
-# Rotate the secret value (separate endpoint)
-curl -s -X PUT "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLUSTER_ID/secrets/$SECRET_ID/value" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"value": "'"$NEW_SECRET_VALUE"'"}'
-```
-
-### Access secrets in pipeline YAML
-
-```yaml
-steps:
-  - label: ":npm: Publish"
-    command: "npm publish"
-    secrets:
-      NPM_TOKEN: "npm-registry-token"
-```
-
-The secret is exposed as the environment variable `NPM_TOKEN` during the step. The value on the right (`npm-registry-token`) is the secret key name in the cluster.
-
-> For `secrets:` YAML syntax, see the **buildkite-pipelines** skill. For programmatic secret retrieval inside steps with `buildkite-agent secret get`, see the **buildkite-agent-runtime** skill.
+> For `secrets:` YAML syntax, see the **buildkite-pipelines** skill. For `buildkite-agent secret get`, see the **buildkite-agent-runtime** skill.
 
 ## Agent Tokens
 
 Agent tokens authenticate agents connecting to a cluster. Each token is scoped to a single cluster.
 
 ### Create a token
-
-**GraphQL (clustered):**
-
-```graphql
-mutation {
-  clusterAgentTokenCreate(input: {
-    organizationId: "org-id"
-    clusterId: "cluster-id"
-    description: "Backend CI agents - production"
-    allowedIpAddresses: "10.0.0.0/8,172.16.0.0/12"
-  }) {
-    clusterAgentTokenEdge {
-      node {
-        id
-        description
-        token  # Only returned on creation — store securely
-      }
-    }
-  }
-}
-```
-
-**REST API:**
 
 ```bash
 curl -s -X POST "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLUSTER_ID/tokens" \
@@ -437,163 +165,19 @@ curl -s -X POST "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLU
 
 The token value is only returned at creation time. Store it in a secrets manager immediately.
 
-### Token security practices
+## Self-Hosted Agents and Lifecycle Hooks
 
-- Rotate tokens on a regular schedule (quarterly recommended)
-- Use IP restrictions (`allowed_ip_addresses`) to limit where agents can connect from
-- Set `expires_at` for temporary or contractor agent pools
-- Create separate tokens per environment (staging vs. production)
-- Revoke compromised tokens immediately — agents reconnect with the new token
+Self-hosted agents run on your own infrastructure, configured via `buildkite-agent.cfg`. Prefer clustered agents for new deployments — they provide secret scoping, queue isolation, and better organizational control. For full configuration reference, `buildkite-agent.cfg` examples, and clustered vs. unclustered agent details, see `references/self-hosted-agents.md`.
 
-## Self-Hosted Agent Configuration
-
-Self-hosted agents run on your own infrastructure and connect to Buildkite using an agent token. Configure them via `buildkite-agent.cfg` or environment variables.
-
-### Key configuration settings
-
-```ini
-# /etc/buildkite-agent/buildkite-agent.cfg
-
-# Authentication
-token="your-agent-token"
-
-# Agent identity
-name="backend-agent-%hostname-%n"
-tags="queue=linux-large,team=backend,os=linux"
-priority=1
-
-# Job execution
-build-path="/var/lib/buildkite-agent/builds"
-hooks-path="/etc/buildkite-agent/hooks"
-plugins-path="/etc/buildkite-agent/plugins"
-
-# Concurrency
-spawn=4
-
-# Security
-no-command-eval=true
-no-local-hooks=false
-no-plugins=false
-allowed-repositories="git@github.com:my-org/*"
-
-# Lifecycle
-disconnect-after-job=true
-cancel-grace-period=30
-
-# Experiments
-experiment="normalised-upload-paths,resolve-commit-after-checkout"
-```
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `token` | — | Agent registration token (required) |
-| `name` | `%hostname-%n` | Agent name template (`%hostname`, `%n` for spawn index) |
-| `tags` | — | Comma-separated `key=value` pairs for routing |
-| `priority` | `0` | Higher priority agents pick up jobs first |
-| `spawn` | `1` | Number of parallel agents to run |
-| `build-path` | varies | Directory where builds execute |
-| `hooks-path` | varies | Path to agent-level hook scripts |
-| `disconnect-after-job` | `false` | Disconnect after each job (for ephemeral/autoscaled agents) |
-| `cancel-grace-period` | `10` | Seconds to wait for graceful shutdown |
-| `no-command-eval` | `false` | Restrict to script-only execution (security hardening) |
-| `allowed-repositories` | — | Glob patterns for repos this agent can build |
-
-### Clustered vs. unclustered agents
-
-**Clustered agents** belong to a cluster and target a single queue:
-
-```ini
-token="cluster-agent-token"
-tags="queue=linux-large"
-```
-
-Clustered agents use a cluster-scoped token and can only have one `queue` tag.
-
-**Unclustered agents** use an organization-level token and can have multiple tags:
-
-```ini
-token="org-agent-token"
-tags="queue=default,os=linux,size=large"
-```
-
-Prefer clustered agents for new deployments. Clusters provide secret scoping, queue isolation, and better organizational control.
-
-## Agent Lifecycle Hooks
-
-Hooks are shell scripts that execute at specific points during the agent and job lifecycle. Use them for secret injection, environment setup, security validation, and cleanup.
-
-### Hook execution order (per job)
-
-```
-environment        → Set environment variables for the job
-pre-checkout       → Runs before git checkout
-checkout           → The git checkout itself (override to customize)
-post-checkout      → Runs after git checkout (e.g., submodule init)
-pre-command        → Runs before the step command (secret injection, validation)
-command            → The step command itself (override to customize execution)
-post-command       → Runs after the step command (cleanup, notifications)
-pre-exit           → Runs before the agent exits the job (final cleanup)
-pre-artifact       → Runs before artifact upload
-```
-
-### Hook scopes
-
-| Scope | Location | Applies to |
-|-------|----------|------------|
-| Agent-level | `hooks-path` in `buildkite-agent.cfg` | All jobs on this agent |
-| Repository-level | `.buildkite/hooks/` in the repo | Jobs from this repo only |
-| Plugin-level | Inside the plugin directory | Jobs using the plugin |
-
-Agent-level hooks run first, then repository hooks, then plugin hooks.
-
-### Environment hook — secret injection
-
-The `environment` hook is the most common agent-level hook. Use it to inject secrets from external providers:
-
-```bash
-#!/bin/bash
-# /etc/buildkite-agent/hooks/environment
-
-set -euo pipefail
-
-# Inject secrets from AWS Secrets Manager
-if [[ "${BUILDKITE_PIPELINE_SLUG}" == "deploy-"* ]]; then
-  export AWS_ACCESS_KEY_ID=$(aws secretsmanager get-secret-value \
-    --secret-id "buildkite/deploy/aws-key" --query SecretString --output text)
-fi
-```
-
-### Environment hook — security validation
-
-Lock down which repositories, commands, and plugins agents execute:
-
-```bash
-#!/bin/bash
-# /etc/buildkite-agent/hooks/environment
-
-set -euo pipefail
-
-# Restrict to allowed repositories
-ALLOWED_REPOS="^git@github\.com:my-org/"
-if [[ ! "${BUILDKITE_REPO}" =~ ${ALLOWED_REPOS} ]]; then
-  echo "Unauthorized repository: ${BUILDKITE_REPO}"
-  exit 1
-fi
-```
+Agent lifecycle hooks execute at specific points during job execution: `environment` → `pre-checkout` → `checkout` → `post-checkout` → `pre-command` → `command` → `post-command` → `pre-exit` → `pre-artifact`. Agent-level hooks run first, then repository hooks, then plugin hooks. For hook details and examples, see `references/self-hosted-agents.md`.
 
 ### Hosted agent caching behavior
 
-**Cache volumes on hosted agents are non-deterministic** — jobs may or may not get a warm cache. Treat cache volumes as performance accelerators, not guarantees. Cache volumes are **pipeline-scoped** (shared across steps within a pipeline, not across pipelines).
-
-For deterministic caching, use Docker images with pre-built dependencies and the internal container registry instead of relying on cache volumes.
-
-**Git mirrors** can be enabled on hosted agents via cache volumes, accelerating checkout without self-hosted infrastructure. Mount `.git/lfs/objects` in cache volumes and pre-install `git-lfs` in the agent image to avoid per-job LFS overhead.
+**Cache volumes on hosted agents are non-deterministic** — jobs may or may not get a warm cache. Treat cache volumes as performance accelerators, not guarantees. Cache volumes are **pipeline-scoped** (not shared across pipelines). For deterministic caching, use Docker images with pre-built dependencies instead. Git mirrors can be enabled via cache volumes to accelerate checkout; mount `.git/lfs/objects` in cache volumes and pre-install `git-lfs` in the agent image.
 
 ### Hosted agent checkout performance
 
-Buildkite's default checkout **prioritizes completeness over speed** — it may be noticeably slower than GitHub Actions for the same repo. To optimize: use the Sparse Checkout plugin for monorepo upload steps, Git mirrors for frequent builds, or the Git Shallow Clone plugin for repos where full history is unnecessary.
-
-Compare `checkout` and `repo-checkout` OpenTelemetry spans to pinpoint whether slowdowns originate from Git operations or custom hooks.
+Buildkite's default checkout **prioritizes completeness over speed** — it may be noticeably slower than GitHub Actions for the same repo. Optimize with the Sparse Checkout plugin (monorepos), Git mirrors (frequent builds), or the Git Shallow Clone plugin (repos where full history is unnecessary).
 
 ### Hosted agent custom hooks
 
@@ -607,60 +191,23 @@ COPY ./hooks/*.sh /custom/hooks/
 RUN chmod +x /custom/hooks/*.sh
 ```
 
-Set the custom image on the queue with `agentImageRef` in the `clusterQueueCreate` mutation's `hostedAgents` input.
-
 ### Hosted agent pre-installed tools
 
 Linux hosted agents include: `bash`, `curl`, `wget`, `git`, `docker`, `python3`, `jq`.
 
-**`nvm` is NOT pre-installed.** Do not source `~/.nvm/nvm.sh` in pipeline commands — it will fail silently or exit 127. Use `fnm` (Fast Node Manager) instead to install any Node.js version, including EOL releases:
+**`nvm` is NOT pre-installed.** Do not source `~/.nvm/nvm.sh` — it will fail silently or exit 127. Use `fnm` instead:
 
 ```bash
-# Install fnm and activate it in one step
 curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.fnm" --skip-shell
-export PATH="$HOME/.fnm:$PATH"
-eval "$(fnm env --use-on-cd)"
-
-# Install and activate the target version
-fnm install 20
-fnm use 20
-node --version
+export PATH="$HOME/.fnm:$PATH" && eval "$(fnm env --use-on-cd)"
+fnm install 20 && fnm use 20
 ```
 
-`fnm` downloads directly from `nodejs.org` and works for all versions including EOL (16, 17, 19, etc.) without GPG key issues.
+`fnm` downloads from `nodejs.org` directly and works for all versions including EOL.
 
-**GitHub release asset downloads may be blocked.** The hostname `release-assets.githubusercontent.com` (used when downloading assets from GitHub Releases) is unreachable from the hosted agent network. Tools distributed as GitHub release binaries — such as CodeQL, Scorecard, Trivy — will fail to download. Pre-install these tools in a custom agent image using `agentImageRef`:
+**GitHub release asset downloads may be blocked.** `release-assets.githubusercontent.com` is unreachable from hosted agents. Pre-install tools distributed as GitHub release binaries (CodeQL, Scorecard, Trivy) in a custom agent image using `agentImageRef`.
 
-```graphql
-mutation {
-  clusterQueueCreate(input: {
-    organizationId: "org-id"
-    clusterId: "cluster-id"
-    key: "linux"
-    hostedAgents: {
-      instanceShape: LINUX_AMD64_4X16
-      agentImageRef: "us-docker.pkg.dev/my-project/agents/linux-ci:latest"
-    }
-  }) {
-    clusterQueue { id key }
-  }
-}
-```
-
-The custom image should extend `buildkite/agent` and `RUN` the tool installation steps.
-
-**Verify queue creation** after the GraphQL mutation by listing queues via the REST API. Silent GraphQL errors can leave the cluster in a state where no hosted queue exists:
-
-```bash
-curl -s "https://api.buildkite.com/v2/organizations/my-org/clusters/$CLUSTER_ID/queues" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" | python3 -c "
-import sys, json
-queues = json.load(sys.stdin)
-print(f'{len(queues)} queue(s) found: {[q[\"key\"] for q in queues]}')
-"
-```
-
-If the list is empty after a `clusterQueueCreate` mutation, the mutation may have failed silently — retry using the REST API instead (see the **buildkite-api** skill for queue creation via REST).
+**Always verify queue creation** after a GraphQL mutation by listing queues via `GET /v2/organizations/{org}/clusters/{cluster_id}/queues`. Silent GraphQL errors can leave the cluster without a hosted queue — if the list is empty, retry via the REST API.
 
 ## Plugin Security Controls
 
@@ -670,305 +217,21 @@ Restrict which plugins agents can run:
 - **`no-plugins=true`** — disable all plugins on sensitive agents
 - **Cluster-based policies** — apply different plugin restrictions per cluster based on security requirements
 
-Distinguish three plugin tiers: Buildkite-maintained, vetted community, and private organizational plugins. Maintain an allowlist for community-sourced plugins and audit plugin repositories proactively — Buildkite does not automatically alert to plugin vulnerabilities.
-
-## Configuration Philosophy
-
-**Treat the Buildkite dashboard as read-only** — use it for observability and approvals, never for configuration changes. Manage pipelines, queues, and secrets via code (Terraform, API scripts, or `bk` CLI). This ensures reproducibility, auditability, and prevents configuration drift between environments.
+Audit plugin repositories proactively — Buildkite does not automatically alert to plugin vulnerabilities.
 
 ## Pipeline Templates
 
-Pipeline templates (Enterprise-only) standardize pipeline YAML across the organization. Templates define a base configuration that pipelines inherit, ensuring consistency for security, compliance, or organizational standards.
-
-### Create a template
-
-```graphql
-mutation {
-  pipelineTemplateCreate(input: {
-    organizationId: "org-id"
-    name: "Standard CI Template"
-    description: "Organization-standard CI pipeline with security scanning and artifact signing"
-    available: true
-    configuration: """
-steps:
-  - label: ":pipeline: Upload"
-    command: buildkite-agent pipeline upload
-
-  - wait
-
-  - label: ":shield: Security Scan"
-    command: "scripts/security-scan.sh"
-    agents:
-      queue: "security-scanners"
-
-  - wait
-
-  - label: ":rocket: Deploy"
-    command: "scripts/deploy.sh"
-    branches: "main"
-    concurrency: 1
-    concurrency_group: "deploy/production"
-"""
-  }) {
-    pipelineTemplate {
-      id
-      uuid
-      name
-      available
-    }
-  }
-}
-```
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `organizationId` | Yes | Organization GraphQL ID |
-| `name` | Yes | Template name |
-| `description` | No | What this template provides |
-| `configuration` | Yes | Pipeline YAML string |
-| `available` | No | Whether teams can select this template (default: `false`) |
-
-### Update a template
-
-```graphql
-mutation {
-  pipelineTemplateUpdate(input: {
-    id: "template-id"
-    name: "Standard CI Template v2"
-    configuration: "..."
-    available: true
-  }) {
-    pipelineTemplate { id name }
-  }
-}
-```
-
-### Template strategy
-
-- Create a small number of templates (3-5) covering common patterns: basic CI, CI + deploy, CI + security scan + deploy
-- Set `available: true` only for templates ready for teams to adopt
-- Templates use standard pipeline YAML — test the YAML as a regular pipeline before promoting to a template
-- Assign templates to pipelines via the Buildkite UI or API
+Pipeline templates (Enterprise-only) standardize pipeline YAML across the organization. See `references/pipeline-templates.md`.
 
 ## Audit Logging
 
-Audit logging (Enterprise-only) tracks organization-level events for compliance and security monitoring.
-
-### Query audit events
-
-```graphql
-query {
-  organization(slug: "my-org") {
-    auditEvents(
-      first: 50
-      occurredAtFrom: "2026-03-01T00:00:00Z"
-      occurredAtTo: "2026-03-26T23:59:59Z"
-    ) {
-      edges {
-        node {
-          type
-          occurredAt
-          actor { name type uuid }
-          subject { name type uuid }
-          data
-        }
-      }
-    }
-  }
-}
-```
-
-| Filter | Description |
-|--------|-------------|
-| `occurredAtFrom` / `occurredAtTo` | ISO 8601 time range |
-| `type` | Specific audit event type (e.g., `ORGANIZATION_UPDATED`) |
-| `subjectType` | Filter by subject type (e.g., `PIPELINE`, `AGENT_TOKEN`) |
-| `subjectUUID` | Filter by specific subject |
-| `order` | `RECENTLY_OCCURRED` (default) or `OLDEST_OCCURRED` |
-
-### High-severity events to monitor
-
-| Event type | Why it matters |
-|------------|---------------|
-| `agent_token.created` / `.deleted` | Agent authentication changes |
-| `member.invited` / `.removed` | Team membership changes |
-| `sso_provider.created` / `.updated` | SSO configuration changes |
-| `pipeline_schedule.created` | New automated triggers |
-| `cluster_secret.created` / `.deleted` | Secret management changes |
-| `organization.updated` | Org-level setting changes |
-
-### SIEM integration via Amazon EventBridge
-
-Stream audit events to a SIEM in real time using EventBridge:
-
-- **Source:** `aws.partner/buildkite.com/buildkite/<partner-event-source-id>`
-- **Detail type:** `"Audit Event Logged"`
-
-Event payload structure:
-
-```json
-{
-  "organization": {
-    "uuid": "org-uuid",
-    "graphql_id": "T3JnYW5pemF0aW9u...",
-    "slug": "my-org"
-  },
-  "event": {
-    "uuid": "event-uuid",
-    "occurred_at": "2026-03-26T14:30:00Z",
-    "type": "agent_token.created",
-    "data": { },
-    "subject_type": "AgentToken",
-    "subject_uuid": "token-uuid",
-    "subject_name": "Production agents",
-    "context": {
-      "request_id": "req-uuid",
-      "request_ip": "203.0.113.42",
-      "session_user_uuid": "user-uuid",
-      "request_user_agent": "Mozilla/5.0..."
-    }
-  },
-  "actor": {
-    "name": "Jane Engineer",
-    "type": "USER",
-    "uuid": "user-uuid"
-  }
-}
-```
-
-Route high-severity events to PagerDuty, Splunk, or Datadog via EventBridge rules matching on `detail.event.type`.
+Audit logging (Enterprise-only) tracks organization-level events for compliance. Query via GraphQL or stream to a SIEM via Amazon EventBridge. See `references/audit-logging.md`.
 
 ## SSO/SAML
 
-Configure SSO to centralize authentication for the organization. Buildkite supports SAML 2.0 providers (Okta, Azure AD, Google Workspace, OneLogin, etc.).
-
-### Set up a SAML provider
-
-**Step 1 — Create the provider:**
-
-```graphql
-mutation {
-  ssoProviderCreate(input: {
-    organizationId: "org-id"
-    type: SAML
-    emailDomain: "example.com"
-    emailDomainVerificationAddress: "admin@example.com"
-  }) {
-    ssoProvider {
-      id
-      state
-      serviceProvider {
-        metadata { url }
-        ssoURL     # ACS URL — configure in IdP
-        issuer     # Entity ID — configure in IdP
-      }
-    }
-  }
-}
-```
-
-**Step 2 — Configure the IdP** with the returned `ssoURL` (ACS URL) and `issuer` (Entity ID).
-
-**Step 3 — Update with IdP metadata:**
-
-```graphql
-# Option A: Metadata URL (preferred — auto-updates)
-mutation {
-  ssoProviderUpdate(input: {
-    id: "sso-provider-id"
-    identityProvider: {
-      metadata: { url: "https://idp.example.com/saml/metadata" }
-    }
-  }) {
-    ssoProvider { id state }
-  }
-}
-
-# Option B: Manual configuration
-mutation {
-  ssoProviderUpdate(input: {
-    id: "sso-provider-id"
-    identityProvider: {
-      ssoURL: "https://idp.example.com/saml/sso"
-      issuer: "https://idp.example.com"
-      certificate: "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
-    }
-  }) {
-    ssoProvider { id state }
-  }
-}
-```
-
-**Step 4 — Verify the email domain** (Buildkite sends a verification email to the address specified).
-
-**Step 5 — Enable the provider** once verification completes and IdP is configured.
-
-### Query SSO providers
-
-```graphql
-query {
-  organization(slug: "my-org") {
-    ssoProviders(first: 10) {
-      edges {
-        node {
-          id
-          type
-          state
-          emailDomain
-          enabledAt
-          ... on SSOProviderSAML {
-            identityProvider { ssoURL issuer certificate metadata { url xml } }
-          }
-          ... on SSOProviderGoogleGSuite {
-            googleHostedDomain
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-Provider states: `PENDING` (created, awaiting config), `DISABLED` (configured but off), `ENABLED` (active).
+Buildkite supports SAML 2.0 (Okta, Azure AD, Google Workspace, OneLogin). See `references/sso-saml.md` for setup flow.
 
 ## Cost Optimization
-
-CI costs are driven by three factors: instance shape size, job duration, and queue utilization. Optimize by right-sizing queues, reducing idle time, and matching workloads to appropriate shapes.
-
-### Right-sizing queues
-
-1. **Identify over-provisioned queues** — If average CPU utilization is below 30%, drop to a smaller instance shape
-2. **Identify under-provisioned queues** — If p95 wait time exceeds 2 minutes, scale up or add capacity
-3. **Separate workload types** — Light jobs (linting, formatting) on `2X4`; heavy compilation on `8X32` or `16X64`
-
-Use the Buildkite MCP server's `get_cluster_queue` tool to check queue metrics and dispatch status.
-
-### Queue utilization analysis
-
-```graphql
-query {
-  organization(slug: "my-org") {
-    pipelines(first: 50) {
-      edges {
-        node {
-          name
-          slug
-          metrics {
-            edges {
-              node { label value }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-Review pipeline metrics to identify:
-- Pipelines with consistently long build times (candidates for larger shapes)
-- Pipelines with very short builds on large shapes (candidates for downsizing)
-- Low-frequency pipelines that could share a queue instead of having dedicated capacity
 
 ### Cost reduction patterns
 
@@ -982,30 +245,14 @@ Review pipeline metrics to identify:
 
 > For `if_changed` and pipeline optimization patterns, see the **buildkite-pipelines** skill.
 
-## Observability
-
-Buildkite provides two complementary metrics tools — do not confuse them:
+## Observability and Queue Monitoring
 
 | Tool | Purpose | How it works |
 |------|---------|-------------|
 | `buildkite-agent-metrics` | Fleet-level queue and job metrics | Polls the Buildkite API; emits to CloudWatch, Datadog, StatsD |
 | Agent health check service | Per-agent process health | Exposes Prometheus endpoint; scrape from each agent host |
 
-The **OpenTelemetry notification service** (Enterprise) provides traces (spans), not traditional metrics. Agent-side execution traces and notification service traces serve different purposes — notification service shows control-plane lifecycle, while agent tracing reveals execution detail (checkout, plugins, commands).
-
-**Start with queue profiling** — wait time and checkout time are the biggest, cheapest wins for observability ROI. Avoid verbose output of tools by default — oversized logs degrade debugging and UI performance.
-
-## Queue Monitoring
-
-Monitor queue health to maintain fast feedback loops. Target: queue wait time under 2 minutes.
-
-### Diagnose queue wait time
-
-Use the Buildkite MCP server to inspect queue state:
-
-- **`list_cluster_queues`** — Overview of all queues in a cluster, including dispatch status
-- **`get_cluster_queue`** — Detailed queue metrics (jobs waiting, agents available)
-- **`list_builds`** — Check for build volume spikes causing congestion
+**Start with queue profiling** — wait time and checkout time are the biggest, cheapest wins. Target: queue wait time under 2 minutes.
 
 ### Scaling decision flow
 
@@ -1018,62 +265,38 @@ Queue wait > 2 min?
 └── No → Queue is healthy
 ```
 
-### Pause dispatch for maintenance
-
-When performing agent maintenance or infrastructure changes, pause dispatch to drain the queue gracefully:
-
-```graphql
-mutation {
-  clusterQueuePauseDispatch(input: {
-    organizationId: "org-id"
-    id: "queue-id"
-    note: "Agent OS upgrade - ETA 30 min"
-  }) {
-    clusterQueue { id dispatchPaused }
-  }
-}
-```
-
-Jobs already running continue. New jobs queue until dispatch resumes.
-
 ## Common Mistakes
 
-| Mistake | What happens | Fix |
-|---------|-------------|-----|
-| Secret key starting with `buildkite` or `bk` | API rejects the secret with a validation error | Use a different prefix — these are reserved for Buildkite internal use |
-| Secret key with special characters (dashes, dots) | API rejects — only letters, numbers, and underscores allowed | Use underscores: `MY_SECRET_KEY` not `my-secret-key` |
-| Not storing agent token at creation time | Token value is never shown again | Store in secrets manager immediately on creation |
-| Using organization-level tokens for clustered agents | Agent connects but cannot access cluster queues or secrets | Use cluster-scoped tokens created via `clusterAgentTokenCreate` |
-| Over-provisioning instance shapes "just in case" | 2-4x higher compute costs with no performance benefit | Start small, monitor, scale up only if builds are slow |
-| Deploying without `disconnect-after-job` on autoscaled agents | Agents idle between jobs, consuming resources | Set `disconnect-after-job=true` for ephemeral agent pools |
-| Skipping IP restrictions on agent tokens | Any machine with the token can connect as an agent | Use `allowed_ip_addresses` to restrict to known CIDR ranges |
-| Creating one large queue for all workloads | Light jobs wait behind heavy jobs; no cost optimization | Create specialized queues per workload type |
-| Editing pipeline template YAML without testing | Broken template affects all pipelines using it | Test YAML as a regular pipeline first, then promote to template |
-| Cluster creation returns HTTP 500 or GraphQL "unknown error" | Cannot create a new cluster; repeated retries also fail | List existing clusters first (`GET /v2/organizations/{org}/clusters`); rename the Default cluster via `PATCH /v2/organizations/{org}/clusters/{id}` with `{"name": "desired-name"}` as a reliable workaround |
-| Hosted queue creation fails with "Upgrade to Platform Pro to access hosted agents" | Plan tier does not include hosted agents; mutation returns an error | Fall back immediately: create a self-hosted queue (omit `hostedAgents`), install `buildkite-agent` locally, and start it with `--token <cluster-token> --tags "queue=default" --spawn 3` |
-| Expecting hosted agent cache volumes to always be warm | Cache misses occur unpredictably — builds fail when they assume cached state | Design builds to work without cache; treat cache volumes as accelerators, not guarantees |
-| Using one IAM role for all queues | CI builds can access production credentials | Assign different IAM roles per queue; scope secrets access by `cluster_queue_key` in secret policies |
-| Relying on cluster insights for historical capacity data | Built-in metrics have limited lookback periods | Export and warehouse queue metrics early if historical capacity planning matters |
-| Scaling down newest agents first | Caches on older agents are cold; freshest caches are destroyed | Configure autoscaler to retire oldest agents first during scale-down |
-| Jobs hang indefinitely in "scheduled" state with self-hosted agents connected | The cluster's `default_queue_id` points to a different queue key than the one in the agent's `queue` tag | Check which queue key the agent uses (`queue=default` → queue with key `default`); update the cluster: `PATCH /v2/organizations/{org}/clusters/{id}` with `{"default_queue_id": "<uuid-of-matching-queue>"}` |
+| Mistake | Fix |
+|---------|-----|
+| Secret key starting with `buildkite` or `bk` | Use a different prefix — these are reserved |
+| Secret key with dashes or dots | Only letters, numbers, underscores allowed: `MY_SECRET_KEY` not `my-secret-key` |
+| Not storing agent token at creation time | Token is only shown once — store in secrets manager immediately |
+| Org-level tokens for clustered agents | Use cluster-scoped tokens (`clusterAgentTokenCreate`) |
+| Over-provisioning instance shapes | Start small, monitor, scale up only when builds are slow |
+| No `disconnect-after-job` on autoscaled agents | Set `disconnect-after-job=true` for ephemeral pools |
+| One large queue for all workloads | Create specialized queues per workload type |
+| Cluster creation returns HTTP 500 | List existing clusters first; rename the Default cluster via PATCH as a workaround |
+| "Upgrade to Platform Pro" on hosted queue creation | Fall back: create self-hosted queue, install `buildkite-agent` locally with `--spawn 3` |
+| Expecting cache volumes to always be warm | Design builds to work without cache — volumes are non-deterministic |
+| One IAM role for all queues | Assign different IAM roles per queue; scope secrets by `cluster_queue_key` |
+| Scaling down newest agents first | Retire oldest agents first to preserve warm caches |
+| Jobs hang "scheduled" with agents connected | Check `default_queue_id` matches the agent's queue tag; update via PATCH |
 
 ## Additional Resources
 
-### Reference Files
-- **`references/graphql-mutations.md`** — Complete GraphQL mutation examples for clusters, queues, tokens, templates, SSO, and audit events
+- **`references/graphql-mutations.md`** — GraphQL mutations for clusters, queues, tokens, templates, SSO, audit
+- **`references/instance-shapes.md`** — All hosted agent instance shapes
+- **`references/self-hosted-agents.md`** — Agent config, clustered vs. unclustered, lifecycle hooks
+- **`references/pipeline-templates.md`** — Template mutations and strategy (Enterprise)
+- **`references/audit-logging.md`** — Audit queries, SIEM/EventBridge integration (Enterprise)
+- **`references/sso-saml.md`** — SSO/SAML provider setup
 
 ## Further Reading
 
 - [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
-- [Manage clusters](https://buildkite.com/docs/clusters/manage-clusters)
-- [Manage cluster queues](https://buildkite.com/docs/clusters/manage-queues)
-- [Manage cluster agent tokens](https://buildkite.com/docs/clusters/manage-cluster-agent-tokens)
-- [Manage cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets)
-- [Pipeline templates](https://buildkite.com/docs/pipelines/configure/templates)
-- [SSO/SAML configuration](https://buildkite.com/docs/integrations/sso)
-- [Audit logging](https://buildkite.com/docs/apis/graphql/schemas/query/organization-audit-events)
-- [Agent configuration](https://buildkite.com/docs/agent/v3/configuration)
-- [Agent hooks](https://buildkite.com/docs/agent/v3/hooks)
-- [Agent management best practices](https://buildkite.com/docs/pipelines/best-practices/agent-management.md)
-- [Monitoring and observability best practices](https://buildkite.com/docs/pipelines/best-practices/monitoring-and-observability.md)
-- [Security controls best practices](https://buildkite.com/docs/pipelines/best-practices/security-controls.md)
+- [Manage clusters](https://buildkite.com/docs/clusters/manage-clusters.md)
+- [Manage cluster queues](https://buildkite.com/docs/clusters/manage-queues.md)
+- [Manage cluster secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets.md)
+- [Agent configuration](https://buildkite.com/docs/agent/v3/configuration.md)
+- [Agent hooks](https://buildkite.com/docs/agent/v3/hooks.md)
