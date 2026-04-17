@@ -62,13 +62,19 @@ def _is_holdout(eval_id: str, ratio: float) -> bool:
     return (int(h, 16) % 100) < (ratio * 100)
 
 
-def load_skill(skill_name: str) -> tuple[str, str]:
-    """Load a skill's SKILL.md, returning (frontmatter_description, full_content).
+def load_skill(skill_name: str) -> tuple[str, str, str]:
+    """Load a skill's content for single-shot eval prompts.
 
-    The full_content includes frontmatter — it's the entire file as the model
-    would see it when the skill is loaded.
+    Returns (frontmatter_description, full_content, references_content).
+
+    full_content is the entire SKILL.md file (including frontmatter).
+    references_content is every .md file under references/ concatenated with
+    path-labelled delimiters, or "" if the directory is absent or empty. Eval
+    runs are single-shot, so bundling references here stands in for the
+    progressive-disclosure reads a real agent would do across turns.
     """
-    skill_path = SKILLS_DIR / skill_name / "SKILL.md"
+    skill_dir = SKILLS_DIR / skill_name
+    skill_path = skill_dir / "SKILL.md"
     if not skill_path.exists():
         raise FileNotFoundError(f"Skill not found: {skill_path}")
 
@@ -83,7 +89,23 @@ def load_skill(skill_name: str) -> tuple[str, str]:
             if fm and "description" in fm:
                 description = fm["description"].strip()
 
-    return description, full_content
+    references_content = _load_references(skill_dir)
+
+    return description, full_content, references_content
+
+
+def _load_references(skill_dir: Path) -> str:
+    """Concatenate every .md file under references/ with path-labelled delimiters."""
+    references_dir = skill_dir / "references"
+    if not references_dir.is_dir():
+        return ""
+
+    chunks = []
+    for md_path in sorted(references_dir.rglob("*.md")):
+        rel = md_path.relative_to(skill_dir)
+        chunks.append(f"## Reference: {rel.as_posix()}\n\n{md_path.read_text()}")
+
+    return "\n\n".join(chunks)
 
 
 def skill_path(skill_name: str) -> Path:
@@ -113,7 +135,7 @@ def load_all_skill_descriptions() -> dict[str, str]:
             continue
         skill_md = skill_dir / "SKILL.md"
         if skill_md.exists():
-            description, _ = load_skill(skill_dir.name)
+            description, _, _ = load_skill(skill_dir.name)
             if description:
                 descriptions[skill_dir.name] = description
     return descriptions

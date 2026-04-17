@@ -242,9 +242,13 @@ def main():
         print(f"No evals found matching filters (skill={args.skill}).", file=sys.stderr)
         sys.exit(1)
 
-    # Load skill content
-    description, full_content = load_skill(args.skill)
-    skill_size = len(full_content.encode())
+    # Load skill content (SKILL.md + bundled references/ for single-shot prompts)
+    description, full_content, references_content = load_skill(args.skill)
+    if references_content:
+        skill_content = full_content + "\n\n" + references_content
+    else:
+        skill_content = full_content
+    skill_size = len(skill_content.encode())
 
     # Build filter description for header
     filter_parts = [f"primary_skill={args.skill}"]
@@ -263,7 +267,7 @@ def main():
         print_header(
             args.skill, skill_size, args.model, len(evals), filters_str, mode="skill"
         )
-        skill_system = SYSTEM_PREAMBLE + full_content
+        skill_system = SYSTEM_PREAMBLE + skill_content
         skill_grades, skill_evals, _ = _run_evals(
             args, skill_system, evals, skill_size, mode_label="skill"
         )
@@ -304,7 +308,7 @@ def main():
             sys.exit(1)
 
     else:
-        system_message = SYSTEM_PREAMBLE + full_content
+        system_message = SYSTEM_PREAMBLE + skill_content
         print_header(args.skill, skill_size, args.model, len(evals), filters_str)
         grades, ordered_evals, _ = _run_evals(args, system_message, evals, skill_size)
 
