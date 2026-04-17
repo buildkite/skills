@@ -70,19 +70,26 @@ Manage pipeline builds — create, view, list, cancel, retry, and watch.
 ### Create a build
 
 ```bash
-# Build the current branch and commit
+# Build the current branch and commit (pipeline auto-detected from repo)
+bk build create
+
+# Explicit pipeline
 bk build create --pipeline my-app
 
-# Build with environment variables
-bk build create --pipeline my-app --branch feature/auth --commit abc1234 --env "DEPLOY_ENV=staging"
+# Build with environment variables and metadata
+bk build create -e "FOO=BAR" -e "BAR=BAZ"
+bk build create --branch feature/auth --commit abc1234 --env "DEPLOY_ENV=staging"
 ```
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--pipeline` | `-p` | — | Pipeline slug (required) |
+| `--pipeline` | `-p` | auto-detected | Pipeline slug; resolved from repo context when omitted |
 | `--branch` | `-b` | current branch | Git branch to build |
 | `--commit` | `-c` | HEAD | Git commit SHA |
 | `--message` | `-m` | — | Build message |
+| `--env` | `-e` | — | Environment variables (repeatable) |
+| `--env-file` | `-f` | — | Load environment variables from a file |
+| `--metadata` | `-M` | — | Build metadata key=value (repeatable) |
 
 ### View a build
 
