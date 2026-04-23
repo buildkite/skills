@@ -1386,3 +1386,188 @@ evals:
       - "BUILDKITE_TRACING_BACKEND"
     expected_not_contains: []
     tags: ["observability", "datadog", "tracing", "performance"]
+
+  # ============================================================
+  # DYNAMIC PIPELINES DEEP-DIVE (added for PR #15 eval)
+  # ============================================================
+
+  - id: "dynpipe-001"
+    question: "My dynamic pipeline generator step passes green but no test steps appear after the generator step. The generator script itself passes (green tick). When I run the generator locally it prints valid YAML. What is going on?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "troubleshooting"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "pipefail"
+      - "set -euo pipefail"
+      - "exit code"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "troubleshooting", "silent-failure"]
+
+  - id: "dynpipe-002"
+    question: "I have a generator that produces a deploy step with env: DEPLOY_ENV: production but when deploy.sh runs, DEPLOY_ENV is empty. Why?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "troubleshooting"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "interpolat"
+      - "$$"
+      - "upload time"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "troubleshooting", "env-vars"]
+
+  - id: "dynpipe-003"
+    question: "We had a flaky network during a build. The generator step failed and someone clicked retry. Now the build has TWO copies of every test step and the deploy ran twice. How do I prevent this?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "troubleshooting"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "key"
+      - "DuplicateKeyError"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "troubleshooting", "duplicate-steps"]
+
+  - id: "dynpipe-004"
+    question: "I set concurrency: 1 and concurrency_group on my deploy steps in a dynamic generator, but two deploys to the same service ran concurrently. The concurrency_group uses $SERVICE in the value. What went wrong?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "troubleshooting"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "interpolat"
+      - "upload time"
+      - "generator"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "troubleshooting", "concurrency"]
+
+  - id: "dynpipe-005"
+    question: "I'm trying to set concurrency: 1 and concurrency_group on a group step to serialise all deploys but pipeline upload fails with 'concurrency is not a valid property on a group step'. How do I serialise deploys across a group?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "command step"
+      - "concurrency"
+      - "each"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "group-steps", "concurrency"]
+
+  - id: "dynpipe-006"
+    question: "I have a Tests group in my static pipeline.yml and my generator also produces a Tests group. I expected them to merge but I get two separate Tests groups in the UI. How do I make them merge?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "merg"
+      - "label"
+      - "inside"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "group-steps", "merging"]
+
+  - id: "dynpipe-007"
+    question: "Our integration tests OOM about 5% of the time on standard agents. When that happens I want them to automatically retry on our memory-large queue instead of the same machine. Built-in retry just retries on the same queue. What's the best approach?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-infrastructure"]
+    expected_contains:
+      - "pre-exit"
+      - "hook"
+      - "pipeline upload"
+      - "137"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "retry", "cross-skill"]
+
+  - id: "dynpipe-008"
+    question: "I want a cleanup step that runs even if earlier steps failed. Like a finally block in a try/catch. Does Buildkite have this?"
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-runtime"]
+    expected_contains:
+      - "pre-exit"
+      - "hook"
+      - "allow_dependency_failure"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "finalizer"]
+
+  - id: "dynpipe-009"
+    question: "I want to write a Buildkite pipeline that reads a webhook payload from build metadata, decides whether to act based on the payload, and dynamically generates steps. What's the recommended pattern for this?"
+    source: "synthetic"
+    source_ref: "dynamic-pipelines-examples-project"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-runtime"]
+    expected_contains:
+      - "meta-data"
+      - "pipeline upload"
+      - "webhook"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "handler-pattern", "cross-skill"]
+
+  - id: "dynpipe-010"
+    question: "I want to write a dynamic pipeline generator in Python using the Buildkite SDK instead of generating YAML strings in bash. How does that work?"
+    source: "synthetic"
+    source_ref: "dynamic-pipelines-examples-project"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "SDK"
+      - "Pipeline"
+      - "pipeline upload"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "sdk"]
+
+  - id: "dynpipe-011"
+    question: "I have a monorepo with 12 services. I want each changed service to get its own collapsible group in the build UI with build and test steps inside. The deploy should only start after all test groups pass. Write me a generator script."
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "group"
+      - "key"
+      - "depends_on"
+      - "git diff"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "group-steps", "monorepo"]
+
+  - id: "dynpipe-012"
+    question: "We're hitting the 500 jobs per upload limit. Our generator produces about 600 steps. What are my options? We have 30 services with build + test + integration + deploy step sets, plus parallelism: 4 on integration tests."
+    source: "synthetic"
+    source_ref: "pf-common-support-issue"
+    difficulty: "troubleshooting"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "trigger"
+      - "split"
+      - "500"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "troubleshooting", "limits"]
