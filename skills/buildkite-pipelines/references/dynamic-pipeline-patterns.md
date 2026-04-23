@@ -247,6 +247,132 @@ Two important notes:
 
 This pattern works for any infrastructure-class failure where a different queue would help. For exit code reference, see `references/retry-and-error-codes.md`. For agent hook configuration, see the **buildkite-agent-infrastructure** skill.
 
+## Branch-based routing
+
+Generate different pipelines per branch. Common shape for repos where `main`, `release/*`, and feature branches have very different needs:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+BRANCH="$BUILDKITE_BRANCH"
+
+case "$BRANCH" in
+  main)
+    cat <<'YAML' | buildkite-agent pipeline upload
+steps:
+  - group: ":test_tube: Tests"
+    key: "tests"
+    steps:
+      - label: ":rspec: Unit"
+        command: "make test-unit"
+        key: "unit"
+      - label: ":earth_americas: Integration"
+        command: "make test-integration"
+        key: "integration"
+  - wait
+  - group: ":rocket: Deploy"
+    key: "deploy"
+    steps:
+      - label: ":rocket: Deploy staging"
+        command: "make deploy-staging"
+        key: "deploy-staging"
+      - wait
+      - label: ":rocket: Deploy production"
+        command: "make deploy-production"
+        key: "deploy-prod"
+        concurrency: 1
+        concurrency_group: "deploy/production"
+YAML
+    ;;
+  release/*)
+    cat <<'YAML' | buildkite-agent pipeline upload
+steps:
+  - label: ":test_tube: Full test suite"
+    command: "make test-all"
+    key: "full-tests"
+    parallelism: 10
+  - wait
+  - block: ":shipit: Approve release"
+    key: "approve"
+  - wait
+  - label: ":rocket: Deploy production"
+    command: "make deploy-production"
+    depends_on: "approve"
+    concurrency: 1
+    concurrency_group: "deploy/production"
+YAML
+    ;;
+  *)
+    # PR and feature branches: just lint and test
+    cat <<'YAML' | buildkite-agent pipeline upload
+steps:
+  - label: ":lint-roller: Lint"
+    command: "make lint"
+    key: "lint"
+  - label: ":rspec: Tests"
+    command: "make test"
+    key: "tests"
+YAML
+    ;;
+esac
+```
+
+Use `<<'YAML'` (quoted heredoc) to prevent shell expansion of `$` characters in the YAML. Use `<<YAML` (unquoted) only when shell variable expansion in the template is intentional.
+
+This pattern is the upgrade path when `if: build.branch == "main"` filters on individual steps become unreadable or when per-branch step counts diverge enough that one static pipeline can't express them cleanly.
+
+## Serial gate chains
+
+Chain multiple phases, where each phase generates the next based on its output. Useful when later steps genuinely depend on what earlier steps produced — not just their success.
+
+Phase 1 builds and uploads a manifest:
+
+```yaml
+# .buildkite/pipeline.yml — phase 1
+steps:
+  - label: ":hammer: Build"
+    command: "make build && buildkite-agent artifact upload 'dist/*'"
+    key: "build"
+  - wait
+  - label: ":test_tube: Generate test plan"
+    command: ".buildkite/generate-tests.sh | buildkite-agent pipeline upload"
+    key: "gen-tests"
+```
+
+Phase 2 reads the manifest and emits per-component test steps plus a deploy gate:
+
+```bash
+#!/bin/bash
+# .buildkite/generate-tests.sh — phase 2
+set -euo pipefail
+
+# Download the build manifest to see what was built
+buildkite-agent artifact download "dist/manifest.json" .
+COMPONENTS=$(jq -r '.components[]' dist/manifest.json)
+
+STEPS="steps:\n"
+for component in $COMPONENTS; do
+  STEPS+="  - label: \":test_tube: Test ${component}\"\n"
+  STEPS+="    command: \"make test-${component}\"\n"
+  STEPS+="    key: \"test-${component}\"\n"
+done
+
+# Gate for deployment
+STEPS+="  - wait\n"
+STEPS+="  - block: \":shipit: Deploy?\"\n"
+STEPS+="    key: \"deploy-gate\"\n"
+STEPS+="  - wait\n"
+STEPS+="  - label: \":rocket: Deploy\"\n"
+STEPS+="    command: \"make deploy\"\n"
+STEPS+="    concurrency: 1\n"
+STEPS+="    concurrency_group: \"deploy/production\"\n"
+
+echo -e "$STEPS" | buildkite-agent pipeline upload
+```
+
+Each phase has full access to what prior phases produced (artifacts, meta-data, API state), so the pipeline shape can adapt mid-flight. Pair with `--replace` on the bootstrap step only when a single uploader owns the entire downstream pipeline.
+
 ## Trigger-based fan-out for large workloads
 
 Workloads that exceed a single build's limits can fan out across separate builds using trigger steps:
@@ -276,7 +402,7 @@ Each triggered build has its own upload and job limits. A monorepo with 20 servi
 
 Large organisations often centralise generator logic so every team gets consistent pipeline patterns:
 
-```
+```text
 infra-repo/
 ├── pipeline-generator/
 │   ├── generate.py          # Main generator

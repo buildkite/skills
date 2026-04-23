@@ -228,6 +228,37 @@ steps:
       .buildkite/generate-pipeline.sh | buildkite-agent pipeline upload
 ```
 
+### When to use what
+
+Pipelines exist on a spectrum. Pick the simplest option that does the job:
+
+| Situation | Approach |
+|-----------|----------|
+| Same steps every build, branch-level filtering at most | Static YAML |
+| Skip steps when specific files haven't changed | `if_changed` |
+| Monorepo with separate pipelines per service | `monorepo-diff` plugin |
+| Combine `if` and `if_changed` with OR logic | Dynamic generation |
+| Apply consistent retry / timeout / env config across many pipelines | Dynamic (shared config) |
+| Calculate test shards, matrix combos, `parallelism × matrix` at runtime | Dynamic (often SDK) |
+| Monorepo with transitive dependencies between services | Dynamic (custom dep graph) |
+| Recover from infra failures (OOM → bigger agent) | Dynamic (`pre-exit` hook) |
+| Steps depend on output from previous steps (multi-stage) | Dynamic, often `--replace` or chained uploads |
+| Cleanup / teardown step that must run regardless of earlier failures | Dynamic (`pre-exit` uploads a finalizer) |
+| Fallback step only when the primary step fails | Dynamic (`pre-exit` checking exit status) |
+| Pipeline YAML has outgrown what the team can maintain | Dynamic (SDK in Python / TS / Go / Ruby) |
+
+### Don't reach for dynamic pipelines for the wrong job
+
+Dynamic generation is the right tool when the *steps themselves* need to change. For passing data between steps, simpler primitives exist:
+
+- **`buildkite-agent meta-data set/get`** — small key-value pairs any later step in the same build can read (a version string, a commit SHA, a feature flag).
+- **Artifacts** — files passed between steps (`buildkite-agent artifact upload/download`).
+- **Trigger step `env:`** — env vars passed to a build in a different pipeline.
+
+If only data needs to move, metadata or artifacts is simpler and safer. See the **buildkite-agent-runtime** skill.
+
+### Bootstrap script
+
 **Always start generator scripts with `set -euo pipefail`.** Without `pipefail`, a failing `pipeline upload` returns the exit code of the last piped command, the build step reports success, and no generated steps appear — the most common dynamic pipeline failure mode.
 
 Example generator that runs tests only for changed services:

@@ -2,6 +2,22 @@
 
 Failure modes specific to pipelines that generate steps at runtime via `buildkite-agent pipeline upload`. Ordered by frequency — silent upload failures and quota issues come first.
 
+## Diagnose in this order
+
+Most production failures fall into a small set of patterns. Work down this list before deeper investigation:
+
+1. **Build green, no generated steps appear** — generator script missing `set -euo pipefail`. The upload failed; bash reported the script's exit code, not the upload's. Fix: add `set -euo pipefail`.
+2. **`The number of jobs in this upload exceeds your organization limit of 500`** — split the output into multiple smaller uploads, or use trigger steps to fan across separate builds. Account for `parallelism` (multiplies jobs).
+3. **`pipeline parsing of "(stdin)" failed: <error>`** — invalid YAML. Run with `--dry-run` locally; capture the generator output to a file and run it through a YAML linter.
+4. **Generated steps in unexpected order** — `pipeline upload` inserts immediately after the calling step. Multiple uploads from the same step appear in reverse upload order. Use `depends_on` for explicit ordering.
+5. **Env vars empty in generated steps** — interpolated at upload time. Use `$$VAR` to defer.
+6. **Duplicate steps after retry of the upload step** — the generator re-ran. Set `key:` on every step (uploads with duplicate keys fail loudly with `DuplicateKeyError`) or use `--replace` if the step is responsible for the entire downstream pipeline.
+7. **Concurrency limits not working** — concurrency group name was interpolated at upload time and resolved to something unexpected. Emit literal strings from the generator.
+8. **Notifications not firing on generated steps** — step-level notifications are not inherited from the initial pipeline. Add `notify:` to the generated step itself.
+9. **Build hits 4,000 jobs-per-build limit** — `(steps × parallelism) + (retries × steps)`. Split with trigger steps or reduce `parallelism` using Test Engine's timing-based test splitting.
+
+Each item below expands one of the above with root cause, fix, and debugging guidance.
+
 ## Common Mistakes
 
 | Mistake | What happens | Fix |
@@ -304,6 +320,14 @@ fi
 
 This consumes an agent slot to evaluate the condition but gives full control over the logic. The standard upgrade path when teams outgrow `if_changed`.
 
+## Matrix and parallelism on the same step
+
+**Symptom.** A step uses `matrix` and `parallelism` together. The pipeline is rejected, or matrix values silently fail to accept nested objects.
+
+**Why.** Buildkite's built-in `matrix` does not combine with `parallelism` on the same step, and matrix values must be flat strings (no nested objects).
+
+**Fix.** Use a generator (often via the SDK) to compute combinations and emit individual steps. See `references/dynamic-pipeline-patterns.md` → "SDK-based pipeline generation" for the worked example.
+
 ## Retry storms during infrastructure incidents
 
 **Symptom.** During an infrastructure issue (spot preemption, network outage, dependent service down), many jobs fail at once and all retry simultaneously, multiplying load on an already-broken fleet.
@@ -320,6 +344,44 @@ This consumes an agent slot to evaluate the condition but gives full control ove
   - `255` timeout / SSH failure
 - **Use a different queue for retries** on infra failures instead of retrying on the same broken fleet. See `references/dynamic-pipeline-patterns.md` for the `pre-exit` hook pattern.
 - **Watch the per-build retry budget**: `(steps × max_retries)` counts toward the 4,000 jobs-per-build limit.
+
+## Security
+
+Any running job can call `pipeline upload`. If a forked PR modifies `.buildkite/`, those scripts run on the pipeline's agents. Treat dynamic pipelines as a privilege-escalation surface.
+
+**Disable fork builds for sensitive pipelines.** Buildkite repository setting. The safest option when the pipeline has access to production secrets.
+
+**For pipelines that need to accept fork PRs, gate them behind a manual approval.** Either with a static `if`:
+
+```yaml
+- block: ":lock: Approve fork build"
+  if: build.pull_request_repo != "" && build.pull_request_repo != build.repository
+  prompt: "This build is from a fork. Review the code before allowing it to run."
+```
+
+Or with a generator (when allowlist logic is needed):
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+if [ "${BUILDKITE_PULL_REQUEST_REPO}" != "" ] && \
+   [ "${BUILDKITE_PULL_REQUEST_REPO}" != "${BUILDKITE_REPO}" ]; then
+  buildkite-agent pipeline upload <<'YAML'
+steps:
+  - block: ":lock: Approve fork build"
+    prompt: "This build is from a fork. Review before allowing on our agents."
+YAML
+fi
+
+buildkite-agent pipeline upload  # main pipeline; appears after the block
+```
+
+**Pass `--reject-secrets` to `pipeline upload`** to reject YAML containing values matching secret-like names (`*_TOKEN`, `*_SECRET`, `*_KEY`). Opt-in, disabled by default.
+
+**Kubernetes setups:** `pipeline upload` can be used to inject steps that run with higher-privilege service accounts. Audit which steps can call `pipeline upload` and what service accounts they run under.
+
+For the durable answer — cryptographic verification that uploaded YAML matches what was signed — see pipeline signing below and the **buildkite-secure-delivery** skill.
 
 ## Pipeline signing with dynamic uploads
 
