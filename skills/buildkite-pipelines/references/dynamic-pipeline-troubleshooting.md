@@ -2,6 +2,26 @@
 
 Failure modes specific to pipelines that generate steps at runtime via `buildkite-agent pipeline upload`. Ordered by frequency — silent upload failures and quota issues come first.
 
+## Contents
+
+1. [Diagnose in this order](#diagnose-in-this-order)
+2. [Common Mistakes](#common-mistakes)
+3. [Silent upload failures](#silent-upload-failures)
+4. [Debugging strategies](#debugging-strategies)
+5. [Upload quota exceeded](#upload-quota-exceeded)
+6. [Job count surprises](#job-count-surprises)
+7. [Upload performance at scale](#upload-performance-at-scale)
+8. [Step insertion order](#step-insertion-order)
+9. [Environment variable interpolation](#environment-variable-interpolation)
+10. [Duplicate steps after retry of an upload step](#duplicate-steps-after-retry-of-an-upload-step)
+11. [Concurrency in dynamically generated steps](#concurrency-in-dynamically-generated-steps)
+12. [Notifications on dynamically generated steps](#notifications-on-dynamically-generated-steps)
+13. [Combining if and if_changed](#combining-if-and-if_changed)
+14. [Matrix and parallelism on the same step](#matrix-and-parallelism-on-the-same-step)
+15. [Retry storms during infrastructure incidents](#retry-storms-during-infrastructure-incidents)
+16. [Security](#security)
+17. [Pipeline signing with dynamic uploads](#pipeline-signing-with-dynamic-uploads)
+
 ## Diagnose in this order
 
 Most production failures fall into a small set of patterns. Work down this list before deeper investigation:

@@ -6,6 +6,17 @@ For monorepo change detection, basic `if_changed`, and matrix builds, see `refer
 For group step behaviour in dynamic pipelines, see `references/group-steps.md`.
 For common failure modes, see `references/dynamic-pipeline-troubleshooting.md`.
 
+## Contents
+
+1. [Fan-out and fan-in with depends_on](#fan-out-and-fan-in-with-depends_on)
+2. [SDK-based pipeline generation](#sdk-based-pipeline-generation)
+3. [The handler pattern: read state, decide, upload](#the-handler-pattern-read-state-decide-upload)
+4. [Finalizer and always-run steps](#finalizer-and-always-run-steps)
+5. [Branch-based routing](#branch-based-routing)
+6. [Serial gate chains](#serial-gate-chains)
+7. [Trigger-based fan-out for large workloads](#trigger-based-fan-out-for-large-workloads)
+8. [Centralised pipeline generation](#centralised-pipeline-generation)
+
 ## Fan-out and fan-in with depends_on
 
 Dynamic generation plus `depends_on` produces fan-out/fan-in graphs that do not fit in a single `parallelism:` step or a static matrix. The pattern: emit one step per work item with a stable `key:`, then emit a single downstream step that depends on every upstream key.
