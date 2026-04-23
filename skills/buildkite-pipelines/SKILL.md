@@ -228,20 +228,40 @@ steps:
       .buildkite/generate-pipeline.sh | buildkite-agent pipeline upload
 ```
 
-For debugging, upload the generated YAML as an artifact before piping to upload:
+### When to use what
 
-```yaml
-steps:
-  - label: ":pipeline: Generate"
-    command: |
-      .buildkite/generate-pipeline.sh | tee generated-pipeline.yml
-      buildkite-agent artifact upload generated-pipeline.yml
-      cat generated-pipeline.yml | buildkite-agent pipeline upload
-```
+Pipelines exist on a spectrum. Pick the simplest option that does the job:
 
-Keep dynamically generated pipelines under **~500 steps** for optimal UI and processing performance. For larger monorepos, use orchestrator pipelines with trigger steps to spawn child pipelines.
+| Situation | Approach |
+|-----------|----------|
+| Same steps every build, branch-level filtering at most | Static YAML |
+| Skip steps when specific files haven't changed | `if_changed` |
+| Monorepo with separate pipelines per service | `monorepo-diff` plugin |
+| Combine `if` and `if_changed` with OR logic | Dynamic generation |
+| Apply consistent retry / timeout / env config across many pipelines | Dynamic (shared config) |
+| Calculate test shards, matrix combos, `parallelism × matrix` at runtime | Dynamic (often SDK) |
+| Monorepo with transitive dependencies between services | Dynamic (custom dep graph) |
+| Recover from infra failures (OOM → bigger agent) | Dynamic (`pre-exit` hook) |
+| Steps depend on output from previous steps (multi-stage) | Dynamic, often `--replace` or chained uploads |
+| Cleanup / teardown step that must run regardless of earlier failures | Dynamic (`pre-exit` uploads a finalizer) |
+| Fallback step only when the primary step fails | Dynamic (`pre-exit` checking exit status) |
+| Pipeline YAML has outgrown what the team can maintain | Dynamic (SDK in Python / TS / Go / Ruby) |
 
-Example generator script that runs tests only for changed services:
+### Don't reach for dynamic pipelines for the wrong job
+
+Dynamic generation is the right tool when the *steps themselves* need to change. For passing data between steps, simpler primitives exist:
+
+- **`buildkite-agent meta-data set/get`** — small key-value pairs any later step in the same build can read (a version string, a commit SHA, a feature flag).
+- **Artifacts** — files passed between steps (`buildkite-agent artifact upload/download`).
+- **Trigger step `env:`** — env vars passed to a build in a different pipeline.
+
+If only data needs to move, metadata or artifacts is simpler and safer. See the **buildkite-agent-runtime** skill.
+
+### Bootstrap script
+
+**Always start generator scripts with `set -euo pipefail`.** Without `pipefail`, a failing `pipeline upload` returns the exit code of the last piped command, the build step reports success, and no generated steps appear — the most common dynamic pipeline failure mode.
+
+Example generator that runs tests only for changed services:
 
 ```bash
 #!/bin/bash
@@ -256,12 +276,19 @@ for dir in services/*/; do
     cat <<YAML
   - label: ":test_tube: $svc"
     command: "cd services/$svc && make test"
+    key: "test-$svc"
 YAML
   fi
 done
 ```
 
-For advanced generator patterns (Python, monorepo, multi-stage), see `references/advanced-patterns.md`.
+Set `key:` on every generated step. It enables `depends_on`, makes retries idempotent (`DuplicateKeyError` blocks silent duplication if the upload step re-runs), and gives stable identifiers across builds. Validate locally with `buildkite-agent pipeline upload --dry-run` before pushing.
+
+Keep uploads under **500 steps per call** and **4,000 jobs per build** (platform defaults, raisable via support). For larger monorepos, use trigger steps to fan out across separate builds.
+
+For type-checked, unit-testable generators, the [Buildkite SDK](https://github.com/buildkite/buildkite-sdk) supports JavaScript/TypeScript, Python, Go, and Ruby. Wrap related steps in group steps once a generator produces more than ~10 steps — adding any group enables DAG mode for the build, and `concurrency` attributes are rejected on groups (see `references/group-steps.md`).
+
+A generator step can also read runtime state (meta-data, artifacts, git diff) and upload the next phase of the pipeline — the handler pattern used by multi-stage builds. For this, fan-out/fan-in, and finalizer / always-run steps via `pre-exit` hooks, see `references/dynamic-pipeline-patterns.md`. For failure modes, see `references/dynamic-pipeline-troubleshooting.md`. For advanced generator patterns (Python, monorepo, multi-stage), see `references/advanced-patterns.md`.
 
 ## Conditional Execution
 
@@ -446,6 +473,9 @@ For full concurrency configuration options, see [Controlling Concurrency](https:
 - **`references/step-types-reference.md`** — Detailed attribute tables for all step types
 - **`references/advanced-patterns.md`** — Dynamic pipeline generators, matrix adjustments, monorepo patterns, multi-stage pipelines
 - **`references/retry-and-error-codes.md`** — Comprehensive exit code table, retry strategies by failure type
+- **`references/group-steps.md`** — Group step attributes, DAG mode, merging across uploads, no-nesting workaround, job-limit impact
+- **`references/dynamic-pipeline-troubleshooting.md`** — Silent upload failures, quota limits, env var interpolation, duplicate-on-retry, retry storms
+- **`references/dynamic-pipeline-patterns.md`** — Fan-out/fan-in, SDK generation, the handler pattern, finalizer steps, trigger-based fan-out
 
 ### Examples
 - **`examples/basic-pipeline.yml`** — Minimal working pipeline (test, wait, deploy)
