@@ -92,7 +92,7 @@ For more on content strategy, see [CONVENTIONS.md](CONVENTIONS.md).
 2. Review an existing complete skill as a quality benchmark (e.g. `skills/buildkite-pipelines/SKILL.md`)
 3. Check the boundary table in CONVENTIONS.md — each topic is owned by exactly one skill
 4. Write your skill following the section order and style rules
-5. Run evals to verify quality: see [evals/README.md](evals/README.md)
+5. Run evals to verify quality (internal — see [buildkite/skills-internal-tools](https://github.com/buildkite/skills-internal-tools))
 
 ## Documentation
 
