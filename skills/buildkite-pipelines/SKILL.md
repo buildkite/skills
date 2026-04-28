@@ -475,7 +475,8 @@ For full concurrency configuration options, see [Controlling Concurrency](https:
 - **`references/retry-and-error-codes.md`** — Comprehensive exit code table, retry strategies by failure type
 - **`references/group-steps.md`** — Group step attributes, DAG mode, merging across uploads, no-nesting workaround, job-limit impact
 - **`references/dynamic-pipeline-troubleshooting.md`** — Silent upload failures, quota limits, env var interpolation, duplicate-on-retry, retry storms
-- **`references/dynamic-pipeline-patterns.md`** — Fan-out/fan-in, SDK generation, the handler pattern, finalizer steps, trigger-based fan-out
+- **`references/dynamic-pipeline-patterns.md`** — Fan-out/fan-in, SDK generation, the handler pattern, finalizer steps, trigger-based fan-out, breaking implicit dependencies on the calling step (`depends_on: ~`), merge-queue conditional generators
+- **`references/dynamic-pipeline-faq.md`** — Recurring questions: no `pre-upload` hook, no build-lock feature, branch-derived concurrency-group keys, community generator DSLs (`Gusto/buildkite-builder`)
 
 ### Examples
 - **`examples/basic-pipeline.yml`** — Minimal working pipeline (test, wait, deploy)

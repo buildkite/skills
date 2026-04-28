@@ -411,6 +411,27 @@ When signing is enabled and verification fails for dynamically uploaded steps, c
 
 For pipelines that need strong supply chain guarantees, signing is the durable answer — block-step gating is a stopgap.
 
+## Job timestamps for dynamically uploaded steps
+
+A job created by `pipeline upload` carries timestamps from when the upload happened, not from when the build started. For builds that gate on a slow generator (downloading artifacts, fetching feature flags, computing dep graphs) the gap can be significant — the parent build's `created_at` is much earlier than the generated jobs' `created_at`.
+
+This matters when measuring CI wait times via the [REST API jobs reference](https://buildkite.com/docs/apis/rest-api/jobs). The job object exposes four timestamps:
+
+| Field | Meaning |
+|-------|---------|
+| `created_at` | When the job was added to the build. For dynamically uploaded jobs, this is when `pipeline upload` ran — not when the parent build started. |
+| `runnable_at` | When the job became eligible for an agent (its dependencies completed and any `wait` ahead of it cleared). |
+| `scheduled_at` | When the job was assigned to a specific agent. |
+| `started_at` | When the job started executing on the agent. |
+
+For wait-time analysis, the useful gaps are:
+
+- `runnable_at` → `started_at` is queue wait — how long the job sat ready before an agent picked it up and began executing. Graph this for agent capacity and queue saturation.
+- `created_at` → `runnable_at` is dependency wait — how long the job waited on `wait` steps and `depends_on` predecessors.
+- `created_at` → `started_at` mixes both, and for dynamically uploaded jobs **also includes the generator step's runtime** before the job was even added to the build.
+
+For dynamic-pipeline observability, prefer `runnable_at` over `created_at` when reporting on agent capacity or queue saturation. Using `created_at` mixes generator time with queue time and makes a slow generator look like a queue problem.
+
 ## Further Reading
 
 - [Dynamic pipelines overview](https://buildkite.com/docs/pipelines/configure/dynamic-pipelines.md)
@@ -418,3 +439,4 @@ For pipelines that need strong supply chain guarantees, signing is the durable a
 - [Platform limits](https://buildkite.com/docs/platform/limits.md)
 - [Environment variables](https://buildkite.com/docs/pipelines/configure/environment-variables.md)
 - [Notifications](https://buildkite.com/docs/pipelines/configure/notifications.md)
+- [REST API jobs reference](https://buildkite.com/docs/apis/rest-api/jobs.md)

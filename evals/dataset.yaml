@@ -1571,3 +1571,723 @@ evals:
       - "500"
     expected_not_contains: []
     tags: ["dynamic-pipelines", "troubleshooting", "limits"]
+
+  # ============================================================
+  # DYNAMIC PIPELINES — followups (skill gap items, 2026-04)
+  # ============================================================
+
+  # ---- Item 1: depends_on: ~ to break the implicit dependency on the calling step ----
+
+  - id: "dynpipe-013"
+    question: "I have a step that uploads a finalizer step from a pre-exit hook. The finalizer should run regardless of whether the calling step passed or failed, and it shouldn't wait on the calling step. What goes in the finalizer's depends_on?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "depends_on"
+      - "~"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "depends-on"]
+
+  - id: "dynpipe-014"
+    question: "An uploaded step is implicitly waiting on the step that uploaded it. How do I clear that implicit dependency in YAML?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "depends_on"
+      - "~"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "depends-on"]
+
+  - id: "dynpipe-015"
+    question: "What does `depends_on: ~` mean in a Buildkite pipeline step?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "null"
+      - "depend"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "depends-on"]
+
+  - id: "dynpipe-016"
+    question: "Is `depends_on: []` equivalent to `depends_on: ~` for clearing implicit dependencies on a dynamically uploaded step?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "depends_on"
+      - "empty"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "depends-on"]
+
+  - id: "dynpipe-017"
+    question: "We're in DAG mode because we use group steps. A step uploaded by our generator is waiting on the generator step instead of running in parallel with later siblings. How do we make the uploaded step start immediately?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "depends_on"
+      - "~"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "depends-on", "dag-mode"]
+
+  - id: "dynpipe-018"
+    question: "Can I write `depends_on: nothing` to remove a step's dependencies in Buildkite?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "~"
+    expected_not_contains:
+      - "depends_on: nothing"
+    tags: ["dynamic-pipelines", "patterns", "depends-on", "negative"]
+
+  - id: "dynpipe-019"
+    question: "I want a hotfix step uploaded from a pre-exit hook to run before a `wait` barrier that's already in the pipeline. What dependency configuration do I use?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "depends_on"
+      - "~"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "depends-on"]
+
+  # ---- Item 2: created_at semantics for dynamically uploaded jobs ----
+
+  - id: "dynpipe-020"
+    question: "I'm graphing CI queue wait times from the REST API jobs endpoint and using `created_at` as the start point. For dynamically uploaded jobs the numbers look way too high. Why, and which timestamp should I be using?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "runnable_at"
+      - "pipeline upload"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill"]
+
+  - id: "dynpipe-021"
+    question: "What's the difference between `created_at`, `runnable_at`, `scheduled_at`, and `started_at` on a Buildkite job?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "runnable_at"
+      - "scheduled_at"
+      - "created_at"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill"]
+
+  - id: "dynpipe-022"
+    question: "When does the `created_at` timestamp get set for a job that was added to the build by `buildkite-agent pipeline upload` rather than declared in the initial pipeline.yml?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "pipeline upload"
+      - "created_at"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill"]
+
+  - id: "dynpipe-023"
+    question: "Which job timestamp tells you how long a job sat in the queue waiting for an agent to pick it up?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "runnable_at"
+      - "scheduled_at"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill"]
+
+  - id: "dynpipe-024"
+    question: "Our generator step takes 4 minutes. When I report queue wait time as `started_at - created_at` for the steps it uploads, the number is inflated. What's happening?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "runnable_at"
+      - "generator"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill"]
+
+  - id: "dynpipe-025"
+    question: "For dynamically uploaded jobs, the parent build's `created_at` is much earlier than the job's `created_at`. Is this a bug?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "pipeline upload"
+      - "created_at"
+    expected_not_contains:
+      - "bug"
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill", "negative"]
+
+  - id: "dynpipe-026"
+    question: "What's the expected ordering of `created_at`, `runnable_at`, `scheduled_at`, and `started_at` on a Buildkite job object?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-api"]
+    expected_contains:
+      - "created_at"
+      - "runnable_at"
+      - "scheduled_at"
+      - "started_at"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "observability", "api", "cross-skill"]
+
+  # ---- Item 4: Concurrency-group key persistence in dynamic pipelines ----
+
+  - id: "dynpipe-027"
+    question: "Our deploy steps use `concurrency_group: deploy/${BUILDKITE_BRANCH}` so each branch gets its own queue. We have thousands of branches. Is this a problem?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "stable"
+      - "concurrency_group"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency", "best-practices"]
+
+  - id: "dynpipe-028"
+    question: "What's the recommended naming pattern for `concurrency_group` keys in dynamically generated steps?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "stable"
+      - "resource"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency", "best-practices"]
+
+  - id: "dynpipe-029"
+    question: "We want to ensure only one build per branch runs at a time. Should we use a per-branch `concurrency_group` or is there a built-in pipeline setting?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "cancel_intermediate_builds"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency", "best-practices"]
+
+  - id: "dynpipe-030"
+    question: "What's wrong with using `concurrency_group: build/${BUILDKITE_PULL_REQUEST}` in a dynamic pipeline?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "high-cardinality"
+      - "concurrency_group"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency", "best-practices", "negative"]
+
+  - id: "dynpipe-031"
+    question: "Are concurrency groups in Buildkite scoped per pipeline or organisation-wide?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "organi"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency"]
+
+  - id: "dynpipe-032"
+    question: "We're seeing the concurrency-group page in the UI list thousands of distinct keys after running our dynamic pipeline for a year. Why, and how do we avoid this?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "stable"
+      - "concurrency_group"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency", "best-practices"]
+
+  - id: "dynpipe-033"
+    question: "Is it safe to use `concurrency_group: deploy/production` in a dynamic pipeline that runs across many branches?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "stable"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "concurrency", "best-practices"]
+
+  # ---- Item 7: BUILDKITE_MERGE_QUEUE_BASE_COMMIT for dynamic pipelines ----
+
+  - id: "dynpipe-034"
+    question: "I want to write a generator script that emits the full integration suite only on GitHub merge-queue builds, and a lightweight lint+unit set on regular branch builds. What's the conditional?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "BUILDKITE_MERGE_QUEUE_BASE_COMMIT"
+      - "merge"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue"]
+
+  - id: "dynpipe-035"
+    question: "Which Buildkite environment variable is set on builds created from a GitHub `merge_group` event but unset on regular branch builds?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "BUILDKITE_MERGE_QUEUE_BASE_COMMIT"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue"]
+
+  - id: "dynpipe-036"
+    question: "Our merge-queue builds use `if_changed` and the diff range pulls in changes from merge groups ahead of us in the queue. We only want changes from the actual PR. What setting do we enable?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "base commit"
+      - "if_changed"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue", "if_changed"]
+
+  - id: "dynpipe-037"
+    question: "Can I detect a GitHub merge-queue build inside a bash generator script? Show the conditional check."
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "BUILDKITE_MERGE_QUEUE_BASE_COMMIT"
+      - "-n"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue"]
+
+  - id: "dynpipe-038"
+    question: "What conditional expression in `if:` corresponds to `BUILDKITE_MERGE_QUEUE_BASE_COMMIT`?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "build.merge_queue"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue"]
+
+  - id: "dynpipe-039"
+    question: "I'm using `[ -n \"$BUILDKITE_MERGE_QUEUE_BASE_COMMIT\" ]` in my generator with `set -u` enabled and the build fails because the variable is unset on regular builds. How do I fix the check?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - ":-"
+      - "BUILDKITE_MERGE_QUEUE_BASE_COMMIT"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue", "negative"]
+
+  - id: "dynpipe-040"
+    question: "Our deploy step should only be added to the pipeline on GitHub merge-queue builds, not on PR builds. Show me a generator script that conditionally emits the deploy step."
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "BUILDKITE_MERGE_QUEUE_BASE_COMMIT"
+      - "pipeline upload"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "patterns", "merge-queue"]
+
+  # ---- Item 8: No pre-upload hook ----
+
+  - id: "dynpipe-041"
+    question: "Is there a `pre-upload` hook that runs before `buildkite-agent pipeline upload`?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "No"
+      - "hook"
+    expected_not_contains:
+      - "pre-upload hook"
+    tags: ["dynamic-pipelines", "hooks", "negative"]
+
+  - id: "dynpipe-042"
+    question: "I want to validate or transform pipeline YAML before it gets uploaded. There's no pre-upload hook. What's the recommended approach?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "generator"
+      - "dry-run"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "hooks", "patterns"]
+
+  - id: "dynpipe-043"
+    question: "List all the Buildkite agent job lifecycle hooks. Is there one that fires before a pipeline upload?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-runtime"]
+    expected_contains:
+      - "pre-command"
+      - "pre-exit"
+      - "post-checkout"
+    expected_not_contains:
+      - "pre-upload"
+    tags: ["dynamic-pipelines", "hooks", "cross-skill"]
+
+  - id: "dynpipe-044"
+    question: "Can I use a hook to gate pipeline uploads — for example, blocking uploads from forked PRs at the agent level?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-infrastructure"]
+    expected_contains:
+      - "pre-bootstrap"
+    expected_not_contains:
+      - "pre-upload"
+    tags: ["dynamic-pipelines", "hooks", "security", "cross-skill"]
+
+  - id: "dynpipe-045"
+    question: "Our generator does a lot of work computing the YAML. We want a validation step before the upload that fails the build if the YAML is invalid, without going through the full upload roundtrip. How?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "dry-run"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "hooks", "patterns"]
+
+  - id: "dynpipe-046"
+    question: "Where would I put logic that should run once before any pipeline upload happens on a self-hosted agent — agent-wide, not per-pipeline?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-infrastructure"]
+    expected_contains:
+      - "pre-bootstrap"
+    expected_not_contains:
+      - "pre-upload hook"
+    tags: ["dynamic-pipelines", "hooks", "cross-skill"]
+
+  - id: "dynpipe-047"
+    question: "Does Buildkite have a hook that fires every time `buildkite-agent pipeline upload` is invoked?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "No"
+    expected_not_contains:
+      - "pre-upload hook"
+    tags: ["dynamic-pipelines", "hooks", "negative"]
+
+  # ---- Item 9: No "lock the build" feature ----
+
+  - id: "dynpipe-048"
+    question: "Is there a way to prevent further pipeline uploads to a build after a certain step runs? Some kind of `--freeze` flag on `pipeline upload`?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "No"
+    expected_not_contains:
+      - "--freeze"
+    tags: ["dynamic-pipelines", "security", "negative"]
+
+  - id: "dynpipe-049"
+    question: "A low-privilege step in our build (e.g. lint) can call `pipeline upload` and inject a step that runs on our deploy queue. We don't want that. What's the recommended mitigation?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-infrastructure"]
+    expected_contains:
+      - "queue"
+      - "trust"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "security", "cross-skill"]
+
+  - id: "dynpipe-050"
+    question: "We're worried that any step in a build can upload steps that run with higher privileges. Does Buildkite support locking a build to prevent that?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "No"
+      - "queue"
+    expected_not_contains:
+      - "--freeze"
+    tags: ["dynamic-pipelines", "security", "negative"]
+
+  - id: "dynpipe-051"
+    question: "What are the recommended mitigation patterns when a low-trust step in a build can call `pipeline upload` and inject privileged steps?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-secure-delivery", "buildkite-agent-infrastructure"]
+    expected_contains:
+      - "queue"
+      - "signing"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "security", "cross-skill"]
+
+  - id: "dynpipe-052"
+    question: "Can pipeline signing prevent a low-privilege step from injecting unsigned steps into the build?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-secure-delivery"]
+    expected_contains:
+      - "signing"
+      - "verif"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "security", "cross-skill"]
+
+  - id: "dynpipe-053"
+    question: "If we run our dynamic pipeline upload step on the same agent queue as our deploy step, what's the security implication?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-infrastructure"]
+    expected_contains:
+      - "queue"
+      - "trust"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "security", "cross-skill"]
+
+  - id: "dynpipe-054"
+    question: "We want our deploy steps to run only on a queue that the lint and test steps can't reach. How do we set that up?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: ["buildkite-agent-infrastructure"]
+    expected_contains:
+      - "queue"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "security", "cross-skill"]
+
+  - id: "dynpipe-055"
+    question: "Does `buildkite-agent pipeline upload` have a `--freeze` flag?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "No"
+    expected_not_contains:
+      - "--freeze flag"
+    tags: ["dynamic-pipelines", "security", "negative"]
+
+  # ---- Item 10: Gusto/buildkite-builder Ruby DSL ----
+
+  - id: "dynpipe-056"
+    question: "Are there Ruby alternatives to writing bash heredocs for generating Buildkite pipelines?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "SDK"
+      - "Ruby"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
+
+  - id: "dynpipe-057"
+    question: "What's the difference between the official Buildkite SDK and Gusto/buildkite-builder?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "buildkite-builder"
+      - "SDK"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
+
+  - id: "dynpipe-058"
+    question: "Is buildkite-builder maintained by Buildkite?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "community"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
+
+  - id: "dynpipe-059"
+    question: "When should I reach for a community pipeline-generator DSL like Gusto/buildkite-builder instead of the official Buildkite SDK?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "advanced"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "Ruby"
+      - "SDK"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
+
+  - id: "dynpipe-060"
+    question: "Our team is mostly Ruby. We want a typed-feeling DSL for generating Buildkite pipelines instead of writing YAML strings. What are our options?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "Ruby"
+      - "SDK"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
+
+  - id: "dynpipe-061"
+    question: "Does the official Buildkite SDK support Ruby?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "Ruby"
+      - "SDK"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
+
+  - id: "dynpipe-062"
+    question: "What languages does the Buildkite SDK support for writing dynamic pipeline generators?"
+    source: "synthetic"
+    source_ref: "skill-followup-2026-04"
+    difficulty: "configuration"
+    cluster: "dynamic-pipelines"
+    primary_skill: "buildkite-pipelines"
+    secondary_skills: []
+    expected_contains:
+      - "TypeScript"
+      - "Python"
+      - "Go"
+      - "Ruby"
+    expected_not_contains: []
+    tags: ["dynamic-pipelines", "sdk", "generators"]
