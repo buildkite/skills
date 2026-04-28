@@ -1,0 +1,16 @@
+# Pipeline using bktec for intelligent test splitting with parallelism,
+# automatic retry for flaky detection, and result path for data feedback
+steps:
+  - label: ":rspec: Tests %n"
+    command: bktec
+    parallelism: 10
+    retry:
+      automatic:
+        - exit_status: "*"
+          limit: 2
+    env:
+      BUILDKITE_TEST_ENGINE_API_ACCESS_TOKEN: "your-api-access-token"
+      BUILDKITE_TEST_ENGINE_SUITE_SLUG: "my-suite"
+      BUILDKITE_TEST_ENGINE_TEST_RUNNER: "rspec"
+      BUILDKITE_TEST_ENGINE_RESULT_PATH: "tmp/rspec-result.json"
+      BUILDKITE_TEST_ENGINE_RETRY_COUNT: "2"
