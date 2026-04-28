@@ -28,6 +28,10 @@ Topics: CI migration planning, bk pipeline convert, converting from GitHub Actio
 
 ## Cross-Cutting Skills
 
+### buildkite-preflight
+Path: skills/buildkite-preflight/SKILL.md
+Topics: bk preflight, local changes, CI validation, failed jobs, failed tests
+
 ### buildkite-agent-runtime
 Path: skills/buildkite-agent-runtime/SKILL.md
 Topics: buildkite-agent annotate, artifact upload/download, meta-data set/get, pipeline upload, oidc request-token, step, lock, env, secret get, redactor add, tool sign/verify
