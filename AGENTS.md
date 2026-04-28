@@ -15,8 +15,10 @@ skills/                              # All skills live here
   buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
-evals/                               # Quality eval dataset and runner
 ```
+
+Internal tooling (eval dataset/runner, ralph orchestration) lives in a separate
+private repo: [buildkite/skills-internal-tools](https://github.com/buildkite/skills-internal-tools).
 
 ## Skill Architecture
 
@@ -51,15 +53,10 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 - All code blocks must be syntactically correct and copy-paste ready
 - SKILL.md body target: 10-18KB; total with references: 15-45KB
 
-## Quality Evaluation
-
-The `evals/` directory contains a dataset of real customer questions and a runner
-that tests skill routing and answer quality. See `evals/README.md` for usage.
-
 ## Working on Skills
 
 1. Read `CONVENTIONS.md` completely
 2. Review an existing complete skill as a quality benchmark
 3. Check the boundary table — never duplicate content owned by another skill
 4. Follow the section order: frontmatter, title, overview, quick start, feature sections, common mistakes, additional resources, further reading
-5. Run evals to verify quality
+5. Run evals (in [skills-internal-tools](https://github.com/buildkite/skills-internal-tools)) to verify quality
