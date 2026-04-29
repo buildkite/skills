@@ -411,6 +411,44 @@ When signing is enabled and verification fails for dynamically uploaded steps, c
 
 For pipelines that need strong supply chain guarantees, signing is the durable answer — block-step gating is a stopgap.
 
+## Job priority on dynamically uploaded jobs
+
+Job `priority` works the same way on a dynamically uploaded job as on a statically defined one. The default value is `0`, and any integer value works. Higher values run before lower values, regardless of how long a job has been queued. Priority is considered before jobs are dispatched to agent queues, and only applies to command jobs (including plugin commands), not to wait, block, group, or input steps.
+
+Set the priority inline on a generated step:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+case "${BUILDKITE_BRANCH}" in
+  main)         PRIORITY=10 ;;
+  release/*)    PRIORITY=5 ;;
+  *)            PRIORITY=0 ;;
+esac
+
+cat <<YAML | buildkite-agent pipeline upload
+steps:
+  - label: ":hammer: Build"
+    command: "make build"
+    priority: ${PRIORITY}
+YAML
+```
+
+To apply the same priority across every command step in the generated pipeline, set `priority` as a top-level key. Steps that declare their own `priority` keep theirs.
+
+```yaml
+priority: 10
+steps:
+  - label: ":fire: Hotfix"
+    command: "make hotfix"
+  - label: ":test_tube: Tests"
+    command: "make test"
+    priority: 1
+```
+
+Priority is set at upload time and is not retroactively recalculated. To change the priority of a job after upload, target the job through the API rather than re-uploading.
+
 ## Further Reading
 
 - [Dynamic pipelines overview](https://buildkite.com/docs/pipelines/configure/dynamic-pipelines.md)
@@ -418,3 +456,4 @@ For pipelines that need strong supply chain guarantees, signing is the durable a
 - [Platform limits](https://buildkite.com/docs/platform/limits.md)
 - [Environment variables](https://buildkite.com/docs/pipelines/configure/environment-variables.md)
 - [Notifications](https://buildkite.com/docs/pipelines/configure/notifications.md)
+- [Job priority](https://buildkite.com/docs/pipelines/configure/workflows/job-prioritization.md)

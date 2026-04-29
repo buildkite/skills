@@ -235,6 +235,8 @@ Pipelines exist on a spectrum. Pick the simplest option that does the job:
 | Situation | Approach |
 |-----------|----------|
 | Same steps every build, branch-level filtering at most | Static YAML |
+| Org-wide enforcement of pipeline structure, admin-controlled (Enterprise plan) | Pipeline templates |
+| Reusable, vetted logic (caching, Docker, artifact transfer) shared across many pipelines | Pinned plugin |
 | Skip steps when specific files haven't changed | `if_changed` |
 | Monorepo with separate pipelines per service | `monorepo-diff` plugin |
 | Combine `if` and `if_changed` with OR logic | Dynamic generation |
