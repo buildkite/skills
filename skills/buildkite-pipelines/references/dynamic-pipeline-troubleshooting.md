@@ -447,7 +447,7 @@ steps:
     priority: 1
 ```
 
-Priority is set at upload time and is not retroactively recalculated. To change the priority of a job after upload, target the job through the API rather than re-uploading.
+Priority is a step attribute set in the YAML, so it's fixed when the step is uploaded. To change a job's priority after upload, use the REST API's [reprioritize a job](https://buildkite.com/docs/apis/rest-api/jobs#reprioritize-a-job) endpoint rather than re-uploading the step.
 
 ## Further Reading
 
@@ -456,4 +456,4 @@ Priority is set at upload time and is not retroactively recalculated. To change 
 - [Platform limits](https://buildkite.com/docs/platform/limits.md)
 - [Environment variables](https://buildkite.com/docs/pipelines/configure/environment-variables.md)
 - [Notifications](https://buildkite.com/docs/pipelines/configure/notifications.md)
-- [Job priority](https://buildkite.com/docs/pipelines/configure/workflows/job-prioritization.md)
+- [Job priority](https://buildkite.com/docs/pipelines/configure/workflows/job-priority.md)
