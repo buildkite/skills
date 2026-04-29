@@ -66,7 +66,7 @@ Skills needed across all journeys.
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
-| **Preflight** | [skills/buildkite-preflight/](skills/buildkite-preflight/SKILL.md) | `bk preflight` runs local uncommitted changes against CI |
+| **Preflight** | [skills/buildkite-preflight/](skills/buildkite-preflight/SKILL.md) | `bk preflight` runs a CI build against local uncommitted changes |
 | **Agent Runtime** | [skills/buildkite-agent-runtime/](skills/buildkite-agent-runtime/SKILL.md) | `buildkite-agent` subcommands inside running job steps — annotate, artifact, meta-data, pipeline upload, OIDC, locks |
 | **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
 | **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
