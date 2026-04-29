@@ -24,6 +24,7 @@ Copy skill directories into your agent's skills folder:
 # Claude Code
 mkdir -p .claude/skills
 cp -r skills/buildkite-pipelines .claude/skills/
+cp -r skills/buildkite-preflight .claude/skills/
 cp -r skills/buildkite-agent-runtime .claude/skills/
 cp -r skills/buildkite-cli .claude/skills/
 cp -r skills/buildkite-api .claude/skills/
@@ -35,6 +36,7 @@ cp -r skills/buildkite-test-engine .claude/skills/
 # Cursor
 mkdir -p .cursor/skills
 cp -r skills/buildkite-pipelines .cursor/skills/
+cp -r skills/buildkite-preflight .cursor/skills/
 cp -r skills/buildkite-agent-runtime .cursor/skills/
 cp -r skills/buildkite-cli .cursor/skills/
 cp -r skills/buildkite-api .cursor/skills/
@@ -64,6 +66,7 @@ Skills needed across all journeys.
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
+| **Preflight** | [skills/buildkite-preflight/](skills/buildkite-preflight/SKILL.md) | `bk preflight` runs local uncommited changes against CI and inspect failures |
 | **Agent Runtime** | [skills/buildkite-agent-runtime/](skills/buildkite-agent-runtime/SKILL.md) | `buildkite-agent` subcommands inside running job steps — annotate, artifact, meta-data, pipeline upload, OIDC, locks |
 | **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
 | **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
