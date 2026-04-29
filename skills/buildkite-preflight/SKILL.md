@@ -91,18 +91,6 @@ bk preflight --pipeline my-org/my-pipeline --watch --json \
 - Use `--json` when you need structured event data
 - If neither flag is set, `bk` uses the interactive TTY UI when stdout is a terminal and plain text otherwise
 
-## Enabling the Experiment
-
-The `bk preflight` subcommand requires the experiment flag. Set it once via config or per-invocation via environment variable:
-
-```bash
-# Persistent (recommended)
-bk config set experiments preflight
-
-# Per-invocation
-BUILDKITE_EXPERIMENTS=preflight bk preflight --pipeline my-org/my-pipeline --watch
-```
-
 ## Running a Preflight Build
 
 ### Basic usage
