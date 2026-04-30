@@ -8,17 +8,12 @@ Installed via `npx skills add buildkite/skills` or manually copied into agent sk
 ```
 skills/                              # All skills live here
   buildkite-pipelines/               # Journey — pipeline YAML, step types, caching, parallelism
-  buildkite-test-engine/             # Journey — test splitting, flaky detection, bktec CLI
-  buildkite-secure-delivery/         # Journey — OIDC, Package Registry, SLSA provenance
   buildkite-migration/               # Journey — CI migration, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI
-  buildkite-agent-infrastructure/    # Journey — clusters, queues, hosted agents, SSO, audit
+  buildkite-preflight/               # Cross-cutting — bk preflight against local uncommitted changes
   buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
 ```
-
-Internal tooling (eval dataset/runner, ralph orchestration) lives in a separate
-private repo: [buildkite/skills-internal-tools](https://github.com/buildkite/skills-internal-tools).
 
 ## Skill Architecture
 
@@ -59,4 +54,3 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 2. Review an existing complete skill as a quality benchmark
 3. Check the boundary table — never duplicate content owned by another skill
 4. Follow the section order: frontmatter, title, overview, quick start, feature sections, common mistakes, additional resources, further reading
-5. Run evals (in [skills-internal-tools](https://github.com/buildkite/skills-internal-tools)) to verify quality

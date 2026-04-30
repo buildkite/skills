@@ -7,7 +7,7 @@
     {
       "name": "buildkite",
       "source": "./",
-      "description": "Buildkite skills for pipelines, agent runtime, CLI, API, platform engineering, secure delivery, and test engine"
+      "description": "Official Buildkite skills for Claude Code, Cursor, and other AI coding agents — pipelines, migration, preflight, agent runtime, CLI, and API"
     }
   ]
 }

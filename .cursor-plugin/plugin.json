@@ -2,7 +2,7 @@
   "name": "buildkite-skills",
   "displayName": "Buildkite Skills",
   "version": "1.0.0",
-  "description": "Buildkite skills for pipelines, agent runtime, CLI, API, platform engineering, secure delivery, and test engine",
+  "description": "Official Buildkite skills for Claude Code, Cursor, and other AI coding agents — pipelines, migration, preflight, agent runtime, CLI, and API",
   "author": {
     "name": "Buildkite"
   },
@@ -17,11 +17,12 @@
     "continuous integration",
     "build automation",
     "agents",
-    "test-engine",
-    "api",
-    "oidc",
-    "secure-delivery",
-    "agent-infrastructure"
+    "claude-code",
+    "cursor",
+    "ai-agents",
+    "preflight",
+    "migration",
+    "api"
   ],
   "category": "developer-tools",
   "tags": [
@@ -30,10 +31,12 @@
     "pipelines",
     "agents",
     "continuous integration",
-    "test-engine",
-    "api",
-    "secure-delivery",
-    "agent-infrastructure"
+    "claude-code",
+    "cursor",
+    "ai-agents",
+    "preflight",
+    "migration",
+    "api"
   ],
   "skills": "./skills/"
 }

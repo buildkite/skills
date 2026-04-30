@@ -10,18 +10,6 @@
 Path: skills/buildkite-pipelines/SKILL.md
 Topics: pipeline.yml, step types (command, wait, block, trigger, group, input), plugins, caching, parallelism, dynamic pipelines, matrix builds, artifacts, hooks, retry, concurrency, if_changed, notify
 
-### buildkite-test-engine
-Path: skills/buildkite-test-engine/SKILL.md
-Topics: test splitting, bktec CLI, flaky detection, quarantine, test collectors, test suites, BUILDKITE_TEST_ENGINE_* env vars, test reliability scores
-
-### buildkite-secure-delivery
-Path: skills/buildkite-secure-delivery/SKILL.md
-Topics: OIDC authentication, Package Registry, SLSA provenance, pipeline signing, JWKS, cosign, attestation, credential-free publishing
-
-### buildkite-agent-infrastructure
-Path: skills/buildkite-agent-infrastructure/SKILL.md
-Topics: clusters, queues, hosted agent instance shapes, cluster secrets, buildkite-agent.cfg, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization
-
 ### buildkite-migration
 Path: skills/buildkite-migration/SKILL.md
 Topics: CI migration planning, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket Pipelines, GitLab CI, vendor auto-detection, pipeline best practices for migrated pipelines
