@@ -1,39 +1,23 @@
 {
   "name": "buildkite-skills",
-  "displayName": "Buildkite Skills",
   "version": "1.0.0",
-  "description": "Buildkite skills for pipelines, agent runtime, CLI, API, platform engineering, secure delivery, and test engine",
+  "description": "Plugin that includes the Buildlkite MCP server and Skills for common workflows (designing pipelines, troubleshooting builds, agent runtime, CLI, API)",
   "author": {
     "name": "Buildkite"
   },
-  "publisher": "Buildkite",
-  "homepage": "https://github.com/buildkite/skills",
+  "homepage": "https://buildkite.com/",
   "repository": "https://github.com/buildkite/skills",
   "license": "MIT",
+  "logo": "./skills/buildkite-pipelines/assets/buildkite-icon-large.png",
   "keywords": [
     "ci/cd",
     "buildkite",
-    "pipelines",
+    "buildkite pipelines",
     "continuous integration",
     "build automation",
-    "agents",
     "test-engine",
-    "api",
-    "oidc",
     "secure-delivery",
-    "agent-infrastructure"
-  ],
-  "category": "developer-tools",
-  "tags": [
-    "ci/cd",
-    "buildkite",
-    "pipelines",
-    "agents",
-    "continuous integration",
-    "test-engine",
-    "api",
-    "secure-delivery",
-    "agent-infrastructure"
+    "continuous delivery"
   ],
   "skills": "./skills/"
 }
