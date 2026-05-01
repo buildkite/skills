@@ -1,14 +1,14 @@
 {
-  "name": "buildkite-skills",
+  "name": "buildkite",
   "version": "1.0.0",
-  "description": "Plugin that includes the Buildlkite MCP server and Skills for common workflows (designing pipelines, troubleshooting builds, agent runtime, CLI, API)",
+  "description": "Buildkite MCP server and skills for common CI/CD workflows (designing pipelines, troubleshooting builds plus agent runtime, CLI, API)",
   "author": {
     "name": "Buildkite"
   },
   "homepage": "https://buildkite.com/",
   "repository": "https://github.com/buildkite/skills",
   "license": "MIT",
-  "logo": "./skills/buildkite-pipelines/assets/buildkite-icon-large.png",
+  "logo": "./skills/buildkite-pipelines/assets/buildkite-icon-small.png",
   "keywords": [
     "ci/cd",
     "buildkite",
