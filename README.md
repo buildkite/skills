@@ -1,8 +1,9 @@
 # Buildkite Skills
 
-Skills that teach AI coding agents how to use [Buildkite](https://buildkite.com).
-Install them into your agent of choice so it can generate correct pipeline YAML,
-run CLI commands, call the API, configure agents, split tests, and ship securely.
+The official Buildkite skills for Claude Code, Cursor, and other AI coding
+agents. Install them into your agent of choice so it can generate correct
+pipeline YAML, run `bk` and `buildkite-agent` CLI commands, call the API,
+configure agents, and run preflight builds.
 
 ## Installation
 
@@ -24,24 +25,20 @@ Copy skill directories into your agent's skills folder:
 # Claude Code
 mkdir -p .claude/skills
 cp -r skills/buildkite-pipelines .claude/skills/
+cp -r skills/buildkite-preflight .claude/skills/
 cp -r skills/buildkite-agent-runtime .claude/skills/
 cp -r skills/buildkite-cli .claude/skills/
 cp -r skills/buildkite-api .claude/skills/
 cp -r skills/buildkite-migration .claude/skills/
-cp -r skills/buildkite-agent-infrastructure .claude/skills/
-cp -r skills/buildkite-secure-delivery .claude/skills/
-cp -r skills/buildkite-test-engine .claude/skills/
 
 # Cursor
 mkdir -p .cursor/skills
 cp -r skills/buildkite-pipelines .cursor/skills/
+cp -r skills/buildkite-preflight .cursor/skills/
 cp -r skills/buildkite-agent-runtime .cursor/skills/
 cp -r skills/buildkite-cli .cursor/skills/
 cp -r skills/buildkite-api .cursor/skills/
 cp -r skills/buildkite-migration .cursor/skills/
-cp -r skills/buildkite-agent-infrastructure .cursor/skills/
-cp -r skills/buildkite-secure-delivery .cursor/skills/
-cp -r skills/buildkite-test-engine .cursor/skills/
 ```
 
 ## Skills
@@ -53,10 +50,7 @@ Skills organized by what you are trying to accomplish.
 | Skill | Directory | Description |
 |-------|-----------|-------------|
 | **Pipelines** | [skills/buildkite-pipelines/](skills/buildkite-pipelines/SKILL.md) | Pipeline YAML, step types, plugins, caching, parallelism, dynamic pipelines, matrix builds, artifacts, hooks |
-| **Test Engine** | [skills/buildkite-test-engine/](skills/buildkite-test-engine/SKILL.md) | Test splitting, flaky detection, quarantine, bktec CLI, test collectors |
-| **Secure Delivery** | [skills/buildkite-secure-delivery/](skills/buildkite-secure-delivery/SKILL.md) | OIDC authentication, Package Registry, SLSA provenance, pipeline signing |
 | **Migration** | [skills/buildkite-migration/](skills/buildkite-migration/SKILL.md) | CI migration planning, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket Pipelines, GitLab CI using `bk pipeline convert` |
-| **Platform Engineering** | [skills/buildkite-agent-infrastructure/](skills/buildkite-agent-infrastructure/SKILL.md) | Clusters, queues, hosted agents, agent config, pipeline templates, SSO, audit logging |
 
 ### Cross-Cutting Skills
 
@@ -64,6 +58,7 @@ Skills needed across all journeys.
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
+| **Preflight** | [skills/buildkite-preflight/](skills/buildkite-preflight/SKILL.md) | `bk preflight` runs a CI build against local uncommitted changes |
 | **Agent Runtime** | [skills/buildkite-agent-runtime/](skills/buildkite-agent-runtime/SKILL.md) | `buildkite-agent` subcommands inside running job steps — annotate, artifact, meta-data, pipeline upload, OIDC, locks |
 | **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
 | **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
@@ -92,7 +87,6 @@ For more on content strategy, see [CONVENTIONS.md](CONVENTIONS.md).
 2. Review an existing complete skill as a quality benchmark (e.g. `skills/buildkite-pipelines/SKILL.md`)
 3. Check the boundary table in CONVENTIONS.md — each topic is owned by exactly one skill
 4. Write your skill following the section order and style rules
-5. Run evals to verify quality: see [evals/README.md](evals/README.md)
 
 ## Documentation
 

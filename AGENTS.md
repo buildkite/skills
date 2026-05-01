@@ -8,14 +8,11 @@ Installed via `npx skills add buildkite/skills` or manually copied into agent sk
 ```
 skills/                              # All skills live here
   buildkite-pipelines/               # Journey — pipeline YAML, step types, caching, parallelism
-  buildkite-test-engine/             # Journey — test splitting, flaky detection, bktec CLI
-  buildkite-secure-delivery/         # Journey — OIDC, Package Registry, SLSA provenance
   buildkite-migration/               # Journey — CI migration, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI
-  buildkite-agent-infrastructure/    # Journey — clusters, queues, hosted agents, SSO, audit
+  buildkite-preflight/               # Cross-cutting — bk preflight against local uncommitted changes
   buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
-evals/                               # Quality eval dataset and runner
 ```
 
 ## Skill Architecture
@@ -51,15 +48,9 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 - All code blocks must be syntactically correct and copy-paste ready
 - SKILL.md body target: 10-18KB; total with references: 15-45KB
 
-## Quality Evaluation
-
-The `evals/` directory contains a dataset of real customer questions and a runner
-that tests skill routing and answer quality. See `evals/README.md` for usage.
-
 ## Working on Skills
 
 1. Read `CONVENTIONS.md` completely
 2. Review an existing complete skill as a quality benchmark
 3. Check the boundary table — never duplicate content owned by another skill
 4. Follow the section order: frontmatter, title, overview, quick start, feature sections, common mistakes, additional resources, further reading
-5. Run evals to verify quality
