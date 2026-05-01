@@ -8,7 +8,7 @@
   "homepage": "https://buildkite.com/",
   "repository": "https://github.com/buildkite/skills",
   "license": "MIT",
-  "logo": "skills/buildkite-pipelines/assets/buildkite-icon-small.png",
+  "logo": "assets/logo.png",
   "keywords": [
     "ci/cd",
     "buildkite",
