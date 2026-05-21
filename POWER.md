@@ -1,7 +1,7 @@
 ---
 name: Buildkite
 displayName: Buildkite
-description: Buildkite MCP and powers to orchestrate and ship from your spec. Trigger builds, run pipelines across your own agents, manage artifacts and debug failures without leaving Kiro."
+description: Buildkite MCP and powers to orchestrate and ship from your spec. Trigger builds, run pipelines across your own agents, manage artifacts and debug failures without leaving Kiro.
 keywords:
   - buildkite
   - ci
