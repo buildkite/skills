@@ -1,14 +1,18 @@
 ---
-name: buildkite
+name: Buildkite
 displayName: Buildkite
-description: Buildkite CI/CD — author pipelines, run builds, manage agents and artifacts, and call the Buildkite API via the Buildkite MCP server. Bundles workflows for pipelines, migration, preflight, the agent runtime, the bk CLI, and the REST/GraphQL API.
+description: Buildkite MCP and powers to orchestrate and ship from your spec. Trigger builds, run pipelines across your own agents, manage artifacts and debug failures without leaving Kiro."
 keywords:
   - buildkite
   - ci
   - cd
   - pipeline
-  - preflight
-  - bk
+  - devops
+  - builds
+  - deploy
+  - orchestration
+  - mcp
+  - agents
 author: Buildkite
 ---
 
