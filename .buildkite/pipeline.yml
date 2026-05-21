@@ -3,16 +3,16 @@ steps:
     if: build.pull_request.id != null
     command: |
       ./scripts/build-power.sh
-      if ! git diff --quiet powers/buildkite; then
+      if ! git diff --quiet steering; then
         {
-          echo "The Kiro power at \`powers/buildkite/\` is out of date with the skills."
+          echo "The Kiro \`steering/\` files are out of date with the skills."
           echo
           echo "Run \`./scripts/build-power.sh\` locally and commit the result."
           echo
           echo "Diff:"
           echo
           echo '```diff'
-          git diff powers/buildkite
+          git diff steering
           echo '```'
         } | buildkite-agent annotate --style error --context kiro-drift
         exit 1

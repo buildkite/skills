@@ -7,14 +7,8 @@ keywords:
   - ci
   - cd
   - pipeline
-  - build
-  - agent
-  - artifact
-  - annotation
   - preflight
   - bk
-  - graphql
-  - webhook
 author: Buildkite
 ---
 
