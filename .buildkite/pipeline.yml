@@ -1,0 +1,19 @@
+steps:
+  - label: ":kiro: power-up-to-date"
+    if: build.pull_request.id != null
+    command: |
+      ./scripts/build-power.sh
+      if ! git diff --quiet powers/buildkite; then
+        {
+          echo "The Kiro power at \`powers/buildkite/\` is out of date with the skills."
+          echo
+          echo "Run \`./scripts/build-power.sh\` locally and commit the result."
+          echo
+          echo "Diff:"
+          echo
+          echo '```diff'
+          git diff powers/buildkite
+          echo '```'
+        } | buildkite-agent annotate --style error --context kiro-drift
+        exit 1
+      fi

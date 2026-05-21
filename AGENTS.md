@@ -54,3 +54,4 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 2. Review an existing complete skill as a quality benchmark
 3. Check the boundary table — never duplicate content owned by another skill
 4. Follow the section order: frontmatter, title, overview, quick start, feature sections, common mistakes, additional resources, further reading
+5. **After editing any `SKILL.md`, run `./scripts/build-power.sh` and commit the regenerated `powers/buildkite/` files.** The Kiro power is derived from the skills; CI fails on drift.
