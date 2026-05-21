@@ -3,11 +3,17 @@ steps:
     if: build.pull_request.id != null
     command: |
       ./scripts/build-power.sh
-      if ! git diff --quiet steering; then
+      if [ -n "$(git status --porcelain -- steering)" ]; then
         {
           echo "The Kiro \`steering/\` files are out of date with the skills."
           echo
           echo "Run \`./scripts/build-power.sh\` locally and commit the result."
+          echo
+          echo "Status:"
+          echo
+          echo '```'
+          git status --short -- steering
+          echo '```'
           echo
           echo "Diff:"
           echo

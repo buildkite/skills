@@ -13,8 +13,6 @@ import shutil
 import sys
 from pathlib import Path
 
-import yaml
-
 REPO = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO / "skills"
 STEERING_DIR = REPO / "steering"
@@ -25,12 +23,67 @@ GENERATED_HEADER = (
 )
 
 
+def parse_scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
+
+
+def parse_frontmatter(frontmatter: str, source: Path) -> dict[str, str]:
+    """Parse the small YAML subset used by SKILL.md frontmatter.
+
+    Supported forms are plain or quoted scalar values and folded blocks:
+      key: value
+      key: "value"
+      key: >
+        folded text
+    """
+    meta: dict[str, str] = {}
+    lines = frontmatter.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if not line.strip():
+            i += 1
+            continue
+
+        if line.startswith((" ", "\t")) or ":" not in line:
+            raise SystemExit(f"{source}: unsupported frontmatter line: {line!r}")
+
+        key, value = line.split(":", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            raise SystemExit(f"{source}: unsupported frontmatter line: {line!r}")
+
+        if value == ">":
+            block_lines = []
+            i += 1
+            while i < len(lines):
+                block_line = lines[i]
+                if block_line and not block_line.startswith((" ", "\t")):
+                    break
+                block_lines.append(block_line.strip())
+                i += 1
+            meta[key] = " ".join(part for part in block_lines if part)
+            continue
+
+        meta[key] = parse_scalar(value)
+        i += 1
+
+    return meta
+
+
 def parse_skill(skill_md: Path):
     text = skill_md.read_text()
     m = re.match(r"^---\n(.*?)\n---\n(.*)$", text, re.DOTALL)
     if not m:
         raise SystemExit(f"{skill_md}: missing YAML frontmatter")
-    meta = yaml.safe_load(m.group(1))
+    meta = parse_frontmatter(m.group(1), skill_md)
+    for key in ("name", "description"):
+        if key not in meta:
+            raise SystemExit(f"{skill_md}: missing required frontmatter key: {key}")
     body = m.group(2).lstrip("\n")
     return meta, body
 
@@ -48,14 +101,13 @@ def write_steering_file(short: str, src: str, meta: dict, body: str) -> None:
     STEERING_DIR.mkdir(parents=True, exist_ok=True)
     out = STEERING_DIR / f"{short}.md"
     description = " ".join(meta["description"].split())
-    frontmatter = {
-        "inclusion": "auto",
-        "name": meta["name"],
-        "description": description,
-    }
-    yaml_block = yaml.safe_dump(
-        frontmatter, sort_keys=False, default_flow_style=False, width=10_000
-    ).rstrip()
+    yaml_block = "\n".join(
+        (
+            "inclusion: auto",
+            f"name: {meta['name']}",
+            f"description: {description}",
+        )
+    )
     content = f"---\n{yaml_block}\n---\n\n{GENERATED_HEADER.format(src=src)}{body}"
     if not content.endswith("\n"):
         content += "\n"
