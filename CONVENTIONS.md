@@ -9,6 +9,20 @@ Copilot, Windsurf, Gemini CLI) via `npx skills add buildkite/skills`.
 
 ---
 
+## Kiro Power: Generated, Never Hand-Edited
+
+The repo root is a Kiro power. `POWER.md` + `mcp.json` + `steering/` bundle all skills
+together with the Buildkite MCP server. The `steering/` files are **generated** from
+`skills/buildkite-*/SKILL.md` by `scripts/build-power.sh`.
+
+- Source of truth: `skills/buildkite-*/SKILL.md` (and their `references/` and `examples/`).
+- Generated, do not edit: everything under `steering/`.
+- Hand-authored: `POWER.md` (the power manifest) and `mcp.json` (the MCP server config).
+- After editing any `SKILL.md`, run `./scripts/build-power.sh` and commit the result.
+- CI enforces this on every PR — a drift between skills and the generated steering files fails the build.
+
+---
+
 ## Skills Are Not Documentation
 
 Skills teach agents *how to do things correctly*. Buildkite docs explain *what features exist*.
