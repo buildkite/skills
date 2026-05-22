@@ -129,17 +129,18 @@ def ensure_symlink(link: Path, target_rel: str) -> None:
 def link_resources(short: str, src: str) -> None:
     src_dir = SKILLS_DIR / src
     bundle_dir = STEERING_DIR / short
-    any_linked = False
     for sub in ("references", "examples"):
+        link = bundle_dir / sub
         if (src_dir / sub).is_dir():
-            link = bundle_dir / sub
             # link sits at steering/<short>/<sub>
             # target sits at skills/<src>/<sub>
             # relative: up 2 (sub -> short -> steering -> REPO)
             target = f"../../skills/{src}/{sub}"
             ensure_symlink(link, target)
-            any_linked = True
-    if not any_linked and bundle_dir.exists() and not any(bundle_dir.iterdir()):
+        elif link.is_symlink():
+            link.unlink()
+
+    if bundle_dir.exists() and not any(bundle_dir.iterdir()):
         bundle_dir.rmdir()
 
 
