@@ -1,0 +1,6 @@
+interface:
+  display_name: "Buildkite Agent Infrastructure"
+  short_description: "Choose and operate self-hosted agent clusters: Elastic CI Stack, Agent Stack for Kubernetes, queue design, lifecycle hooks, tokens, observability"
+  icon_small: "./assets/buildkite-icon-small.png"
+  icon_large: "./assets/buildkite-icon-large.png"
+  brand_color: "#00D974"

@@ -50,7 +50,7 @@ Before writing, state aloud (in your response or thinking):
 1. The frontmatter you will use (copy the template below)
 2. Your assigned skill name
 3. Three topics you will NOT cover (per the boundary table below)
-4. Your SKILL.md size target (10-18KB body, with overflow in `references/`)
+4. Your SKILL.md size target (10-25KB body, with overflow in `references/`)
 
 ---
 
@@ -60,7 +60,7 @@ Each skill lives in its own directory with this structure:
 
 ```
 skills/<skill-name>/
-├── SKILL.md              (required — core skill, 10-18KB typical)
+├── SKILL.md              (required — core skill, 10-25KB typical)
 ├── references/           (optional — detailed content loaded on demand)
 │   ├── flag-reference.md
 │   └── advanced-examples.md
@@ -152,14 +152,15 @@ Every SKILL.md must follow this structure:
 1. **YAML frontmatter** (name + description)
 2. **H1 title** — `# Buildkite <Area>`
 3. **2-sentence overview** — what this covers and why agents care
-4. **## Quick Start** — minimum viable example, copy-paste ready, <20 lines
+4. **## Quick Start** — minimum viable example, copy-paste ready, < 20 lines for the code block. May be preceded by a small decision table or symptom router that helps the reader pick the right code path — keep the table to ≤ 10 rows, and follow it with the copy-paste block. The agent should be able to act after reading the Quick Start alone.
 5. **## [Feature sections]** — one H2 per major feature area
    - Include CLI examples in fenced code blocks
    - Include flag tables for the most common commands
    - Include YAML examples where relevant
 6. **## Common Mistakes** — table format (see below)
-7. **## Additional Resources** — pointers to `references/` and `examples/` files
-8. **## Further Reading** — 3-5 links to buildkite.com/docs
+7. **## Additional Resources** — pointers to `references/`, `examples/`, and `scripts/`
+8. **## Anti-Scope** *(recommended for skills with significant boundary overlap)* — explicit "this skill does NOT cover" list, each item pointing to the owning skill. Use the heading `## Anti-Scope` exactly. Optional for anchor skills that handle anti-scope through other mechanisms (e.g., a glossary section listing terms owned elsewhere).
+9. **## Further Reading** — 3-5 links to buildkite.com/docs
 
 ---
 
@@ -203,18 +204,19 @@ When your topic touches another skill's territory, use exactly this pattern:
 Never duplicate content owned by another skill. One sentence + pointer.
 
 **Size targets:**
-- SKILL.md body: **10-18KB** typical. Contains core knowledge for common tasks.
+- SKILL.md body: **10-25KB** typical. Anchor skills (e.g., `buildkite-fundamentals`) may run smaller (10-15KB); journey skills with verbatim doc quotes, decision tables, and gotcha tables run to the upper end.
 - References: **unlimited**. Move detailed flag tables, advanced examples, and edge cases here.
-- Total skill content (SKILL.md + references): **15-45KB** typical.
+- Total skill content (SKILL.md + references): **15-100KB** typical. Reference files carry the bulk of detail and load on demand, so a larger total is the right shape — not a problem.
 
 Note: Anthropic's official guidance recommends skills under ~2,000 tokens / 500 lines.
 Our skills are significantly larger because Buildkite-specific domain knowledge is niche
 and unlikely to be in model training data. This is a deliberate trade-off — but it means
 every line must earn its place. Prefer moving detail to `references/` over inflating SKILL.md.
 
-If your SKILL.md first draft exceeds 18KB, identify sections to extract into `references/`.
-If it's under 8KB, it's too thin — expand quick start, add more inline examples, deepen
-common mistakes.
+If your SKILL.md first draft exceeds 25KB, identify sections to extract into `references/`.
+The obvious candidates: exhaustive flag tables, framework gotcha tables, per-provider
+cookbooks. If it's under 8KB, it's too thin — expand quick start, add more inline examples,
+deepen common mistakes.
 
 ---
 
@@ -245,19 +247,28 @@ Each skill owns specific topics exclusively. Do not cover topics outside your bo
 
 | Topic | Owner | Others do this |
 |-------|-------|---------------|
-| `pipeline.yml` syntax, step types, plugins, caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, `notify:`, `artifact_paths:`, concurrency, `agents:` routing, `secrets:` | **buildkite-pipelines** | Reference only |
-| Test Engine suites, `bktec` CLI, test splitting, flaky detection, quarantine, test collectors, `BUILDKITE_TEST_ENGINE_*` env vars | **buildkite-test-engine** | Reference only |
-| OIDC auth flows, Package Registry setup, SLSA provenance, pipeline signing (JWKS), verification rollout | **buildkite-secure-delivery** | Reference only |
-| Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | **buildkite-agent-infrastructure** | Reference only |
+| Core Buildkite vocabulary, build hierarchy (pipeline/build/step/job), agent/queue/cluster containment, MCP vs REST vs GraphQL vs CLI vs `buildkite-agent` surface map, OIDC subject format reference | **buildkite-fundamentals** | Reference only |
+| `pipeline.yml` syntax, step types, plugins, caching, parallelism, retry, `if_changed`, dynamic pipelines, matrix, `notify:`, `artifact_paths:`, concurrency, `agents:` routing, `secrets:` block syntax | **buildkite-pipelines** | Reference only |
+| Test Engine suites, `bktec` CLI, test splitting, flaky detection, quarantine, test collectors, `BUILDKITE_TEST_ENGINE_*` env vars | **buildkite-test-engine** *(planned)* | Reference only |
+| OIDC auth flows, Package Registries authentication (OIDC + `bkpt_`), SLSA provenance, pipeline signing (JWKS), verification rollout, secrets workflows, token lifecycle, `redactor`, untrusted-data handling | **buildkite-secure-delivery** | Reference only |
+| Self-hosted clusters, queues, queue design, `agent-stack-k8s` controller, Elastic CI Stack, `buildkite-agent.cfg`, agent tokens, agent lifecycle hooks, agent observability | **buildkite-agent-infrastructure** | Reference only |
+| Buildkite-hosted agent operations: image lifecycle, internal container registry, macOS / Xcode / fastlane, cache volumes, namespace concurrency, terminal access, hosted pipeline migration | **buildkite-hosted-agents-operations** | Reference only |
+| Diagnosing failed, flaky, stalled, or anomalous builds: investigation workflow, failure attribution, webhook state traps, agent-disconnect diagnostics, log-search workarounds | **buildkite-build-investigation** | Reference only |
 | `buildkite-agent` subcommands inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor, tool sign/verify | **buildkite-agent-runtime** | Reference only |
 | `bk build`, `bk job`, `bk pipeline`, `bk pipeline convert`, `bk secret`, `bk artifact`, `bk auth`, `bk cluster`, `bk package` commands | **buildkite-cli** | Reference only |
-| REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Reference only |
+| `bk preflight` against local uncommitted changes | **buildkite-preflight** | Reference only |
+| REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination, MCP server use | **buildkite-api** | Reference only |
 | CI migration planning, `bk pipeline convert`, provider-specific concept mappings (GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI), pipeline best practices for converted pipelines | **buildkite-migration** | Reference only |
 
 **Artifact ambiguity:** The pipeline YAML for artifact upload/download belongs to
 **buildkite-pipelines**. The `buildkite-agent artifact` subcommands belong to
 **buildkite-agent-runtime**. The `bk artifact` CLI commands belong to **buildkite-cli**.
 Each skill covers its scope and cross-references the others.
+
+**Topics deferred from this batch.** SSO/SAML, audit logging, pipeline templates, and cost
+attribution are not yet covered by any skill. They are intentionally out of scope of the
+current boundary table — track as gaps to add to a future `buildkite-admin`-style skill or
+to extensions of existing skills.
 
 ---
 
@@ -287,7 +298,7 @@ Before you consider your skill done, verify:
 - [ ] Description uses third person ("This skill should be used when...")
 - [ ] Description contains specific quoted trigger phrases
 - [ ] Follows section order exactly (Quick Start before feature sections, Common Mistakes near end)
-- [ ] SKILL.md body is 10-18KB; detailed content moved to `references/`
+- [ ] SKILL.md body is 10-25KB; detailed content moved to `references/`
 - [ ] All referenced `references/` and `examples/` files exist
 - [ ] `agents/openai.yaml` exists with correct metadata
 
@@ -307,7 +318,7 @@ Before you consider your skill done, verify:
 - [ ] Core concepts and common patterns in SKILL.md
 - [ ] Exhaustive flag tables, advanced examples in `references/`
 - [ ] Additional Resources section points to bundled files
-- [ ] Total skill content (SKILL.md + references) is 15-45KB
+- [ ] Total skill content (SKILL.md + references) is 15-100KB
 
 ---
 
