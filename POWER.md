@@ -50,6 +50,7 @@ This power is generated from the upstream Buildkite skills at <https://github.co
 
 ## License and support
 
-This power integrates with buildkite mcp [(MIT)](https://github.com/buildkite/buildkite-mcp-server/blob/main/LICENSE).
+This power integrates with the [Buildkite MCP server](https://github.com/buildkite/buildkite-mcp-server) ([MIT](https://github.com/buildkite/buildkite-mcp-server/blob/main/LICENSE)).
+
 - [Privacy Policy](https://buildkite.com/about/legal/privacy-policy/)
 - [Support](https://buildkite.com/about/contact/)
