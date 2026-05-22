@@ -17,7 +17,7 @@ together with the Buildkite MCP server. The `steering/` files are **generated** 
 
 - Source of truth: `skills/buildkite-*/SKILL.md` (and their `references/` and `examples/`).
 - Generated, do not edit: everything under `steering/`.
-- Hand-authored: `POWER.md` (the power manifest).
+- Hand-authored: `POWER.md` (the power manifest) and `mcp.json` (the MCP server config).
 - After editing any `SKILL.md`, run `./scripts/build-power.sh` and commit the result.
 - CI enforces this on every PR — a drift between skills and the generated steering files fails the build.
 
