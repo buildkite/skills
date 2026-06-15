@@ -15,21 +15,6 @@ brew install buildkite/buildkite/bk
 
 Download pre-built binaries from the [GitHub releases page](https://github.com/buildkite/cli/releases). Extract and place the `bk` binary on the system PATH.
 
-### Shell completion
-
-Generate autocompletion scripts for the current shell:
-
-```bash
-# Bash
-bk completion bash > /etc/bash_completion.d/bk
-
-# Zsh
-bk completion zsh > "${fpath[1]}/_bk"
-
-# Fish
-bk completion fish > ~/.config/fish/completions/bk.fish
-```
-
 ### Verify installation
 
 ```bash
@@ -85,7 +70,7 @@ Manage organization clusters from the terminal.
 bk cluster list
 
 # View cluster details
-bk cluster view <cluster-slug>
+bk cluster view <cluster-uuid>
 ```
 
 | Flag | Short | Default | Description |
@@ -99,17 +84,19 @@ bk cluster view <cluster-slug>
 Manage packages in Buildkite Package Registries.
 
 ```bash
-# List package registries
-bk package list
+# Push a package from a file
+bk package push <registry-slug> --file-path my-package.tar.gz
 
-# Push a package
-bk package push <file> --registry my-registry
+# Push a package via stdin
+cat my-package.tar.gz | bk package push <registry-slug> --stdin-file-name my-package.tar.gz -
 ```
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--registry` | `-r` | — | Registry slug (required for push) |
-| `--output` | `-o` | `text` | Output format: `text`, `json` |
+| `<registry-slug>` | — | — | Registry slug (positional arg, required) |
+| `--file-path` | — | — | Path to the package file |
+| `--stdin-file-name` | — | — | Filename when reading from stdin |
+| `--web` | `-w` | `false` | Open in browser after push |
 
 Supports Docker images, npm packages, Debian packages, RPM packages, and generic file uploads. Push to Buildkite Package Registries, ECR, GAR, Artifactory, and ACR.
 
@@ -122,39 +109,41 @@ Make direct REST or GraphQL API calls from the terminal using `bk api`. Useful f
 ### REST API
 
 ```bash
-# GET request
-bk api /organizations/my-org/pipelines
+# GET request (organization is inferred from config)
+bk api /pipelines/example-pipeline/builds/420
 
 # POST request with JSON body
-bk api --method POST /organizations/my-org/pipelines --data '{
+bk api --method POST /pipelines --data '{
   "name": "New Pipeline",
   "repository": "git@github.com:org/repo.git"
 }'
 
 # PUT request
-bk api --method PUT /organizations/my-org/pipelines/my-app --data '{
-  "description": "Updated description"
+bk api --method PUT /clusters/CLUSTER_UUID --data '{
+  "name": "My Updated Cluster"
 }'
 ```
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--method` | `-X` | `GET` | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH` |
+| `--method` | `-X` | — | HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH` |
 | `--data` | `-d` | — | Request body (JSON string) |
-| `--output` | `-o` | `text` | Output format: `text`, `json` |
+| `--headers` | `-H` | — | Headers to include (repeatable) |
+| `--file` | `-f` | — | File containing a GraphQL query |
+| `--analytics` | — | `false` | Use the Test Analytics endpoint |
+| `--verbose` | — | `false` | Enable verbose output |
 
 ### GraphQL API
 
-```bash
-bk api --graphql --data '{
-  "query": "{ viewer { user { name email } } }"
-}'
-```
+GraphQL requests are sent by providing a query via `--data` or `--file` without a REST endpoint:
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--graphql` | | `false` | Send request to the GraphQL endpoint |
-| `--data` | `-d` | — | GraphQL query as JSON string |
+```bash
+# Inline query
+bk api --data '{ "query": "{ viewer { user { name email } } }" }'
+
+# Query from file
+bk api --file query.graphql
+```
 
 > For comprehensive REST and GraphQL API documentation (endpoints, mutations, pagination, webhooks), see the **buildkite-api** skill.
 
