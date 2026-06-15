@@ -1,0 +1,48 @@
+name: Regenerate Kiro steering
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths:
+      - "skills/buildkite-*/SKILL.md"
+      - "skills/buildkite-*/references/**"
+      - "skills/buildkite-*/examples/**"
+      - "scripts/build-power.*"
+      - ".github/workflows/regenerate-kiro-steering.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    name: Regenerate generated steering files
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate steering files
+        run: ./scripts/build-power.sh
+
+      - name: Commit regenerated steering
+        run: |
+          if [ -z "$(git status --porcelain -- steering)" ]; then
+            echo "Kiro steering is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add steering
+          git commit -m "Regenerate Kiro steering" -- steering
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
