@@ -96,6 +96,7 @@ All endpoints are under `/organizations/{org.slug}`. Abbreviated as `/{org}` bel
 | Organizations | `/organizations` | GET | `read_organizations` |
 | Pipelines | `/{org}/pipelines` | GET, POST | `read_pipelines`, `write_pipelines` |
 | Pipeline | `/{org}/pipelines/{slug}` | GET, PUT, PATCH, DELETE | `read_pipelines`, `write_pipelines` |
+| Pipeline templates | `/{org}/pipeline-templates` | GET, POST | `read_pipeline_templates`, `write_pipeline_templates` |
 | Builds (org) | `/{org}/builds` | GET | `read_builds` |
 | Builds (pipeline) | `/{org}/pipelines/{slug}/builds` | GET, POST | `read_builds`, `write_builds` |
 | Build | `/{org}/pipelines/{slug}/builds/{num}` | GET | `read_builds` |
@@ -106,9 +107,13 @@ All endpoints are under `/organizations/{org.slug}`. Abbreviated as `/{org}` bel
 | Artifact download | `/{org}/pipelines/{slug}/builds/{num}/artifacts/{id}/download` | GET | `read_artifacts` |
 | Annotations | `/{org}/pipelines/{slug}/builds/{num}/annotations` | GET | `read_builds` |
 | Agents | `/{org}/agents` | GET | `read_agents` |
-| Agent tokens | `/{org}/agent-tokens` | GET, POST | `read_agents`, `write_agents` |
+| Clusters | `/{org}/clusters` | GET, POST | `read_clusters`, `write_clusters` |
+| Cluster | `/{org}/clusters/{id}` | GET, PUT, DELETE | `read_clusters`, `write_clusters` |
+| Cluster queues | `/{org}/clusters/{id}/queues` | GET, POST | `read_clusters`, `write_clusters` |
+| Cluster queue | `/{org}/clusters/{id}/queues/{id}` | GET, PUT, DELETE | `read_clusters`, `write_clusters` |
+| Cluster tokens | `/{org}/clusters/{id}/tokens` | GET, POST | `read_agents`, `write_agents` |
+| Cluster secrets | `/{org}/clusters/{id}/secrets` | GET, POST | `read_secrets_details`, `write_secrets` |
 | Members | `/{org}/members` | GET | `read_organizations` |
-| Webhooks | `/{org}/webhooks` | GET, POST | — |
 
 ### Pagination
 
@@ -230,7 +235,7 @@ API errors return JSON with a `message` field.
 
 ## GraphQL API
 
-Endpoint: `https://graphql.buildkite.com/v1`. The GraphQL API supports queries and mutations with cursor-based pagination. Use it for operations not available in the REST API (cluster management, pipeline templates, complex mutations) and when fetching nested or specific fields to reduce response size.
+Endpoint: `https://graphql.buildkite.com/v1`. The GraphQL API supports queries and mutations with cursor-based pagination. Use it when fetching nested or specific fields to reduce response size, for audit events, or when you prefer a typed query language over REST conventions.
 
 > For full query/mutation examples, pagination details, and introspection guidance, see `references/graphql-reference.md`.
 
@@ -241,16 +246,13 @@ Endpoint: `https://graphql.buildkite.com/v1`. The GraphQL API supports queries a
 | Trigger a build | Either | Both support it; REST is simpler |
 | List builds with filtering | REST | Better query parameter support |
 | Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
-| Create or update cluster queues | GraphQL | Not available in REST |
-| Create pipeline templates | GraphQL | Not available in REST |
-| Manage agent tokens | GraphQL | More control than REST |
-| Simple CRUD on pipelines | REST | Simpler request/response |
+| Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
 | Audit events | GraphQL | `auditEvent` query available |
 | Bulk operations on many pipelines | GraphQL | Fetch specific fields only, reduce payload size |
 
 ## Webhooks
 
-Webhooks deliver HTTP POST requests to a specified URL when events occur in Buildkite. Use them for event-driven automation: failure notifications, auto-retry logic, deployment triggers, status dashboards. Configure via the REST API at `/{org}/webhooks` with a target URL, event subscriptions, and optional HMAC-SHA256 signature verification.
+Webhooks deliver HTTP POST requests to a specified URL when events occur in Buildkite. Use them for event-driven automation: failure notifications, auto-retry logic, deployment triggers, status dashboards. Configure webhooks in the Buildkite dashboard under your organization's **Notification Services** settings, specifying a target URL, event subscriptions, and optional HMAC-SHA256 signature verification.
 
 Most commonly used events: `build.finished` (react to build completion), `job.finished` (react to individual job results), `build.failing` (early failure notification). Agent events (`agent.connected`, `agent.disconnected`, etc.) and job lifecycle events are also available.
 
@@ -267,7 +269,6 @@ Most commonly used events: `build.finished` (react to build completion), `job.fi
 | Ignoring `429` rate limit responses | Subsequent requests fail or get blocked | Read the `Retry-After` header and wait before retrying |
 | Comparing webhook signatures with `==` instead of timing-safe comparison | Vulnerable to timing attacks | Use `crypto.timingSafeEqual` (Node.js) or `hmac.compare_digest` (Python) |
 | Sending `env` as a string instead of object in build creation | 422 error | `env` must be a JSON object: `{"KEY": "value"}`, not `"KEY=value"` |
-| Using REST API for cluster/queue management | 404 — endpoints do not exist | Use the GraphQL API for cluster and queue operations (`clusterQueueCreate`, etc.) |
 
 ## Additional Resources
 
