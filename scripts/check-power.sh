@@ -55,10 +55,19 @@ if [ -z "$pull_request_repo" ] || [ "$pull_request_repo" != "$pipeline_repo" ]; 
   exit 1
 fi
 
+github_token="${GITHUB_TOKEN:-${GH_TOKEN:-${BUILDKITE_GITHUB_TOKEN:-}}}"
+if [ -n "$github_token" ]; then
+  git remote set-url origin "https://x-access-token:${github_token}@github.com/${pipeline_repo}.git"
+fi
+
 git config user.name "${BUILDKITE_GIT_AUTHOR_NAME:-buildkite-agent}"
 git config user.email "${BUILDKITE_GIT_AUTHOR_EMAIL:-buildkite-agent@users.noreply.github.com}"
 git add steering
 git commit -m "Regenerate Kiro steering" -- steering
-git push origin "HEAD:${BUILDKITE_BRANCH}"
+
+if ! git push origin "HEAD:${BUILDKITE_BRANCH}"; then
+  annotate_drift "CI regenerated \`steering/\`, but could not push the generated commit back to \`${BUILDKITE_BRANCH}\`. Configure a write-capable \`GITHUB_TOKEN\`, \`GH_TOKEN\`, or \`BUILDKITE_GITHUB_TOKEN\` for this pipeline, or run \`./scripts/build-power.sh\` locally and commit the result." error
+  exit 1
+fi
 
 annotate_drift "CI regenerated and pushed the derived \`steering/\` files to this branch. A follow-up build should run on the new commit." info
