@@ -4,36 +4,7 @@ Webhooks deliver HTTP POST requests to a specified URL when events occur in Buil
 
 ## Creating a Webhook
 
-```bash
-curl -sS -X POST "https://api.buildkite.com/v2/organizations/my-org/webhooks" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Build failure handler",
-    "webhook_url": "https://my-server.example.com/webhooks/buildkite",
-    "events": ["build.finished", "job.finished"],
-    "verify_tls_certificates": true,
-    "token": "my-webhook-secret",
-    "pipeline_selection": {
-      "type": "all"
-    }
-  }'
-```
-
-Webhook creation parameters:
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `description` | Yes | Webhook name/description |
-| `webhook_url` | Yes | Target URL for POST requests |
-| `events` | Yes | Array of event types to subscribe to |
-| `verify_tls_certificates` | No | Verify TLS certificates (default: `true`) |
-| `token` | No | Secret sent as `X-Buildkite-Token` header |
-| `signature_key` | No | Secret for HMAC-SHA256 signature verification |
-| `pipeline_selection` | Yes | Object with `type`: `all`, `some`, `teams`, or `clusters` |
-| `branch_filter` | No | Branch pattern filter (e.g., `main production/*`) |
-
-Pipeline selection `type` values: `all` (all pipelines), `some` (add `pipeline_slugs` array), `teams` (add `team_slugs` array), `clusters` (add `cluster_uuids` array).
+Configure webhooks in the Buildkite dashboard under your organization's **Notification Services** settings. Specify a target URL, select the events to subscribe to, and optionally configure a token or signature key for verification. There is no REST API endpoint for webhook management — webhooks are created and managed through the UI.
 
 ## Event Types
 

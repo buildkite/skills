@@ -2,7 +2,7 @@
 
 Endpoint: `https://graphql.buildkite.com/v1`
 
-The GraphQL API supports queries and mutations with cursor-based pagination. Use it for operations not available in the REST API (cluster management, pipeline templates, complex mutations) and when fetching nested or specific fields to reduce response size.
+The GraphQL API supports queries and mutations with cursor-based pagination. Use it when fetching nested or specific fields to reduce response size, for audit events, or when you prefer a typed query language over REST conventions.
 
 ## Basic Query
 
@@ -183,10 +183,7 @@ Other key mutations: `pipelineUpdate`, `pipelineTemplateCreate` (Enterprise), `a
 | Trigger a build | Either | Both support it; REST is simpler |
 | List builds with filtering | REST | Better query parameter support |
 | Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
-| Create or update cluster queues | GraphQL | Not available in REST |
-| Create pipeline templates | GraphQL | Not available in REST |
-| Manage agent tokens | GraphQL | More control than REST |
-| Simple CRUD on pipelines | REST | Simpler request/response |
+| Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
 | Audit events | GraphQL | `auditEvent` query available |
 | Bulk operations on many pipelines | GraphQL | Fetch specific fields only, reduce payload size |
 
