@@ -5,7 +5,7 @@ description: "Runs Buildkite CI builds against changes in the local working tree
 
 # Buildkite Preflight
 
-Preflight runs CI builds against changes in the local working directory. It's intended to provide a feedback loop for evaluating local changes in CI by providing a single command to run the entire commit/push/run loop.
+Preflight runs CI builds against changes in the local working tree. It's intended to provide a feedback loop for evaluating local changes in CI by providing a single command to run the entire commit/push/run loop.
 
 ## When to Run Preflight
 

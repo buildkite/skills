@@ -54,4 +54,4 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 2. Review an existing complete skill as a quality benchmark
 3. Check the boundary table — never duplicate content owned by another skill
 4. Follow the section order: frontmatter, title, overview, quick start, feature sections, common mistakes, additional resources, further reading
-5. **After editing any `SKILL.md`, run `./scripts/build-power.sh` and commit the regenerated `steering/` files.** The `steering/` tree is derived from the skills; CI fails on drift.
+5. **After editing any `SKILL.md`, `steering/` must be regenerated from the skills.** The GitHub Action auto-commits regenerated `steering/` files for same-repository PRs; Buildkite still fails on drift if the generated files are missing or stale.

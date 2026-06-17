@@ -7,7 +7,8 @@ steps:
         {
           echo "The Kiro \`steering/\` files are out of date with the skills."
           echo
-          echo "Run \`./scripts/build-power.sh\` locally and commit the result."
+          echo "A GitHub Action should regenerate and push these files automatically for same-repository pull requests."
+          echo "If this is a fork or the action did not run, run \`./scripts/build-power.sh\` locally and commit the result."
           echo
           echo "Status:"
           echo
