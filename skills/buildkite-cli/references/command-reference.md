@@ -80,7 +80,7 @@ bk organization list    # alias bk org list; JSON by default
 
 | Flag | Short | Default | Description | Side |
 |------|-------|---------|-------------|------|
-| `--pipeline` | `-p` | auto-detected | Pipeline slug or `{org}/{slug}` | server |
+| `--pipeline` | `-p` | — (org-wide when omitted) | Pipeline slug or `{org}/{slug}` | server |
 | `--state` | — | — | Filter by state (comma-separated) | server |
 | `--branch` | — | — | Filter by branch (comma-separated) | server |
 | `--since` | — | — | Created since (e.g. `1h`, `30m`) | server |
