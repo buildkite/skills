@@ -423,5 +423,3 @@ When the Buildkite MCP server is available, prefer MCP tools for read operations
 - [CLI command reference](https://buildkite.com/docs/platform/cli/reference.md)
 - [CLI configuration and authentication](https://buildkite.com/docs/platform/cli/configuration.md)
 - [Managing secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets.md)
-</content>
-</invoke>
