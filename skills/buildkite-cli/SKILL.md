@@ -3,399 +3,433 @@ name: buildkite-cli
 description: >
   This skill should be used when the user asks to "trigger a build",
   "check build status", "watch a build", "view build logs", "rebuild a build",
-  "cancel a build", "list builds", "download artifacts",
-  "manage secrets", "create a pipeline", "list pipelines", or
+  "cancel a build", "list builds", "list jobs", "unblock a job",
+  "download artifacts", "manage secrets", "create a pipeline", "list pipelines",
+  "validate a pipeline", "copy a pipeline", "run a local agent", or
   "interact with Buildkite from the command line".
   Also use when the user mentions bk commands, bk build, bk job, bk pipeline,
-  bk secret, bk artifact, bk cluster, bk package, bk auth, bk configure,
-  bk use, bk init, bk api, or asks about Buildkite CLI installation,
-  terminal-based Buildkite workflows, or command-line CI/CD operations.
+  bk secret, bk artifacts, bk cluster, bk queue, bk package, bk agent, bk auth,
+  bk config, bk use, bk browse, bk api, bk skill, or asks about Buildkite CLI
+  installation, authentication, terminal-based Buildkite workflows, or
+  command-line CI/CD operations.
 ---
 
 # Buildkite CLI
 
-The Buildkite CLI (`bk`) provides terminal access to builds, jobs, pipelines, secrets, artifacts, clusters, and packages. Use it to trigger builds, tail logs, manage secrets, and automate CI/CD workflows without leaving the command line.
+The Buildkite CLI (`bk`) provides terminal access to builds, jobs, pipelines, secrets, artifacts, clusters, queues, and packages. Use it to trigger builds, tail logs, manage secrets, run a local agent, and automate CI/CD workflows without leaving the command line.
 
-> **Tip:** This skill covers common commands and patterns. For complete flag details on any command, run `bk <command> --help`.
+> **Tip:** This skill covers common commands and patterns. For complete flag details on any command, run `bk <command> --help`. The CLI ships exhaustive examples in its own help output — prefer it as the source of truth for a specific flag.
 
 ## Quick Start
 
 ```bash
 # Install
-brew tap buildkite/buildkite && brew install buildkite/buildkite/bk
+brew install buildkite/buildkite/bk
 
-# Authenticate
-bk configure
+# Authenticate (OAuth — opens a browser)
+bk auth login
 
-# Trigger a build on the current branch
-bk build create --pipeline my-app
+# Trigger a build on the current branch (pipeline auto-detected from the repo)
+bk build create
 
-# Watch it run
-bk build watch 42 --pipeline my-app
+# Watch the most recent build run
+bk build watch
 
-# View logs for a failed job
-bk job log <job-id>
+# Inspect a build and read a failed job's log
+bk build view
+bk job log <job-uuid>
 ```
+
+Most build, job, artifact, and pipeline commands resolve the pipeline, branch, and most-recent build from the current git repository. Pass `-p/--pipeline` explicitly only when outside a repo or when targeting a different pipeline.
 
 ## Installation
 
 ```bash
-brew tap buildkite/buildkite && brew install buildkite/buildkite/bk
+# Homebrew (macOS and Linux)
+brew install buildkite/buildkite/bk
+
+# Update an existing install (prints the right command for brew/mise installs)
+bk update
 ```
 
 For binary downloads and verification, see `references/command-reference.md`.
 
 ## Authentication
 
-Run `bk configure` to set the organization slug and API access token. This creates `$HOME/.config/bk.yaml` on first run.
+`bk auth login` is the recommended method. It uses OAuth and stores the resulting token in the system keychain — no manual token creation required.
 
 ```bash
-bk configure
-# Non-interactive (CI/Docker): bk configure --org my-org --token "$BUILDKITE_API_TOKEN" --no-input
+# OAuth login (opens a browser; grants all scopes your account allows)
+bk auth login
+
+# Login to a specific organization
+bk auth login --org my-org
+
+# Login with read-only access (scope group), plus write access to builds
+bk auth login --scopes "read_only write_builds"
+
+# Headless / remote machine (no browser)
+bk auth login --device
+
+# Non-interactive with an existing API token (CI/Docker)
+bk auth login --org my-org --token "$BUILDKITE_API_TOKEN"
 ```
 
-Or use keychain-based auth (v3.31+): `bk auth login`
+| Command | Description |
+|---------|-------------|
+| `bk auth login` | OAuth or token login; stores credentials in the keychain |
+| `bk auth status` | Show the current session (supports `-o json`) |
+| `bk auth token` | Print the stored token to stdout (e.g. for `curl`) |
+| `bk auth switch [org]` (alias `bk auth use`) | Switch the active organization |
+| `bk auth logout` | Remove stored credentials (`--all` for every org) |
 
-### Token creation
+On headless Linux hosts where no keychain is available, pin token storage to an in-memory store: `bk config set credential_store shm`, then `bk auth login --device`.
 
-1. Open Buildkite > user avatar > **Personal Settings** > **API Access Tokens**
-2. Select **New API Access Token**
-3. Grant scopes: `read_builds`, `write_builds`, `read_pipelines`, `read_artifacts` at minimum
-4. Copy the token and pass it to `bk configure`
+### Token-based config (alternative)
 
-For the full `bk auth` subcommand reference and organization switching (`bk use`), see `references/command-reference.md`.
+`bk configure` stores a manually-created API token instead of using OAuth. Use it only when OAuth is unavailable.
+
+```bash
+bk configure --org my-org --token "$BUILDKITE_API_TOKEN"
+bk configure add --org second-org --token "$OTHER_TOKEN"   # add another org
+```
+
+Create the token at Buildkite > avatar > **Personal Settings** > **API Access Tokens** with at least `read_builds`, `write_builds`, `read_pipelines`, and `read_artifacts` scopes.
+
+### Switching organizations
+
+```bash
+bk use my-other-org      # top-level alias for bk auth switch
+bk auth switch           # interactive selection
+bk organization list     # list configured orgs
+```
+
+### CLI configuration
+
+`bk config` manages persistent settings (default output format, pager, credential store). User config applies globally; `--local` writes a `.bk.yaml` in the current directory.
+
+```bash
+bk config list                          # show effective config
+bk config set output_format json        # default all output to JSON
+bk config set selected_org my-org --local
+```
 
 ## Builds
 
-Manage pipeline builds — create, view, list, cancel, retry, and watch.
+Create, view, list, cancel, retry, rebuild, watch, and download builds.
 
 ### Create a build
 
 ```bash
-# Build the current branch and commit (pipeline auto-detected from repo)
+# Build the current branch and commit (pipeline auto-detected from the repo)
 bk build create
 
-# Explicit pipeline
-bk build create --pipeline my-app
+# Explicit pipeline, branch, and message
+bk build create -p my-app -b feature/auth -m "Test auth changes"
 
-# Build with environment variables and metadata
-bk build create -e "FOO=BAR" -e "BAR=BAZ"
-bk build create --branch feature/auth --commit abc1234 --env "DEPLOY_ENV=staging"
+# With environment variables and metadata
+bk build create -e "DEPLOY_ENV=staging" -M "release=true"
+
+# Open the new build in the browser
+bk build create -w
 ```
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--pipeline` | `-p` | auto-detected | Pipeline slug; resolved from repo context when omitted |
-| `--branch` | `-b` | current branch | Git branch to build |
-| `--commit` | `-c` | HEAD | Git commit SHA |
-| `--message` | `-m` | — | Build message |
-| `--env` | `-e` | — | Environment variables (repeatable) |
+| `--pipeline` | `-p` | auto-detected | Pipeline slug, or `{org}/{slug}` |
+| `--branch` | `-b` | pipeline default branch | Git branch to build |
+| `--commit` | `-c` | `HEAD` | Git commit SHA |
+| `--message` | `-m` | commit message | Build message |
+| `--author` | `-a` | — | Build author (`"Name <email>"`, email, name, or username) |
+| `--env` | `-e` | — | Environment variable `KEY=VALUE` (repeatable) |
 | `--env-file` | `-f` | — | Load environment variables from a file |
-| `--metadata` | `-M` | — | Build metadata key=value (repeatable) |
+| `--metadata` | `-M` | — | Build metadata `KEY=VALUE` (repeatable) |
+| `--ignore-branch-filters` | `-i` | `false` | Build even when branch filters would skip it |
+| `--web` | `-w` | `false` | Open the build in a browser after creating it |
 
 ### View a build
 
+`bk build view` (and most build commands) default to the most recent build on the current branch.
+
 ```bash
-bk build view 42 --pipeline my-app
+bk build view                  # most recent build on the current branch
+bk build view 429              # a specific build number
+bk build view -s failed,broken # only show failed/broken jobs
+bk build view --mine           # most recent build by the current user
+bk build view 429 -o json      # structured output
 ```
 
 ### List builds
 
 ```bash
-# List recent builds for a pipeline
-bk build list --pipeline my-app
-
-# List only failed builds
-bk build list --pipeline my-app --state failed
+bk build list                                   # 50 most recent
+bk build list --state failed --branch main      # filter by state and branch
+bk build list --since 24h --duration ">20m"     # recent slow builds
+bk build list --meta-data env=production -o json
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--pipeline` | `-p` | — | Pipeline slug (omit for org-wide listing) |
-| `--state` | — | — | Filter by state: `running`, `scheduled`, `passed`, `failed`, `blocked`, `canceled`, `canceling`, `skipped`, `not_run`, `finished` (repeatable) |
-| `--branch` | — | — | Filter by branch name (repeatable) |
-| `--output` | `-o` | `text` | Output format: `text`, `json`, `yaml` |
+Server-side filters (fast): `--pipeline`, `--since`, `--until`, `--state`, `--branch`, `--creator`, `--commit`, `--meta-data`. Client-side filters: `--duration`, `--message`. Valid states: `running`, `scheduled`, `passed`, `failed`, `blocked`, `canceled`, `canceling`, `skipped`, `not_run`. Pass `--state` and `--branch` as comma-separated lists. Use `--limit N` (default 50) or `--no-limit` to control paging. See `references/command-reference.md` for the full filter table.
 
 ### Watch a build
 
-Stream real-time build progress to the terminal. Blocks until the build completes or is canceled.
+Stream real-time progress. Blocks until the build completes or is canceled.
 
 ```bash
-bk build watch 42 --pipeline my-app
+bk build watch                       # watch the most recent build
+bk build watch 429 -p my-app         # watch a specific build
+bk build watch --interval 5          # custom polling interval (seconds)
 ```
 
-### Cancel a build
+### Cancel, retry, rebuild
 
 ```bash
-bk build cancel 42 --pipeline my-app
+bk build cancel 429 -p my-app   # only scheduled/running/failing builds
+bk build rebuild 429            # rebuild a specific build (or most recent)
 ```
 
-The build must be in a `scheduled`, `running`, or `failing` state.
+### Download build resources
 
-### Rebuild a build
+`bk build download` downloads a build's artifacts to the local filesystem.
 
 ```bash
-bk build rebuild 42 --pipeline my-app
+bk build download 429 -p my-app
+bk build download --mine          # most recent build by the current user
 ```
 
-### Build workflow: trigger and watch
-
-Combine `create` and `watch` for a complete trigger-and-follow workflow:
+### Trigger and follow
 
 ```bash
-# Trigger a build and immediately stream progress
-bk build create --pipeline my-app --branch main && bk build watch --pipeline my-app
+bk build create -p my-app -b main && bk build watch -p my-app
 ```
-
-> Note: `bk build watch` without a build number will watch the most recent build.
 
 ## Jobs
 
-Manage individual jobs within a build — view logs, retry failures, cancel running jobs.
+Inspect and act on individual jobs. Jobs are addressed by UUID — `bk job log` no longer needs pipeline or build context (the `-p`/`-b` flags are deprecated and ignored).
 
 ### View job logs
 
 ```bash
-bk job log <job-id>
+bk job log 0190046e-e199-453b-a302-a21a4d649d31
+bk job log <job-uuid> --no-timestamps   # strip timestamp prefixes
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--no-timestamps` | — | `false` | Strip timestamp prefixes from log output |
+### List jobs
 
-### Retry a job
-
-Each job ID can only be retried once — subsequent retries must use the new job ID returned by the first retry.
+`bk job list` extracts jobs across recent builds, with server-side (`--pipeline`, `--since`, `--until`) and client-side (`--queue`, `--state`, `--duration`) filters.
 
 ```bash
-bk job retry <job-id>
+bk job list --queue test-queue --state running
+bk job list --duration ">10m" --order-by duration --no-limit
 ```
 
-### Cancel a job
+### Retry, cancel, unblock, reprioritize
 
 ```bash
-bk job cancel <job-id>
+bk job retry <job-uuid>           # each job UUID can be retried once
+bk job cancel <job-uuid>
+bk job unblock <job-uuid>         # unblock a blocked step
+bk job unblock <job-uuid> --data '{"release": "true"}'   # with block-step fields
+bk job reprioritize <job-uuid> 10 # raise scheduling priority
 ```
 
-### Debugging workflow: find failures and read logs
+### Debugging workflow
 
 ```bash
-# Find failed builds
-bk build list --pipeline my-app --state failed
-
-# View the build to identify which jobs failed
-bk build view 42 --pipeline my-app
-
-# Read logs for the failed job
-bk job log <job-id>
+bk build list --state failed -p my-app   # find failed builds
+bk build view 429 -p my-app -s failed    # identify the failed jobs
+bk job log <job-uuid>                     # read the failing log
 ```
 
 ## Pipelines
 
-Manage pipeline configuration — list, create, and update pipelines.
+Create, list, view, copy, validate, and convert pipeline configuration.
 
-> For converting pipelines from other CI systems, see the **buildkite-migration** skill.
-
-### Convert a pipeline from another CI system
-
-Convert a GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab, Harness, or Bitrise pipeline to Buildkite YAML. No login required — uses a public API.
+### List and view
 
 ```bash
-# Auto-detect vendor from file path and save to .buildkite/pipeline.<vendor>.yml
-bk pipeline convert -F .github/workflows/ci.yml
-bk pipeline convert -F .circleci/config.yml
-bk pipeline convert -F Jenkinsfile
-
-# Specify vendor explicitly (required for gitlab, harness, bitrise)
-bk pipeline convert -F .gitlab-ci.yml --vendor gitlab
-
-# Custom output path
-bk pipeline convert -F .github/workflows/ci.yml --output .buildkite/pipeline.yml
-
-# Read from stdin
-cat .github/workflows/ci.yml | bk pipeline convert --vendor github
-```
-
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--file` | `-F` | — | Path to source pipeline file (required unless using stdin) |
-| `--vendor` | `-v` | auto-detected | Source CI vendor: `github`, `bitbucket`, `circleci`, `jenkins`, `gitlab`, `harness`, `bitrise` |
-| `--output` | `-o` | `.buildkite/pipeline.<vendor>.yml` | Output file path |
-| `--timeout` | — | `300` | Cancellation timeout in seconds |
-
-### List pipelines
-
-```bash
-bk pipeline list
+bk pipeline list                 # all pipelines (default 100)
+bk pipeline list --name deploy   # filter by name (partial, case-insensitive)
+bk pipeline view my-app          # pipeline details
+bk pipeline view my-app -w       # open in browser
 ```
 
 ### Create a pipeline
 
 ```bash
-bk pipeline create "My App" --repository "git@github.com:org/my-app.git"
+bk pipeline create "My App" -r "git@github.com:org/my-app.git" --cluster-name "Default"
+bk pipeline create "My App" -r "git@github.com:org/my-app.git" --dry-run   # preview only
 ```
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `<name>` | — | — | Pipeline name (positional arg, required) |
+| `<name>` | — | — | Pipeline name (positional, required) |
 | `--repository` | `-r` | — | Git repository URL |
+| `--description` | `-d` | — | Pipeline description |
 | `--cluster-uuid` | — | — | Cluster UUID to assign the pipeline to |
 | `--cluster-name` | — | — | Cluster name (resolved to UUID) |
-| `--description` | `-d` | — | Pipeline description |
+| `--create-webhook` | `-W` | `false` | Create an SCM webhook (GitHub / GitHub Enterprise only) |
+| `--dry-run` | — | `false` | Show what would be created without creating it |
 
-> For pipeline YAML configuration after creation, see the **buildkite-pipelines** skill.
+> For pipeline YAML configuration, step types, and plugins, see the **buildkite-pipelines** skill.
+
+### Copy a pipeline
+
+```bash
+bk pipeline copy my-app --target "my-app-v2"             # within the org
+bk pipeline copy my-app --target "other-org/my-app"      # across orgs (cluster reset)
+```
+
+### Validate a pipeline
+
+`bk pipeline validate` checks YAML against the pipeline schema locally (no API token needed). Defaults to `.buildkite/pipeline.yaml` or `.yml`.
+
+```bash
+bk pipeline validate
+bk pipeline validate --file .buildkite/deploy.yml
+```
+
+### Convert from another CI system
+
+Convert GitHub Actions, Bitbucket, CircleCI, Jenkins, GitLab (beta), Harness (beta), or Bitrise (beta) config to Buildkite YAML. No login required.
+
+```bash
+bk pipeline convert -F .github/workflows/ci.yml          # vendor auto-detected
+bk pipeline convert -F .gitlab-ci.yml --vendor gitlab    # specify when ambiguous
+cat .circleci/config.yml | bk pipeline convert --vendor circleci
+```
+
+Output defaults to `.buildkite/pipeline.<vendor>.yml` (stdout when reading from stdin). Use `-o/--output` for a custom path.
+
+> For converting pipelines from other CI systems in depth, see the **buildkite-migration** skill.
 
 ## Secrets
 
-Manage cluster-scoped secrets for pipelines. Secrets are encrypted and accessible to all agents within a cluster.
-
-> For using secrets inside pipeline YAML (`secrets:` key) and inside job steps (`buildkite-agent secret get`), see the **buildkite-pipelines** skill and **buildkite-agent-runtime** skill respectively.
-
-### Create a secret
+Manage cluster-scoped secrets. All secret commands require `--cluster-uuid`.
 
 ```bash
-bk secret create --cluster-uuid <cluster-uuid> --key MY_SECRET --value "$TOKEN"
+# Create (omit --value to enter it via a masked prompt)
+bk secret create --cluster-uuid <uuid> --key MY_SECRET --value "$TOKEN"
+
+# List, view, update, delete
+bk secret list --cluster-uuid <uuid>
+bk secret get --cluster-uuid <uuid> --secret-id <secret-uuid>
+bk secret update --cluster-uuid <uuid> --secret-id <secret-uuid> --update-value
+bk secret delete --cluster-uuid <uuid> --secret-id <secret-uuid>
 ```
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--cluster-uuid` | — | — | Cluster UUID (required) |
-| `--key` | — | — | Secret key name (required) |
-| `--value` | — | — | Secret value (omit for interactive prompt) |
-| `--description` | — | — | Human-readable description |
+**Naming rules:** keys may contain only letters, numbers, and underscores, and cannot begin with `buildkite` or `bk` (case-insensitive). Exception: `BUILDKITE_API_TOKEN`. Pass `--description` and an access `--policy` (YAML) on create or update.
 
-**Naming rules:**
-- Keys must contain only letters, numbers, and underscores
-- Keys cannot begin with `buildkite` or `bk` (case-insensitive)
-- Exception: `BUILDKITE_API_TOKEN` is allowed
-
-### List secrets
-
-```bash
-bk secret list --cluster-uuid <cluster-uuid>
-```
-
-### Get a secret
-
-```bash
-bk secret get --cluster-uuid <cluster-uuid> --secret-id <secret-uuid>
-```
-
-### Update a secret
-
-```bash
-bk secret update --cluster-uuid <cluster-uuid> --secret-id <secret-uuid> --update-value
-```
-
-### Delete a secret
-
-```bash
-bk secret delete --cluster-uuid <cluster-uuid> --secret-id <secret-uuid>
-```
+> For using secrets inside pipeline YAML (`secrets:`) and job steps (`buildkite-agent secret get`), see the **buildkite-pipelines** and **buildkite-agent-runtime** skills.
 
 ## Artifacts
 
-Download build artifacts from the terminal.
-
-### Download artifacts
+List and download build artifacts. The command is `bk artifacts` (plural). Build number defaults to the most recent build on the current branch.
 
 ```bash
-# Download all artifacts from a specific build
-bk artifacts download --build 42
-
-# Download all artifacts from a specific job
-bk artifacts download --build 42 --job-uuid <job-uuid>
-
-# Download a specific artifact by ID (use `bk artifacts list` to find IDs)
-bk artifacts download <artifact-id> --build 42
+bk artifacts list                              # most recent build
+bk artifacts list 429 -j <job-uuid>            # a specific job in a build
+bk artifacts download --build 429              # all artifacts for a build
+bk artifacts download <artifact-id> --build 429
 ```
 
-### List artifacts
+> There is no `bk artifacts upload`. Upload artifacts from within a job step with `buildkite-agent artifact upload` (see the **buildkite-agent-runtime** skill). For `artifact_paths:` in pipeline YAML, see the **buildkite-pipelines** skill.
+
+## Clusters and Queues
+
+The CLI manages clusters, queues, and cluster maintainers directly:
 
 ```bash
-# List artifacts for a build
-bk artifacts list 42
-
-# List artifacts for a specific job in a build
-bk artifacts list 42 --job-uuid <job-uuid>
+bk cluster list
+bk cluster create --name "Production"
+bk queue list <cluster-uuid>
+bk queue create <cluster-uuid> --key deploy
+bk queue pause <cluster-uuid> <queue-uuid>     # stop dispatching to a queue
 ```
 
-> **Note:** The CLI command is `bk artifacts` (plural). There is no `bk artifacts upload` — for uploading artifacts from within a running job step, use `buildkite-agent artifact upload` (see the **buildkite-agent-runtime** skill). For declaring artifact paths in pipeline YAML (`artifact_paths:`), see the **buildkite-pipelines** skill.
+Full CRUD exists for `bk cluster`, `bk queue`, and `bk maintainer`. See `references/command-reference.md` for the command list.
 
-## Clusters
+> For cluster/queue strategy, hosted agent shapes, agent tokens, and infrastructure provisioning, see the **buildkite-agent-infrastructure** skill.
 
-List and view clusters with `bk cluster list` and `bk cluster view <cluster-uuid>`. For flags and examples, see `references/command-reference.md`.
+## Local Agent
 
-> For cluster creation, queue management, and infrastructure provisioning, see the **buildkite-agent-infrastructure** skill.
+`bk agent run` downloads the agent, creates a temporary cluster token, and runs an ephemeral `buildkite-agent` locally — useful for testing pipeline changes against your own machine. Everything is cleaned up on Ctrl+C.
 
-## Packages
+```bash
+bk agent run                      # latest agent on the Default cluster
+bk agent run --queue deploy       # listen on a specific queue
+bk agent install                  # install the binary + a starter config
+```
 
-Push packages with `bk package push <registry-slug> --file-path <file>`. For flags and supported formats, see `references/command-reference.md`.
+`bk agent list/view/pause/resume/stop` manage registered agents in the org.
 
-> For OIDC-based authentication to package registries (no static credentials), see the **buildkite-secure-delivery** skill.
+## Preflight, Browse, and Other Commands
+
+```bash
+bk browse                 # open the current pipeline (filtered to the branch)
+bk browse 429 -n          # print the build URL instead of opening it
+bk init                   # scaffold a starter pipeline.yaml
+bk package push <registry-slug> --file-path pkg.tar.gz
+bk user invite alice@example.com bob@example.com
+bk skill add buildkite-api   # install a Buildkite skill into the current agent
+```
+
+> For running a build against local uncommitted changes with `bk preflight run`, see the **buildkite-preflight** skill.
 
 ## Raw API Access
 
-Make direct REST or GraphQL API calls with `bk api <path>` (REST) or `bk api --data '<query>'` (GraphQL). For flags and examples, see `references/command-reference.md`.
+Make direct REST or GraphQL calls with `bk api`:
 
-> For comprehensive REST and GraphQL API documentation (endpoints, mutations, pagination, webhooks), see the **buildkite-api** skill.
+```bash
+bk api /pipelines/my-app/builds/429                    # REST GET (org inferred)
+bk api -X POST /pipelines --data '{"name":"New","repository":"git@..."}'
+bk api --data '{"query":"{ viewer { user { email } } }"}'   # GraphQL
+```
 
-## Users
-
-Invite users with `bk user invite user@example.com`. See `references/command-reference.md` for details.
-
-## Pipeline Initialization
-
-Scaffold a starter `pipeline.yaml` with `bk init`. For pipeline YAML syntax and step types, see the **buildkite-pipelines** skill. See `references/command-reference.md` for details.
+> For comprehensive REST and GraphQL documentation (endpoints, mutations, pagination, webhooks), see the **buildkite-api** skill.
 
 ## MCP Server Alternatives
 
-When the Buildkite MCP server is available, agents can use MCP tools for direct access without shell execution. The table below maps CLI commands to their MCP equivalents:
+When the Buildkite MCP server is available, prefer MCP tools for read operations — they handle auth, pagination, and parsing. Fall back to the CLI for actions MCP does not cover.
 
 | CLI Command | MCP Tool | Notes |
 |-------------|----------|-------|
 | `bk build create` | `create_build` | MCP handles auth automatically |
-| `bk build view` | `get_build` | MCP returns structured data |
-| `bk build list` | `list_builds` | MCP supports the same filters |
+| `bk build view` / `list` | `get_build` / `list_builds` | Same filters; structured output |
 | `bk job log` | `read_logs`, `tail_logs` | MCP supports streaming |
-| `bk pipeline list` | `list_pipelines` | |
-| `bk pipeline create` | `create_pipeline` | |
-| `bk artifacts download` | `list_artifacts_for_build`, `get_artifact` | |
+| `bk pipeline list` / `view` / `create` | `list_pipelines`, `get_pipeline`, `create_pipeline` | |
+| `bk artifacts list` / `download` | `list_artifacts_for_build`, `get_artifact` | |
 | `bk cluster list` | `list_clusters` | |
 | `bk auth status` | `current_user`, `access_token` | |
-| `bk secret create/list/delete` | — | No MCP equivalent; CLI required |
-| `bk package push` | — | No MCP equivalent; CLI required |
-| `bk job retry` | — | No MCP equivalent; CLI required |
-| `bk job cancel` | — | No MCP equivalent; CLI required |
-| `bk build watch` | — | No MCP equivalent; CLI required |
-| `bk api` | — | Use MCP tools for read operations; CLI for custom API calls |
-
-**When to use CLI vs MCP:** Use MCP tools when available — they handle authentication, pagination, and response parsing automatically. Fall back to the CLI when MCP does not cover the operation (secrets, packages, job retry, build watch) or when the agent needs to execute commands in a Bash workflow.
+| `bk build watch` / `download` | — | CLI only |
+| `bk job retry` / `cancel` / `unblock` | — | CLI only |
+| `bk secret *`, `bk package push`, `bk agent run` | — | CLI only |
+| `bk api` | — | Use MCP tools for reads; CLI for custom calls |
 
 ## Common Mistakes
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
-| Running `bk` commands before `bk configure` | Every command fails with authentication errors | Run `bk configure` or `bk auth login` first |
-| Running `bk configure` in Docker/CI without `--no-input` | Hangs or fails trying to read from TTY or system keychain | Add `--no-input` flag: `bk configure --org my-org --token "$TOKEN" --no-input` |
-| Omitting `--pipeline` on build commands | Command fails or targets the wrong pipeline | Always pass `--pipeline <slug>` explicitly |
-| Retrying a job ID that was already retried | API returns 422 error — each job ID can only be retried once | Use the new job ID returned by the first retry |
-| Creating secrets with keys starting with `buildkite` or `bk` | Creation fails — reserved prefix | Choose a different key name (exception: `BUILDKITE_API_TOKEN`) |
-| Passing secret values as literal strings in `--value` | Values persist in shell history and process list | Use env var references (`--value "$TOKEN"`) or interactive prompts |
-| Using `bk build cancel` on a completed build | API returns error — only `scheduled`, `running`, or `failing` builds can be canceled | Check build state with `bk build view` first |
-| Expecting `bk artifacts download` to work cross-cluster | Artifacts are cluster-scoped by default | Ensure both pipelines are in the same cluster or configure cross-cluster artifact access |
-| Confusing `bk` CLI with `buildkite-agent` | `bk` runs on local machines to interact with the Buildkite API; `buildkite-agent` runs inside CI job steps | Use `bk` from terminal, `buildkite-agent` inside pipeline step commands |
+| Running `bk` commands before authenticating | Commands fail with authentication errors | Run `bk auth login` (or `bk configure` with a token) first |
+| Running `bk auth login` in Docker/CI expecting a browser | Hangs — no browser or keychain available | Use `bk auth login --org my-org --token "$TOKEN"`, or `--device` for headless |
+| Passing `-p`/`-b` to `bk job log` | Flags are deprecated and ignored — job UUIDs are self-contained | Pass only the job UUID |
+| Retrying a job UUID that was already retried | API returns 422 — each UUID retries once | Use the new job UUID returned by the first retry |
+| Creating secrets with keys starting with `buildkite`/`bk` | Creation fails — reserved prefix | Choose another name (exception: `BUILDKITE_API_TOKEN`) |
+| Passing secret values literally in `--value` | Values persist in shell history and process list | Use env var references (`--value "$TOKEN"`) or the masked prompt |
+| Running `bk build cancel` on a finished build | API errors — only scheduled/running/failing builds cancel | Check state with `bk build view` first |
+| Assuming `bk artifacts upload` exists | No such command | Upload from a job with `buildkite-agent artifact upload` |
+| Confusing `bk` with `buildkite-agent` | `bk` runs locally against the API; `buildkite-agent` runs inside job steps | Use `bk` from a terminal, `buildkite-agent` inside pipeline commands |
 
 ## Additional Resources
 
 ### Reference Files
-- **`references/command-reference.md`** — Full installation methods, auth subcommands, organization switching, and detailed flags/examples for clusters, packages, API access, users, and pipeline initialization
+- **`references/command-reference.md`** — Installation methods, full `bk build list`/`bk job list` filter tables, cluster/queue/maintainer commands, `bk agent`, `bk api`, package push, and config details
 
 ## Further Reading
 
 - [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
 - [Buildkite CLI overview](https://buildkite.com/docs/platform/cli.md)
 - [CLI command reference](https://buildkite.com/docs/platform/cli/reference.md)
-- [CLI installation](https://buildkite.com/docs/platform/cli/installation.md)
 - [CLI configuration and authentication](https://buildkite.com/docs/platform/cli/configuration.md)
 - [Managing secrets](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets.md)
+</content>
+</invoke>
