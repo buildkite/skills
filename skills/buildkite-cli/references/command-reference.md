@@ -270,4 +270,3 @@ bk init     # scaffold a starter pipeline.yaml in the current directory
 ```
 
 > For pipeline YAML syntax, step types, and configuration patterns, see the **buildkite-pipelines** skill.
-</content>
