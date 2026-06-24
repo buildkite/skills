@@ -223,7 +223,7 @@ bk api --file query.graphql
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
 | `--method` | `-X` | `GET` | HTTP method |
-| `--data` | `-d` | — | Request body (REST JSON or GraphQL query) |
+| `--data` | `-d` | — | Request body for REST requests |
 | `--headers` | `-H` | — | Headers to include (repeatable) |
 | `--file` | `-f` | — | File containing a GraphQL query |
 | `--analytics` | — | `false` | Use the Test Analytics endpoint |
