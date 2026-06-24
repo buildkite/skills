@@ -382,7 +382,7 @@ Make direct REST or GraphQL calls with `bk api`:
 ```bash
 bk api /pipelines/my-app/builds/429                    # REST GET (org inferred)
 bk api -X POST /pipelines --data '{"name":"New","repository":"git@..."}'
-bk api --data '{"query":"{ viewer { user { email } } }"}'   # GraphQL
+bk api --file query.graphql                                      # GraphQL (file with a named operation)
 ```
 
 > For comprehensive REST and GraphQL documentation (endpoints, mutations, pagination, webhooks), see the **buildkite-api** skill.
