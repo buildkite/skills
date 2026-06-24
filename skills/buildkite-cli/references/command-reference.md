@@ -216,8 +216,7 @@ bk api --method PUT /clusters/CLUSTER_UUID --data '{ "name": "My Updated Cluster
 # Test Analytics endpoint
 bk api --analytics /suites
 
-# GraphQL (inline or from a file)
-bk api --data '{ "query": "{ viewer { user { name email } } }" }'
+# GraphQL (from a file)
 bk api --file query.graphql
 ```
 
