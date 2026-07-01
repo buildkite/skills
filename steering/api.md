@@ -32,6 +32,10 @@ curl -sS -X POST "https://graphql.buildkite.com/v1" \
   }' | jq '.data.pipeline.builds.edges[].node'
 ```
 
+## Rate Limits
+
+Traffic through the Buildkite MCP server counts against a separate rate limit from the org-wide REST API budget. A 429 from an MCP call is the MCP-specific limit, not your production API allowance. See [platform limits](https://buildkite.com/docs/platform/limits) for exact numbers.
+
 ## Authentication
 
 ### Bearer Token
