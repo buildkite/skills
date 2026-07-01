@@ -17,6 +17,10 @@ Buildkite exposes a REST API and a GraphQL API for programmatic automation, plus
 
 > To execute API calls interactively from the terminal, see the **buildkite-cli** skill for `bk api` commands. To use the Buildkite MCP server for direct agent access to builds, logs, and pipelines, the MCP server exposes its own tool schemas — no API construction needed.
 
+## Rate Limits
+
+Traffic through the Buildkite MCP server counts against a separate rate limit from the org-wide REST API budget. A 429 from an MCP call is the MCP-specific limit, not your production API allowance. See [[platform limits](https://buildkite.com/docs/platform/limits)](https://buildkite.com/docs/platform/limits) for exact numbers.
+
 ## Quick Start
 
 List builds for a pipeline using the REST API:
