@@ -6,20 +6,25 @@ Installed via `npx skills add buildkite/skills` or manually copied into agent sk
 ## Repository Structure
 
 ```
-skills/                              # All skills live here
-  buildkite-pipelines/               # Journey — pipeline YAML, step types, caching, parallelism
-  buildkite-migration/               # Journey — CI migration, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI
-  buildkite-preflight/               # Cross-cutting — bk preflight against local uncommitted changes
-  buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
-  buildkite-cli/                     # Cross-cutting — bk CLI commands
-  buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
+skills/                                 # All skills live here
+  buildkite-fundamentals/               # Anchor — core vocabulary, build hierarchy, MCP/REST/CLI surface map
+  buildkite-pipelines/                  # Journey — pipeline YAML, step types, caching, parallelism
+  buildkite-migration/                  # Journey — CI migration, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI
+  buildkite-agent-infrastructure/       # Journey — self-hosted clusters, queues, lifecycle hooks, tokens
+  buildkite-hosted-agents-operations/   # Journey — Buildkite-hosted Linux + macOS operating runbook
+  buildkite-secure-delivery/            # Journey — OIDC, Package Registries auth, SLSA, secrets, signing
+  buildkite-build-investigation/        # Cross-cutting — diagnose failed, flaky, stalled, anomalous builds
+  buildkite-preflight/                  # Cross-cutting — bk preflight against local uncommitted changes
+  buildkite-agent-runtime/              # Cross-cutting — buildkite-agent subcommands in job steps
+  buildkite-cli/                        # Cross-cutting — bk CLI commands
+  buildkite-api/                        # Cross-cutting — REST API, GraphQL, webhooks
 ```
 
 ## Skill Architecture
 
 Each skill directory contains:
 
-- `SKILL.md` (required) — core skill content, 10-18KB typical
+- `SKILL.md` (required) — core skill content, 10-25KB typical
 - `references/` (optional) — detailed content loaded on demand
 - `examples/` (optional) — complete runnable examples
 - `agents/openai.yaml` (required) — multi-agent platform metadata
@@ -46,7 +51,7 @@ Link to Buildkite docs for canonical reference; do not reproduce them.
 - Cross-references use: `> For [topic], see the **buildkite-[skill]** skill.`
 - Style: imperative voice, no second person, no marketing language
 - All code blocks must be syntactically correct and copy-paste ready
-- SKILL.md body target: 10-18KB; total with references: 15-45KB
+- SKILL.md body target: 10-25KB; total with references: 15-100KB
 
 ## Working on Skills
 
