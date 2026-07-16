@@ -158,9 +158,9 @@ bk build view --mine --summary      # latest build by the current user
 ### List builds
 
 ```bash
-bk build list --summary                              # 50 compact build summaries
+bk build list --summary                              # 50 most recent build summaries
 bk build list --summary --state failed --branch main # filter by state and branch
-bk build list --summary --since 24h                  # recent build states
+bk build list --summary --since 24h --duration ">20m" # slow builds from the last 24 hours
 bk build list --summary --meta-data env=production -o json
 ```
 
