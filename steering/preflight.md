@@ -175,7 +175,7 @@ Check the exit code to determine the build result:
 
 ## Optional Workflow: Act On A Failure And Check Back Later
 
-Begin fixing the first failure as soon as preflight exits with an incomplete build result because the build is failing, and then check back on the same build with `bk build view` for subsequent failures. This allows you to quickly iterate on the first failure, and gather further failures in parallel. Use the `bk preflight --no-cleanup` option to ensure that build is not cancled on fast failure.
+Begin fixing the first failure as soon as preflight exits with an incomplete build result because the build is failing. Check the same build's summary while it continues, then query failed jobs directly for subsequent failures. This allows you to quickly iterate on the first failure, and gather further failures in parallel. Use the `bk preflight --no-cleanup` option to ensure that build is not canceled on fast failure.
 
 ```bash
 bk preflight --pipeline my-org/my-pipeline --watch --no-cleanup --text
@@ -188,10 +188,11 @@ Workflow:
 1. Wait for preflight to exit on build failing (the default --exit-on condition).
 2. Inspect the failed build's jobs logs and test failures and start fixing the issue immediately.
 3. Keep the build number or preflight UUID from the run output.
-4. Use `bk build view` to check the same build again while it continues running:
+4. Check the build state without downloading jobs, artifacts, annotations, or expanded pipeline details. Query failed jobs separately through the REST List Jobs endpoint:
 
 ```bash
-bk build view <build-number> -p my-org/my-pipeline --text
+bk build view 429 -p my-org/my-pipeline --summary --text
+bk job list --pipeline my-org/my-pipeline --build 429 --state failed --no-limit --text
 ```
 
 5. After the build reaches a terminal state and you no longer need the remote preflight branch, clean it up explicitly:

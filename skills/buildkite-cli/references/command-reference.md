@@ -92,13 +92,14 @@ bk organization list    # alias bk org list; JSON by default
 | `--message` | — | — | Filter by message content | client |
 | `--limit` | — | `50` | Maximum builds to return | — |
 | `--no-limit` | — | `false` | Fetch all builds (overrides `--limit`) | — |
+| `--summary` | — | `false` | Return metadata only; exclude jobs and expanded pipeline information | server/output |
 | `--output` | `-o` | `text` | Output format: `text`, `json`, `yaml` (or `--json`/`--yaml`/`--text`) | — |
 
 Valid states: `running`, `scheduled`, `passed`, `failed`, `blocked`, `canceled`, `canceling`, `skipped`, `not_run`.
 
 ### `bk build view` / `rebuild` / `download`
 
-These default to the most recent build on the current branch. Shared flags: `-p/--pipeline`, `-b/--branch`, `-u/--user`, `--mine`, `-w/--web` (view and rebuild). `bk build view` adds `-s/--job-states` (comma-separated: `running`, `scheduled`, `passed`, `failed`, `canceled`, `skipped`, `not_run`, `broken`) and output flags.
+These default to the most recent build on the current branch. Shared flags: `-p/--pipeline`, `-b/--branch`, `-u/--user`, `--mine`, `-w/--web` (view and rebuild). `bk build view` adds `-s/--job-states` (comma-separated: `running`, `scheduled`, `passed`, `failed`, `canceled`, `skipped`, `not_run`, `broken`), `--summary`, and output flags. Summary mode excludes jobs and expanded pipeline information and skips artifact and annotation requests; use it for status polling and metadata reads.
 
 ### `bk build watch`
 
@@ -112,17 +113,20 @@ These default to the most recent build on the current branch. Shared flags: `-p/
 
 ### `bk job list`
 
+Pass `--build` when the build number is known. This uses the dedicated cursor-paginated List Jobs endpoint instead of searching build responses. The pipeline can be passed with `--pipeline` or resolved from the current repository or configuration. `--limit` remains the total output cap; `--no-limit` follows every cursor page. `--since` and `--until` cannot be combined with `--build`.
+
 | Flag | Default | Description | Side |
 |------|---------|-------------|------|
 | `--pipeline` (`-p`) | — | Filter by pipeline slug | server |
+| `--build` | — | Filter by build number; requires a resolvable pipeline | server |
 | `--since` | — | Builds created since (e.g. `1h`) | server |
 | `--until` | — | Builds created before (e.g. `1h`) | server |
 | `--queue` | — | Filter by queue name | client |
-| `--state` | — | Filter by job state (comma-separated) | client |
+| `--state` | — | Filter by job state (comma-separated) | server with `--build`; client otherwise |
 | `--duration` | — | Filter by duration (`>10m`, `<5m`, …) | client |
 | `--order-by` | — | Order by `start_time` or `duration` | — |
-| `--limit` | `100` | Maximum jobs to return | — |
-| `--no-limit` | `false` | Fetch all matching jobs (scans up to 200 builds otherwise) | — |
+| `--limit` | `100` | Maximum total jobs to return | — |
+| `--no-limit` | `false` | Fetch every jobs page; without `--build`, also scan beyond the default 200 builds | — |
 
 Other job commands: `bk job retry <uuid>`, `bk job cancel <uuid> [-w]`, `bk job unblock <uuid> [--data '<json>']`, `bk job reprioritize <uuid> <priority>`. The `-p`/`-b` flags on `bk job log` and `bk job reprioritize` are deprecated and ignored — job UUIDs no longer need build context.
 
@@ -200,8 +204,8 @@ Supports Docker images, npm, Debian, RPM, and generic file uploads. Push to Buil
 ## Raw API Access
 
 ```bash
-# REST GET (organization inferred from config)
-bk api /pipelines/example-pipeline/builds/420
+# REST GET build metadata (organization inferred from config)
+bk api '/pipelines/example-pipeline/builds/420?exclude_jobs=true&exclude_pipeline=true'
 
 # REST POST
 bk api --method POST /pipelines --data '{
