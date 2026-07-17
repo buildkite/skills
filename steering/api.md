@@ -10,7 +10,7 @@ description: This skill should be used when the user asks to "call the Buildkite
 
 Buildkite exposes a REST API and a GraphQL API for programmatic automation, plus webhooks for event-driven integrations. Use the REST API for straightforward CRUD operations on builds, pipelines, and organizations. Use the GraphQL API for mutations (queue creation, template management, cluster operations) and when fetching nested or specific fields. Use webhooks to react to build and agent events in real time.
 
-> To execute API calls interactively from the terminal, see the **buildkite-cli** skill for `bk api` commands. To use the Buildkite MCP server for direct agent access to builds, logs, and pipelines, the MCP server exposes its own tool schemas — no API construction needed.
+> To execute API calls interactively from the terminal, see the **buildkite-cli** skill for `bk api` commands. With the Buildkite MCP server, use `list_builds` and `get_build` for build metadata without jobs or expanded pipeline information; use `list_jobs` and `get_job` only when job details are needed.
 
 ## Quick Start
 
@@ -18,7 +18,8 @@ List builds for a pipeline using the REST API:
 
 ```bash
 curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds?per_page=5" | jq '.[].state'
+  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds?exclude_jobs=true&exclude_pipeline=true&per_page=5" \
+  | jq '.[].state'
 ```
 
 Query the same data via GraphQL:
@@ -86,6 +87,8 @@ Base URL: `https://api.buildkite.com/v2`
 
 All responses return JSON. Use `Content-Type: application/json` for request bodies.
 
+Default build list and get requests to `exclude_jobs=true`. Also set `exclude_pipeline=true` unless expanded pipeline information is required. Retrieve jobs from the Jobs API rather than expanding every job into a build response.
+
 ### Endpoint Reference
 
 All endpoints are under `/organizations/{org.slug}`. Abbreviated as `/{org}` below.
@@ -99,7 +102,7 @@ All endpoints are under `/organizations/{org.slug}`. Abbreviated as `/{org}` bel
 | Builds (org) | `/{org}/builds` | GET | `read_builds` |
 | Builds (pipeline) | `/{org}/pipelines/{slug}/builds` | GET, POST | `read_builds`, `write_builds` |
 | Build | `/{org}/pipelines/{slug}/builds/{num}` | GET | `read_builds` |
-| Jobs | `/{org}/pipelines/{slug}/builds/{num}/jobs` | GET | `read_builds` |
+| Jobs (build) | `/{org}/pipelines/{slug}/builds/{num}/jobs` | GET | `read_builds` |
 | Job log | `/{org}/pipelines/{slug}/builds/{num}/jobs/{id}/log` | GET, DELETE | `read_build_logs` |
 | Job env | `/{org}/pipelines/{slug}/builds/{num}/jobs/{id}/env` | GET | `read_job_env` |
 | Artifacts (build) | `/{org}/pipelines/{slug}/builds/{num}/artifacts` | GET | `read_artifacts` |
@@ -116,11 +119,11 @@ All endpoints are under `/organizations/{org.slug}`. Abbreviated as `/{org}` bel
 
 ### Pagination
 
-REST responses are paginated using HTTP `Link` headers:
+Most REST list responses are paginated using HTTP `Link` headers. The List Jobs endpoint instead returns cursor links in the response body, as described below.
 
 ```
-Link: <https://api.buildkite.com/v2/organizations/my-org/builds?page=2&per_page=30>; rel="next",
-      <https://api.buildkite.com/v2/organizations/my-org/builds?page=5&per_page=30>; rel="last"
+Link: <https://api.buildkite.com/v2/organizations/my-org/builds?exclude_jobs=true&exclude_pipeline=true&page=2&per_page=30>; rel="next",
+      <https://api.buildkite.com/v2/organizations/my-org/builds?exclude_jobs=true&exclude_pipeline=true&page=5&per_page=30>; rel="last"
 ```
 
 | Parameter | Default | Max | Description |
@@ -135,7 +138,7 @@ Parse the `Link` header to follow `rel="next"` until no next link exists.
 ```bash
 # Filter by state and branch
 curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds?state=failed&branch=main"
+  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds?exclude_jobs=true&exclude_pipeline=true&state=failed&branch=main"
 ```
 
 Build list query parameters:
@@ -148,8 +151,33 @@ Build list query parameters:
 | `commit` | Commit SHA | `commit=abc123` |
 | `created_from` | Builds after (ISO 8601) | `created_from=2024-01-01T00:00:00Z` |
 | `created_to` | Builds before (ISO 8601) | `created_to=2024-12-31T23:59:59Z` |
+| `exclude_jobs` | Exclude embedded jobs; use for state polling and metadata | `exclude_jobs=true` |
+| `exclude_pipeline` | Exclude expanded pipeline information | `exclude_pipeline=true` |
 | `include_retried_jobs` | Include retried executions | `include_retried_jobs=true` |
 | `meta_data` | Filter by metadata | `meta_data[deploy]=true` |
+
+### Get a Build
+
+Use a build number, not a build UUID. Keep metadata and status checks lightweight:
+
+```bash
+curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42?exclude_jobs=true&exclude_pipeline=true"
+```
+
+Omit an exclusion only when the response must include that expansion.
+
+### List Jobs
+
+Query jobs directly once the build number is known. Do not fetch the build again with embedded jobs. The endpoint supports server-side state filtering, including `failed` jobs in large or still-running builds.
+
+```bash
+curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/jobs?state[]=failed&include_retried_jobs=false&per_page=100" \
+  | jq '.items[] | {id, name, state, exit_status, web_url}'
+```
+
+This endpoint uses cursor pagination: read jobs from `.items` and follow `.links.next` until it is `null`. `include_retried_jobs` defaults to `true`; set it to `false` when only the latest attempt for each step is needed.
 
 ### Create a Build
 
@@ -243,7 +271,9 @@ Endpoint: `https://graphql.buildkite.com/v1`. The GraphQL API supports queries a
 | Scenario | Use | Why |
 |----------|-----|-----|
 | Trigger a build | Either | Both support it; REST is simpler |
+| Poll build state or read metadata | REST | Set `exclude_jobs=true&exclude_pipeline=true` to avoid unused expansions |
 | List builds with filtering | REST | Better query parameter support |
+| List jobs for one build | REST Jobs API | Server-side job filtering without expanding the build response |
 | Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
 | Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
 | Audit events | GraphQL | `auditEvent` query available |
@@ -261,6 +291,7 @@ Most commonly used events: `build.finished` (react to build completion), `job.fi
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
+| Polling build list/get endpoints with embedded jobs | Repeatedly transfers every job and expanded pipeline data | Add `exclude_jobs=true&exclude_pipeline=true`; query the Jobs API only when job details are needed |
 | Using pipeline slug as GraphQL `pipelineID` | Mutation fails with "not found" error | Query the pipeline first to get its `id` (base64-encoded GraphQL node ID), then use that in mutations |
 | Missing `Content-Type: application/json` on POST requests | 422 error or empty response body | Always include `-H "Content-Type: application/json"` for POST/PUT/PATCH requests |
 | Not following `Link` header pagination | Only get first 30 results, missing data | Parse the `Link` header for `rel="next"` and loop until no next link exists |
