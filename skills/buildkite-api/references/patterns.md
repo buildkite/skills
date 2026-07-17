@@ -40,6 +40,18 @@ curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
 
 Follow `.links.next` when it is not `null`.
 
+## Fetch Jobs for a Step or Group
+
+Filter on the server when only one step or group is relevant. `step_key` returns all jobs for the step, including parallel jobs. `group_key` returns all jobs in the group.
+
+```bash
+curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/jobs?step_key=test&group_key=verification&per_page=100" \
+  | jq '.items[] | {id, name, state, web_url}'
+```
+
+Follow each `.links.next` URL as returned; rebuilding the URL can drop filters between cursor pages.
+
 ## Trigger Downstream Pipeline
 
 ```python

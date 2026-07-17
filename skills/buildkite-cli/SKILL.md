@@ -219,11 +219,13 @@ bk job log <job-uuid> --no-timestamps   # strip timestamp prefixes
 
 ### List jobs
 
-When the build number is known, pass `--build` so `bk job list` uses the dedicated cursor-paginated List Jobs endpoint. The pipeline can be explicit or resolved from the current repository or configuration. `--state` is applied server-side; `--queue` and `--duration` remain client-side.
+When the build number is known, pass `--build` so `bk job list` uses the dedicated cursor-paginated List Jobs endpoint. The pipeline can be explicit or resolved from the current repository or configuration. `--state`, `--step-key`, and `--group-key` are applied server-side; `--queue` and `--duration` remain client-side. Use `--step-key` for every job in a step, including parallel jobs, and `--group-key` for every job in a group.
 
 ```bash
 bk job list --pipeline my-app --build 429 --state failed
 bk job list --build 429 --state running # pipeline auto-detected
+bk job list --build 429 --step-key test
+bk job list --build 429 --group-key verification
 ```
 
 Without `--build`, the command searches across recent builds and extracts their embedded jobs:
@@ -233,7 +235,7 @@ bk job list --queue test-queue --state running
 bk job list --duration ">10m" --order-by duration --no-limit
 ```
 
-`--limit` caps the total jobs emitted, not the API page size. Use `--no-limit` to follow every cursor page. `--since` and `--until` cannot be combined with `--build`.
+`--step-key` and `--group-key` require `--build` and can be combined. `--limit` caps the total jobs emitted, not the API page size. Use `--no-limit` to follow every cursor page; the CLI preserves all server-side filters across cursor pages. `--since` and `--until` cannot be combined with `--build`.
 
 ### Retry, cancel, unblock, reprioritize
 
