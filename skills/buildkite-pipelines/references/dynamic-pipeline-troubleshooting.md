@@ -132,6 +132,8 @@ Visible in **Organisation Settings > Quotas > Service Quotas**.
 2. **Use trigger steps to fan out.** A monorepo with 20 services × 30 steps each = 600 jobs in one build (rejected). With trigger steps: 20 trigger steps in the parent (well under 500), each child build handles its own 30 steps. Each triggered build gets its own job limits.
 3. **Request a quota increase** when workloads genuinely exceed defaults.
 
+When asking for an increase, include the workload shape: generated steps per upload, uploads per build, `parallelism`, retry policy, and whether trigger-step fan-out is practical. Support can raise defaults, but large uploads are often slower than smaller, parallel uploads.
+
 ## Job count surprises
 
 **Symptom.** The build hits the 4,000 jobs-per-build limit unexpectedly.
