@@ -144,6 +144,12 @@ fi
 RELEASE_NAME=$(buildkite-agent meta-data get "release-name")
 ```
 
+**Raw webhook payloads** are available in webhook-triggered builds, while the webhook data remains cached. Read the special `buildkite:webhook` key when automation needs fields that are not promoted to first-class environment variables, such as the original pull request comment body.
+
+```bash
+buildkite-agent meta-data get "buildkite:webhook" | jq .
+```
+
 ## Pipeline Upload
 
 Dynamically add steps to a running build. The core mechanism behind dynamic pipelines — generate YAML at runtime and upload it.
