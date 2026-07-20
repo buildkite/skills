@@ -89,7 +89,7 @@ done
 
 Match the destination across all pages. Show the selected service by ID, compare stable non-secret fields, then choose create, update, enable, or disable from the [notification services reference](https://buildkite.com/docs/apis/rest-api/organizations/notification-services). Never replace an omitted secret automatically and never delete a service as part of a generic reconciliation loop.
 
-## Trigger and monitor a build
+## Trigger, monitor, and diagnose a build
 
 Require `write_builds` to create, cancel, or rebuild and `read_builds` to inspect builds. Use a bounded polling interval, stop at a terminal state, and do not rebuild automatically when the original command may have external side effects.
 
@@ -123,7 +123,7 @@ printf 'Build %s finished in state %s\n' "$number" "$state"
 
 Cancel a running build with `PUT $base/$number/cancel`. Rebuild with `PUT $base/$number/rebuild` only when replaying the original commit, branch, environment, message, and pull request context is intended. To fetch current source-control state, create a new build instead.
 
-## Diagnose failed jobs and filter artifacts
+### Diagnose failed jobs and filter artifacts
 
 Require `read_builds` and `read_artifacts`. These commands inspect the first response page only. Follow `.links.next` for every jobs page and the HTTP `Link` header for every artifact page before treating the results as complete. Inspect signal and embedded agent context before deciding whether a retry is safe.
 
