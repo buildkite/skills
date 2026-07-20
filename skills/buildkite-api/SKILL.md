@@ -13,7 +13,7 @@ description: >
 
 # Buildkite API
 
-Choose the API endpoint by capability rather than treating REST as read-only and GraphQL as the write API. Use REST for builds, pipelines, substantial organization administration, hosted resources, diagnostics, and notification-service writes; use GraphQL for typed nested reads and mutations that remain GraphQL-only.
+Do not treat REST as read-only and GraphQL as the write API. Default to REST for builds, pipelines, organization administration, hosted resources, diagnostics, and notification-service writes. Use GraphQL when typed nested reads avoid several requests or for GraphQL-only mutations.
 
 > To execute API calls interactively from the terminal, see the **buildkite-cli** skill for `bk api` commands. With the Buildkite MCP server, prefer purpose-built tools for supported reads and actions.
 
@@ -69,23 +69,26 @@ Scopes are necessary but not always sufficient. Check the caller's organization 
 
 Use `https://api.buildkite.com/v2` as the base URL and `Content-Type: application/json` for JSON request bodies. Most organization-scoped resources begin with `/organizations/{org.slug}`; user, organization-list, and other top-level resources do not.
 
+For build metadata and status reads, default to `exclude_jobs=true&exclude_pipeline=true`. Fetch jobs from the Jobs API only when job details are required.
+
 ### Capability map
 
 Use this map to select a resource family, then open the linked reference for exact schemas and response behavior.
 
-| Family | Protocol and access | Scope, permission, or gate | Operational guidance and docs |
-|--------|---------------------|----------------------------|-------------------------------|
-| Organization API and pipeline settings | REST read/write; organization admin | `read_organization_settings`/`write_organization_settings`; fields may be feature-gated | Treat `/api-settings` and `/pipeline-settings` as separate resources. Read before writing. IP allowlist changes can lock out the caller. [Organization API settings](https://buildkite.com/docs/apis/rest-api/organizations/api-settings) and [pipeline settings](https://buildkite.com/docs/apis/rest-api/organizations/pipeline-settings) |
-| Audit events | REST read-only; organization admin; Enterprise | `read_audit_events` | Read `.items`, follow `.links.next`, and retain the HTTP `Link` header when building general pagination tooling. [Audit events](https://buildkite.com/docs/apis/rest-api/organizations/audit-events) |
-| Members and invitations | REST read/write; organization access plus relevant admin permissions | Members use `read_organizations`/`write_organizations`; invitations use `read_organization_invitations`/`write_organization_invitations` and invite-member permission | Member updates only change role and per-member `sso_mode`, never the caller's own membership or an SSO provider. Invitation lists contain pending invitations; bulk creation validates atomically. Membership begins after acceptance or provisioning. [Members](https://buildkite.com/docs/apis/rest-api/organizations/members) and [invitations](https://buildkite.com/docs/apis/rest-api/organizations/invitations) |
-| Teams activation | REST enable-only `POST /organizations/{org.slug}/teams/enable`; GraphQL reads `Organization.isTeamsEnabled` | `write_teams`, token access to the organization, `change_teams_enabled` organization-admin permission, and team permissions in the plan when currently disabled | Idempotent `204`; delegates to the existing enablement and audit path, and can seed the Everyone team when no teams exist. No REST read or disable route exists. [Teams](https://buildkite.com/docs/apis/rest-api/teams) |
-| Repository connections and repository discovery | REST read-only; organization admin | `read_organization_repository_connections` | List/show connections without pagination. Discover repositories under a connection, optionally with an exact case-insensitive repository filter. Discovery supports GitHub, GitHub Limited Access, GitHub Restricted, and GitHub Enterprise Server; unsupported providers return `422`. Do not create, update, or delete connections through this API. [Connection management](https://buildkite.com/docs/apis/rest-api/organizations/repository-connections) and [repository discovery](https://buildkite.com/docs/apis/rest-api/repository-connections) |
-| Pipeline setup | REST read/write | `read_pipelines`/`write_pipelines`; pipeline access applies | YAML-enabled pipeline creation requires non-empty `configuration`; legacy visual-step organizations can use non-empty `steps`, and templates use `pipeline_template_uuid`. Validation occurs as part of the mutating create request; no REST dry-run endpoint exists. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
-| Notification services | REST lifecycle: list/show/create/update/delete/enable/disable | `read_notification_services`/`write_notification_services`; organization administrator or **Manage Notification Services** permission | Reconcile by type and destination, preserving omitted fields. Common API-manageable providers include webhook, legacy Slack incoming webhook, EventBridge, Datadog, and OpenTelemetry. OAuth Slack Workspace and Linear require browser creation/authorization, after which common fields can be managed by API. Secret response behavior varies. [Notification services](https://buildkite.com/docs/apis/rest-api/organizations/notification-services) |
-| Inbound GitHub processing | REST GET/PUT/DELETE on `/pipelines/{slug}/github-webhooks` | `read_pipelines`/`write_pipelines`, Full Access, eligible GitHub or GitHub Enterprise Server pipeline, expanded webhook triggers enrollment | Toggle Buildkite processing of incoming GitHub events. This neither registers a webhook at the repository nor configures an organization GitHub App connection. Unavailable configurations return `404`. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
-| Build lifecycle | REST create/cancel/rebuild and read/list | `read_builds`/`write_builds`; pipeline access applies | Trigger deliberately, poll terminal state without tight loops, and treat cancel and rebuild as explicit mutations. Rebuild replays the original build context rather than fetching current source-control state. [Builds](https://buildkite.com/docs/apis/rest-api/builds) |
-| Hosted resources | REST; agent images read/create/delete, network ranges read-only, and cache volumes list/delete | `read_clusters`/`write_clusters`, manage-cluster permission, and hosted feature gates | Expect agent-image creation to start an asynchronous build; there is no update endpoint. Treat cache deletion as an explicit mutation. [Agent images](https://buildkite.com/docs/apis/rest-api/clusters/agent-images), [network ranges](https://buildkite.com/docs/apis/rest-api/clusters/network-ranges), and [cache volumes](https://buildkite.com/docs/apis/rest-api/clusters/cache-volumes) |
-| Diagnostics and artifacts | REST read/filter/download/delete; GraphQL also supports `artifactDelete` | `read_builds`, `read_agents`, `read_artifacts`; `write_artifacts` for deletion | Correlate job signal details with embedded agent platform, queue, and lifecycle timestamps. Filter artifacts server-side before pagination. Require explicit confirmation before either deletion path. [Jobs](https://buildkite.com/docs/apis/rest-api/jobs), [agents](https://buildkite.com/docs/apis/rest-api/agents), and [artifacts](https://buildkite.com/docs/apis/rest-api/artifacts) |
+| Family | Protocol and access | Scope, permission, or gate | Key boundary and docs |
+|--------|---------------------|----------------------------|-----------------------|
+| Organization settings | REST read/write | `read_organization_settings`/`write_organization_settings`; organization admin; field gates | Read before writing; API allowlist changes can lock out the caller. [API settings](https://buildkite.com/docs/apis/rest-api/organizations/api-settings) and [pipeline settings](https://buildkite.com/docs/apis/rest-api/organizations/pipeline-settings) |
+| Audit events | REST read-only | `read_audit_events`; organization admin; Enterprise | Cursor-paginated independently of settings. [Audit events](https://buildkite.com/docs/apis/rest-api/organizations/audit-events) |
+| Members and invitations | REST read/write | `read_organizations`/`write_organizations`, `read_organization_invitations`/`write_organization_invitations`; relevant admin permissions | Pending invitations are not memberships; bulk invitation creation is atomic. [Members](https://buildkite.com/docs/apis/rest-api/organizations/members) and [invitations](https://buildkite.com/docs/apis/rest-api/organizations/invitations) |
+| Teams activation | REST enable-only; GraphQL `Organization.isTeamsEnabled` state read | `write_teams`; organization access; `change_teams_enabled`; plan gate when disabled | Idempotent `POST /organizations/{org.slug}/teams/enable`; may create Everyone when no teams exist; no REST read or disable route. [Teams](https://buildkite.com/docs/apis/rest-api/teams) |
+| Repository connections | REST read-only | `read_organization_repository_connections`; organization admin; provider support | Connections have no API mutations; unsupported discovery providers return `422`. [Connections](https://buildkite.com/docs/apis/rest-api/organizations/repository-connections) and [discovery](https://buildkite.com/docs/apis/rest-api/repository-connections) |
+| Pipeline setup | REST read/write | `read_pipelines`/`write_pipelines`; pipeline access | Create validates and mutates together; there is no REST dry run. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
+| Notification services | REST read/write lifecycle | `read_notification_services`/`write_notification_services`; organization admin or **Manage Notification Services** | OAuth Slack Workspace and Linear require initial browser authorization; preserve omitted secrets. [Notification services](https://buildkite.com/docs/apis/rest-api/organizations/notification-services) |
+| Inbound GitHub processing | REST read/write | `read_pipelines`/`write_pipelines`; Full Access; provider and feature gates | Processing controls do not register a repository webhook or configure the GitHub App. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
+| Build lifecycle | REST read/write | `read_builds`/`write_builds`; pipeline access | Rebuild replays the original context instead of fetching current source-control state. [Builds](https://buildkite.com/docs/apis/rest-api/builds) |
+| Hosted resources | REST mixed access | `read_clusters`/`write_clusters`; manage-cluster permission; feature gates | Image creation is asynchronous with no update; cache deletion is explicit. [Images](https://buildkite.com/docs/apis/rest-api/clusters/agent-images), [network ranges](https://buildkite.com/docs/apis/rest-api/clusters/network-ranges), and [cache volumes](https://buildkite.com/docs/apis/rest-api/clusters/cache-volumes) |
+| Diagnostics | REST read-only | `read_builds`, `read_agents` | Signal and agent lifecycle fields are evidence, not proof that retry is safe. [Jobs](https://buildkite.com/docs/apis/rest-api/jobs) and [agents](https://buildkite.com/docs/apis/rest-api/agents) |
+| Artifacts | REST read/write; GraphQL deletion | `read_artifacts`/`write_artifacts`; GraphQL API access | Filter before pagination and confirm deletion explicitly. [Artifacts](https://buildkite.com/docs/apis/rest-api/artifacts) |
 
 ### Pagination
 
@@ -113,7 +116,7 @@ Apply `state` and `path` before pagination on build-level and job-level artifact
 
 Download by artifact ID with `curl -L` because the download endpoint redirects. REST deletion requires `write_artifacts` and accepts the artifact UUID at either `/organizations/{org.slug}/jobs/{job.id}/artifacts/{id}` or the fully qualified pipeline/build/job route. The build-level artifact-list route has no corresponding delete operation. GraphQL `artifactDelete` accepts the artifact global ID. Require explicit confirmation for either path, and never turn filtered discovery into an automatic deletion loop.
 
-Buildkite-managed artifact files are removed after deletion. Files in customer-managed S3, Google Cloud, or Artifactory storage are not removed; delete those from the external store separately.
+If the organization uses customer-managed artifact storage, deleting the Buildkite artifact does not remove the underlying object. Do not infer the storage backend or delete external objects automatically; consult the organization's artifact-storage configuration and deletion runbook.
 
 ### Job and agent diagnostics
 
@@ -147,7 +150,7 @@ Separate outbound notifications from inbound source-control processing:
 
 For outbound handlers, branch on `X-Buildkite-Event` or the payload `event`. Do not assume every event has build, job, pipeline, and sender objects with an identical shape. Acknowledge quickly, process idempotently, and consult the [webhooks reference](https://buildkite.com/docs/apis/webhooks) for the selected event and current authentication fields.
 
-> For lifecycle guidance and the four webhook-related concepts, see `references/webhooks.md`.
+> For notification-service lifecycle and inbound GitHub delivery diagnosis, see `references/webhooks.md`.
 
 ## Common Mistakes
 

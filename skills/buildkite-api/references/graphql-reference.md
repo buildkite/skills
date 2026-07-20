@@ -2,7 +2,9 @@
 
 Endpoint: `https://graphql.buildkite.com/v1`
 
-The GraphQL API supports queries and mutations with cursor-based pagination. Use it for typed nested reads and mutation shapes that fit the workflow. GraphQL API access uses the **Enable GraphQL API Access** token permission rather than granular REST scopes. Use the REST Audit Events endpoint for audit-event retrieval.
+Use GraphQL for typed nested reads and mutations that fit the workflow. GraphQL access requires the **Enable GraphQL API Access** token permission rather than granular REST scopes.
+
+Use the REST Audit Events endpoint for audit-event retrieval.
 
 ## Basic Query
 
@@ -131,7 +133,7 @@ mutation {
 }
 ```
 
-Note: `pipelineID` is the GraphQL node ID (base64-encoded), not the pipeline slug. Retrieve it with a pipeline query first.
+Note: `pipelineID` is the opaque GraphQL node ID, not the pipeline slug or REST UUID. Retrieve it with a pipeline query rather than deriving it.
 
 **Create a pipeline** (use `clusterId` to associate with a cluster):
 
@@ -187,19 +189,7 @@ mutation DeleteArtifact($id: ID!) {
 }
 ```
 
-Pass the artifact global GraphQL ID, not its REST UUID. Treat this as destructive and require explicit confirmation. The artifact record remains with a deleted state. Buildkite-managed storage is removed asynchronously; customer-managed storage is not removed and requires a separate manual deletion. Never discover and delete artifacts in one unattended loop.
-
-## REST vs GraphQL Decision Guide
-
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Trigger a build | Either | Both support it; REST is simpler |
-| List builds with filtering | REST | Better query parameter support |
-| Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
-| Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
-| Audit events | REST | Dedicated read-only endpoint with cursor body and `Link` header |
-| Delete an artifact | REST or GraphQL | REST accepts the artifact UUID; `artifactDelete` accepts the artifact global ID |
-| Bulk operations on many pipelines | GraphQL | Fetch specific fields only, reduce payload size |
+Pass the artifact global GraphQL ID, not its REST UUID. Require explicit confirmation and apply the artifact-deletion safeguards in the main skill.
 
 ## Introspection
 

@@ -1,15 +1,8 @@
 # Webhooks
 
-Identify the operation before changing configuration. Four similarly named concepts have different owners and effects.
+Use the main skill to identify whether the operation concerns an outbound notification, inbound GitHub processing, repository webhook registration, or the organization GitHub App connection. Changing one does not configure the others.
 
-| Concept | Manage it with | Effect |
-|---------|----------------|--------|
-| Outbound notification service webhook | Organization notification-services REST list/show/create/update/delete/enable/disable | Sends selected Buildkite events to an external HTTP endpoint |
-| Inbound GitHub processing toggle | Pipeline `GET`/`PUT`/`DELETE /github-webhooks` REST resource | Enrolls or removes Buildkite processing of incoming GitHub or GitHub Enterprise Server events |
-| Pipeline repository webhook registration | `POST /organizations/{org.slug}/pipelines/{slug}/webhook` for an eligible GitHub App pipeline | Asks Buildkite to create repository event delivery through the provider |
-| Organization GitHub App connection | Organization browser authorization and connection settings | Grants and configures organization-level repository access |
-
-Changing one does not configure the others. In particular, the inbound processing toggle does not register a repository webhook or configure the organization GitHub App connection. It requires `read_pipelines` or `write_pipelines`, Full Access, an eligible pipeline, and expanded webhook triggers; unavailable configurations return `404`.
+The inbound processing toggle requires `read_pipelines` or `write_pipelines`, Full Access, an eligible pipeline, and expanded webhook triggers. Unavailable configurations return `404`.
 
 ## Reconcile an outbound webhook
 

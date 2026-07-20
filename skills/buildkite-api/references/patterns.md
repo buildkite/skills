@@ -2,18 +2,22 @@
 
 Keep these workflows read-first and explicit about access. Set `BUILDKITE_API_TOKEN` before running them.
 
-## Inventory organization settings and audit events
+## Inventory organization API posture
 
-Require organization admin, `read_organization_settings`, and Enterprise plus `read_audit_events` for the audit call. Keep API settings and pipeline settings separate.
+Read API controls, pipeline defaults, and recent administrative activity before proposing an organization-level mutation. These are independent resources, not one transaction. Call each endpoint only when its scope, permission, and plan requirements are available.
+
+API settings and pipeline settings require organization admin and `read_organization_settings`. Audit Events additionally require Enterprise and `read_audit_events`.
 
 ```bash
 org="my-org"
 base="https://api.buildkite.com/v2/organizations/$org"
 auth="Authorization: Bearer $BUILDKITE_API_TOKEN"
 
+# Run these settings reads independently when authorized.
 curl -sS -H "$auth" "$base/api-settings" | jq .
 curl -sS -H "$auth" "$base/pipeline-settings" | jq .
 
+# Run the Audit Events read independently when authorized.
 next="$base/audit_events"
 while [ -n "$next" ]; do
   page=$(curl -sS -H "$auth" "$next")
@@ -27,6 +31,8 @@ Do not write either settings resource from this inventory loop. Review feature-g
 ## Discover a repository and create a pipeline
 
 Require organization admin and `read_organization_repository_connections` for discovery, then `write_pipelines` and pipeline access for creation. Discovery supports eligible GitHub and GitHub Enterprise Server connection variants; other providers can return `422`.
+
+Use discovery only when the repository URL or default branch must come from an organization connection. Otherwise, create the pipeline directly.
 
 ```bash
 set -euo pipefail
@@ -107,7 +113,8 @@ build=$(curl -sS --fail-with-body -X POST -H "$auth" -H "Content-Type: applicati
 number=$(jq -er '.number' <<<"$build")
 
 for attempt in $(seq 1 60); do
-  state=$(curl -sS --fail-with-body -H "$auth" "$base/$number" | jq -er '.state')
+  state=$(curl -sS --fail-with-body -H "$auth" \
+    "$base/$number?exclude_jobs=true&exclude_pipeline=true" | jq -er '.state')
   case "$state" in
     passed|failed|canceled|skipped|not_run) break ;;
   esac
@@ -123,9 +130,9 @@ printf 'Build %s finished in state %s\n' "$number" "$state"
 
 Cancel a running build with `PUT $base/$number/cancel`. Rebuild with `PUT $base/$number/rebuild` only when replaying the original commit, branch, environment, message, and pull request context is intended. To fetch current source-control state, create a new build instead.
 
-### Diagnose failed jobs and filter artifacts
+### Diagnose failed jobs
 
-Require `read_builds` and `read_artifacts`. These commands inspect the first response page only. Follow `.links.next` for every jobs page and the HTTP `Link` header for every artifact page before treating the results as complete. Inspect signal and embedded agent context before deciding whether a retry is safe.
+Require `read_builds`. This command inspects the first response page only; follow `.links.next` before treating the results as complete. Inspect signal and embedded agent context before deciding whether a retry is safe.
 
 ```bash
 org="my-org"
@@ -140,6 +147,20 @@ curl -sS -H "$auth" \
       id, name, exit_status, signal, signal_reason,
       agent: (.agent | {os_id, arch, queue, connected_at, disconnected_at, lost_at, stopped_at})
     }'
+```
+
+Diagnostic fields can explain failure timing but do not prove an external side effect did not occur.
+
+### Filter artifacts when build output is needed
+
+Require `read_artifacts`. This command inspects the first response page only; follow the HTTP `Link` header before treating the results as complete.
+
+```bash
+org="my-org"
+pipeline="my-pipeline"
+build="42"
+base="https://api.buildkite.com/v2/organizations/$org/pipelines/$pipeline/builds/$build"
+auth="Authorization: Bearer $BUILDKITE_API_TOKEN"
 
 curl -sS --get -H "$auth" \
   --data-urlencode "state=finished" \
@@ -148,4 +169,4 @@ curl -sS --get -H "$auth" \
   | jq '.[] | {id, path, state, job_id}'
 ```
 
-Path matching is exact unless the value contains `*`. Diagnostic fields can explain failure timing but do not prove an external side effect did not occur.
+Path matching is exact unless the value contains `*`.
