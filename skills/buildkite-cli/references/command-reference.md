@@ -161,8 +161,6 @@ bk maintainer create <cluster-uuid> ...
 bk maintainer delete <cluster-uuid> <maintainer-id>
 ```
 
-> For cluster/queue strategy, hosted agent shapes, agent tokens, and infrastructure provisioning, see the **buildkite-agent-infrastructure** skill.
-
 ## Local Agent
 
 ```bash
@@ -251,7 +249,7 @@ bk browse --all-branches         # builds list without a branch filter
 bk user invite alice@example.com bob@example.com
 ```
 
-Sends invitation emails. Users gain access based on the organization's default role and team assignments.
+Creates and sends invitations with the `member` role. Membership and access begin only after acceptance or provisioning, when normal default-team assignments apply.
 
 ## Skills
 

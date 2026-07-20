@@ -2,7 +2,7 @@
 
 Endpoint: `https://graphql.buildkite.com/v1`
 
-The GraphQL API supports queries and mutations with cursor-based pagination. Use it when fetching nested or specific fields to reduce response size, for audit events, or when you prefer a typed query language over REST conventions.
+The GraphQL API supports queries and mutations with cursor-based pagination. Use it for typed nested reads and mutation shapes that fit the workflow. GraphQL API access uses the **Enable GraphQL API Access** token permission rather than granular REST scopes. Use the REST Audit Events endpoint for audit-event retrieval.
 
 ## Basic Query
 
@@ -172,9 +172,22 @@ mutation {
 }
 ```
 
-> For detailed guidance on cluster and queue provisioning strategy, see the **buildkite-agent-infrastructure** skill.
-
 Other key mutations: `pipelineUpdate`, `pipelineTemplateCreate` (Enterprise), `agentTokenCreate`, `agentTokenRevoke`.
+
+**Delete an artifact:**
+
+```graphql
+mutation DeleteArtifact($id: ID!) {
+  artifactDelete(input: { id: $id }) {
+    artifact {
+      id
+      state
+    }
+  }
+}
+```
+
+Pass the artifact global GraphQL ID, not its REST UUID. Treat this as destructive and require explicit confirmation. The artifact record remains with a deleted state. Buildkite-managed storage is removed asynchronously; customer-managed storage is not removed and requires a separate manual deletion. Never discover and delete artifacts in one unattended loop.
 
 ## REST vs GraphQL Decision Guide
 
@@ -184,7 +197,8 @@ Other key mutations: `pipelineUpdate`, `pipelineTemplateCreate` (Enterprise), `a
 | List builds with filtering | REST | Better query parameter support |
 | Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
 | Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
-| Audit events | GraphQL | `auditEvent` query available |
+| Audit events | REST | Dedicated read-only endpoint with cursor body and `Link` header |
+| Delete an artifact | REST or GraphQL | REST accepts the artifact UUID; `artifactDelete` accepts the artifact global ID |
 | Bulk operations on many pipelines | GraphQL | Fetch specific fields only, reduce payload size |
 
 ## Introspection

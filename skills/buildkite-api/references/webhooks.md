@@ -1,132 +1,53 @@
 # Webhooks
 
-Webhooks deliver HTTP POST requests to a specified URL when events occur in Buildkite. Use them for event-driven automation: failure notifications, auto-retry logic, deployment triggers, status dashboards.
+Identify the operation before changing configuration. Four similarly named concepts have different owners and effects.
 
-## Creating a Webhook
+| Concept | Manage it with | Effect |
+|---------|----------------|--------|
+| Outbound notification service webhook | Organization notification-services REST list/show/create/update/delete/enable/disable | Sends selected Buildkite events to an external HTTP endpoint |
+| Inbound GitHub processing toggle | Pipeline `GET`/`PUT`/`DELETE /github-webhooks` REST resource | Enrolls or removes Buildkite processing of incoming GitHub or GitHub Enterprise Server events |
+| Pipeline repository webhook registration | `POST /organizations/{org.slug}/pipelines/{slug}/webhook` for an eligible GitHub App pipeline | Asks Buildkite to create repository event delivery through the provider |
+| Organization GitHub App connection | Organization browser authorization and connection settings | Grants and configures organization-level repository access |
 
-Configure webhooks in the Buildkite dashboard under your organization's **Notification Services** settings. Specify a target URL, select the events to subscribe to, and optionally configure a token or signature key for verification. There is no REST API endpoint for webhook management — webhooks are created and managed through the UI.
+Changing one does not configure the others. In particular, the inbound processing toggle does not register a repository webhook or configure the organization GitHub App connection. It requires `read_pipelines` or `write_pipelines`, Full Access, an eligible pipeline, and expanded webhook triggers; unavailable configurations return `404`.
 
-## Event Types
+## Reconcile an outbound webhook
 
-**Build events:** `build.scheduled`, `build.running`, `build.failing`, `build.finished`, `build.skipped`
+Use `read_notification_services` and `write_notification_services` plus organization administrator access or the **Manage Notification Services** permission.
 
-**Job events:** `job.scheduled`, `job.started`, `job.finished`, `job.activated` (block step unblocked)
+1. List notification services and match the webhook by stable destination and provider fields.
+1. Show the matched service before mutation.
+1. Compare only fields managed by the integration.
+1. Create when absent; update, enable, or disable when present; delete only with explicit destructive intent.
+1. Re-read the service and verify non-secret fields.
 
-**Agent events:** `agent.created`, `agent.destroyed`, `agent.connected`, `agent.disconnected`, `agent.authorized`, `agent.unauthorized`, `agent.busy`, `agent.idle`
+Do not infer that an omitted or redacted response field must be replaced. Secret response behavior varies by provider. Follow the [notification services REST reference](https://buildkite.com/docs/apis/rest-api/organizations/notification-services) for request fields and provider behavior.
 
-**Other:** `ping` (webhook settings changed), `cluster_token.registration_blocked` (IP restriction)
+Common generally available service types include webhook, legacy Slack incoming webhook, EventBridge, Datadog, and OpenTelemetry. OAuth Slack Workspace and Linear require browser creation and authorization; common fields can be managed through the API afterward.
 
-The most commonly used events are `build.finished` (react to build completion), `job.finished` (react to individual job results), and `build.failing` (early failure notification).
+## Handle outbound events
 
-## Webhook Payload Structure
+Branch on the `X-Buildkite-Event` header or top-level `event` value. Payload shapes vary by event: do not require every event to contain the same build, job, pipeline, agent, or sender fields.
 
-All payloads contain top-level `event`, `build`, `pipeline`, and `sender` fields:
+Keep handlers safe:
 
-```json
-{
-  "event": "build.finished",
-  "build": {
-    "id": "build-uuid",
-    "url": "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42",
-    "web_url": "https://buildkite.com/my-org/my-pipeline/builds/42",
-    "number": 42,
-    "state": "failed",
-    "blocked": false,
-    "message": "Fix login flow",
-    "commit": "abc123def456",
-    "branch": "main",
-    "source": "webhook",
-    "created_at": "2024-01-15T10:30:00.000Z",
-    "finished_at": "2024-01-15T10:35:00.000Z",
-    "meta_data": {},
-    "creator": { "id": "user-uuid", "name": "Jane Developer" }
-  },
-  "pipeline": { "slug": "my-pipeline", "name": "My Pipeline", "repository": "git@github.com:my-org/my-repo.git" },
-  "sender": { "id": "user-uuid", "name": "Jane Developer" }
-}
-```
+- Parse the raw request according to the documented content type and selected event.
+- Validate the current authentication fields exactly as specified in the [webhooks documentation](https://buildkite.com/docs/apis/webhooks). Do not invent an HMAC contract or stale field names.
+- Return success quickly and move slow work to a queue.
+- Make processing idempotent because deliveries can repeat.
+- Query REST or GraphQL by payload IDs when the event omits needed retry or relationship context.
+- Record the event name and stable object IDs without logging tokens or secret values.
 
-Job events (`job.*`) add a `job` field with `id`, `type`, `name`, `state`, `exit_status`, `started_at`, `finished_at`, and `agent` object.
+Do not auto-retry a build solely from a failure event. Verify retry history, command idempotency, and external side effects first.
 
-**Webhook payload gaps:** Webhook payloads lack retry context (whether a job is a retry, original vs. retried) and manual-vs-automatic action flags. For complete build/job context including retry metadata, query the GraphQL API using the IDs from the webhook payload.
+## Diagnose inbound GitHub delivery
 
-## HTTP Headers
+Check the layers independently:
 
-Every webhook request includes:
+1. Confirm the organization GitHub App or repository connection can access the repository.
+1. Confirm the repository has a webhook registration or supported app-based delivery path.
+1. Read the pipeline `github-webhooks` processing resource and distinguish `404` eligibility from an absent pipeline.
+1. Check that expanded webhook triggers are configured before enrollment.
+1. Inspect repository delivery and Buildkite processing results separately.
 
-| Header | Description | Example |
-|--------|-------------|---------|
-| `X-Buildkite-Event` | Event type | `build.finished` |
-| `X-Buildkite-Token` | Plain text secret (if `token` configured) | `my-webhook-secret` |
-| `X-Buildkite-Signature` | HMAC-SHA256 signature (if `signature_key` configured) | `timestamp=1234567890,signature=abc123...` |
-| `Content-Type` | Always `application/json` | `application/json` |
-| `User-Agent` | Buildkite user agent | `Buildkite-Webhook/1.0` |
-
-## Signature Verification
-
-When `signature_key` is configured, verify the `X-Buildkite-Signature` header to confirm the request came from Buildkite.
-
-The signature format is: `timestamp=<unix_ts>,signature=<hex_hmac>`
-
-Compute the expected signature over `<timestamp>.<raw_body>`:
-
-**Node.js / Express:**
-
-```javascript
-const crypto = require("crypto");
-
-function verifyWebhookSignature(req, secret) {
-  const header = req.headers["x-buildkite-signature"];
-  if (!header) return false;
-
-  const parts = Object.fromEntries(
-    header.split(",").map(p => p.split("=", 2))
-  );
-
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(`${parts.timestamp}.${req.rawBody}`)
-    .digest("hex");
-
-  return crypto.timingSafeEqual(
-    Buffer.from(parts.signature),
-    Buffer.from(expected)
-  );
-}
-```
-
-For Python, use `hmac.new(secret, f"{timestamp}.{body}", hashlib.sha256).hexdigest()` with `hmac.compare_digest` for timing-safe comparison.
-
-## Webhook Handler Example
-
-Express handler that verifies signatures and auto-retries failed builds:
-
-```javascript
-const express = require("express");
-const crypto = require("crypto");
-const app = express();
-
-app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf.toString(); } }));
-
-app.post("/webhooks/buildkite", async (req, res) => {
-  const sig = req.headers["x-buildkite-signature"];
-  if (sig) {
-    const parts = Object.fromEntries(sig.split(",").map(p => p.split("=", 2)));
-    const expected = crypto.createHmac("sha256", process.env.BUILDKITE_WEBHOOK_SECRET)
-      .update(`${parts.timestamp}.${req.rawBody}`).digest("hex");
-    if (!crypto.timingSafeEqual(Buffer.from(parts.signature), Buffer.from(expected)))
-      return res.status(401).send("Invalid signature");
-  }
-
-  const { event, build } = req.body;
-  if (event === "build.finished" && build.state === "failed" && build.branch === "main") {
-    await fetch(`${build.url}/rebuild`, {
-      method: "PUT",
-      headers: { "Authorization": `Bearer ${process.env.BUILDKITE_API_TOKEN}` }
-    });
-  }
-  res.status(200).send("OK");
-});
-
-app.listen(3000);
-```
+See the [pipelines REST reference](https://buildkite.com/docs/apis/rest-api/pipelines) for the current processing endpoints and [GitHub integration documentation](https://buildkite.com/docs/pipelines/source-control/github) for repository-side setup.
