@@ -174,15 +174,15 @@ Omit an exclusion only when the response must include that expansion.
 
 ### List Jobs
 
-Query jobs directly once the build number is known. Do not fetch the build again with embedded jobs. The endpoint supports server-side state filtering, including `failed` jobs in large or still-running builds.
+Query jobs directly once the build number is known. Do not fetch the build again with embedded jobs. Prefer server-side `state`, `step_key`, and `group_key` filters to fetching every job and filtering locally. A step key matches every job for that step, including parallel jobs; a group key matches every job in that group.
 
 ```bash
 curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/jobs?state[]=failed&include_retried_jobs=false&per_page=100" \
+  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/jobs?state[]=failed&group_key=verification&include_retried_jobs=false&per_page=100" \
   | jq '.items[] | {id, name, state, exit_status, web_url}'
 ```
 
-This endpoint uses cursor pagination: read jobs from `.items` and follow `.links.next` until it is `null`. `include_retried_jobs` defaults to `true`; set it to `false` when only the latest attempt for each step is needed.
+This endpoint uses cursor pagination: read jobs from `.items` and follow `.links.next` until it is `null`. Follow the returned next URL as-is so `state[]`, `step_key`, `group_key`, and `include_retried_jobs` remain applied on every page. `include_retried_jobs` defaults to `true`; set it to `false` when only the latest attempt for each step is needed.
 
 ### Create a Build
 
