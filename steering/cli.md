@@ -211,6 +211,8 @@ bk job log <job-uuid> --no-timestamps   # strip timestamp prefixes
 
 ### List jobs
 
+`--step-key` and `--group-key` require Buildkite CLI v3.54.0 or later. Run `bk update` if either flag is unavailable.
+
 When the build number is known, pass `--build` so `bk job list` uses the dedicated cursor-paginated List Jobs endpoint. The pipeline can be explicit or resolved from the current repository or configuration. `--state`, `--step-key`, and `--group-key` are applied server-side; `--queue` and `--duration` remain client-side. Use `--step-key` for every job in a step, including parallel jobs, and `--group-key` for every job in a group.
 
 ```bash
