@@ -10,8 +10,8 @@ description: >
   upload/download, buildkite-agent meta-data set/get, buildkite-agent pipeline upload,
   buildkite-agent oidc request-token, buildkite-agent step, buildkite-agent lock,
   buildkite-agent env, buildkite-agent secret get, buildkite-agent redactor add,
-  buildkite-agent tool sign/keygen, or any buildkite-agent subcommand used inside
-  a running job step.
+  buildkite-agent tool sign/keygen, buildkite:webhook, raw webhook payloads, or
+  any buildkite-agent subcommand used inside a running job step.
 ---
 
 # Buildkite Agent Runtime
@@ -150,6 +150,13 @@ fi
 ```bash
 # After a block step with fields: [{key: "release-name", text: "Release Name"}]
 RELEASE_NAME=$(buildkite-agent meta-data get "release-name")
+```
+
+**Raw webhook payloads** are available in webhook-triggered builds, while the webhook data remains cached. Read the special `buildkite:webhook` key when automation needs fields that are not promoted to first-class environment variables, such as the original pull request comment body.
+
+```bash
+WEBHOOK="$(buildkite-agent meta-data get "buildkite:webhook")"
+COMMENT_BODY="$(jq -r '.comment.body' <<< "$WEBHOOK")"
 ```
 
 ## Pipeline Upload
