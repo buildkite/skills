@@ -155,7 +155,8 @@ RELEASE_NAME=$(buildkite-agent meta-data get "release-name")
 **Raw webhook payloads** are available in webhook-triggered builds, while the webhook data remains cached. Read the special `buildkite:webhook` key when automation needs fields that are not promoted to first-class environment variables, such as the original pull request comment body.
 
 ```bash
-buildkite-agent meta-data get "buildkite:webhook" | jq .
+WEBHOOK="$(buildkite-agent meta-data get "buildkite:webhook")"
+COMMENT_BODY="$(jq -r '.comment.body' <<< "$WEBHOOK")"
 ```
 
 ## Pipeline Upload
