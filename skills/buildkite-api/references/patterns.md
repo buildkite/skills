@@ -28,35 +28,22 @@ done
 
 Do not write either settings resource from this inventory loop. Review feature-gated fields and lockout risk before any API allowlist change.
 
-## Discover a repository and create a pipeline
+## Create a pipeline with the required repository checks
 
-Require organization admin and `read_organization_repository_connections` for discovery, then `write_pipelines` and pipeline access for creation. Discovery supports eligible GitHub and GitHub Enterprise Server connection variants; other providers can return `422`.
-
-Use discovery only when the repository URL or default branch must come from an organization connection. Otherwise, create the pipeline directly.
+Require `write_pipelines` and pipeline access for creation. When the user supplies a repository URL and only needs a pipeline, skip repository discovery and create directly.
 
 ```bash
 set -euo pipefail
 
 org="my-org"
-connection_id="CONNECTION_UUID"
-repository="my-org/my-repo"
 cluster_id="CLUSTER_UUID"
+repository_url="git@github.com:my-org/my-repo.git"
+default_branch="main"
 base="https://api.buildkite.com/v2/organizations/$org"
 auth="Authorization: Bearer $BUILDKITE_API_TOKEN"
 
-repo=$(curl -sS --fail-with-body --get -H "$auth" \
-  --data-urlencode "repository=$repository" \
-  "$base/repository_connections/$connection_id/repositories")
-
-jq . <<<"$repo"
-if [ "$(jq 'length' <<<"$repo")" -ne 1 ]; then
-  printf 'Expected one repository match; refusing to create pipeline\n' >&2
-  exit 1
-fi
-clone_url=$(jq -er '.[0].clone_url' <<<"$repo")
-default_branch=$(jq -er '.[0].default_branch' <<<"$repo")
 payload=$(jq -n \
-  --arg repository "$clone_url" \
+  --arg repository "$repository_url" \
   --arg cluster_id "$cluster_id" \
   --arg default_branch "$default_branch" '{
   name: "My Repository",
@@ -71,7 +58,38 @@ curl -sS --fail-with-body -X POST -H "$auth" -H "Content-Type: application/json"
   -d "$payload" | jq '{slug, web_url, repository}'
 ```
 
-The exact repository filter is case-insensitive. Verify the result before the mutating create. Pipeline creation validates and mutates in one request; no REST dry run exists. YAML-enabled pipelines require `configuration`; legacy visual-step organizations can use `steps`, and templates use `pipeline_template_uuid`.
+Pipeline creation validates and mutates in one request; no REST dry run exists.
+
+Default to YAML `configuration`. Use `pipeline_template_uuid` when a template has been selected, and use visual `steps` only for a known legacy workflow. No public organization field reliably identifies the step mode before creation. Report a `422` validation response instead of silently retrying with a different mode.
+
+### Verify an existing GitHub connection when the outcome depends on it
+
+When the requested result depends on an existing GitHub connection—for example, verify access before configuring pull request builds, commit statuses, or repository webhooks—require organization admin and `read_organization_repository_connections`, then discover before creating the pipeline. Discovery supports eligible GitHub and GitHub Enterprise Server connection variants.
+
+```bash
+set -euo pipefail
+
+org="my-org"
+connection_id="CONNECTION_UUID"
+repository="my-org/my-repo"
+base="https://api.buildkite.com/v2/organizations/$org"
+auth="Authorization: Bearer $BUILDKITE_API_TOKEN"
+
+repo=$(curl -sS --fail-with-body --get -H "$auth" \
+  --data-urlencode "repository=$repository" \
+  "$base/repository_connections/$connection_id/repositories")
+
+jq . <<<"$repo"
+if [ "$(jq 'length' <<<"$repo")" -ne 1 ]; then
+  printf 'Expected one repository match; refusing connection-dependent setup\n' >&2
+  exit 1
+fi
+
+repository_url=$(jq -er '.[0].clone_url' <<<"$repo")
+default_branch=$(jq -er '.[0].default_branch' <<<"$repo")
+```
+
+The exact repository filter is case-insensitive. Use the returned `repository_url` and `default_branch` in the create payload above only after the check succeeds. Do not block ordinary pipeline creation when discovery is unsupported; explain the remaining provider or browser prerequisite instead.
 
 ## Reconcile a notification webhook safely
 
@@ -149,7 +167,17 @@ curl -sS -H "$auth" \
     }'
 ```
 
-Diagnostic fields can explain failure timing but do not prove an external side effect did not occur.
+Use `step_key` when every job for one step is relevant, including parallel jobs, and `group_key` for every job in a group. Apply either filter independently or combine them when both constraints are intended:
+
+```bash
+curl -sS --get -H "$auth" \
+  --data-urlencode "step_key=test" \
+  --data-urlencode "group_key=verification" \
+  --data-urlencode "per_page=100" \
+  "$base/jobs" | jq '.items[] | {id, name, state}'
+```
+
+Follow each `.links.next` URL as returned so filters remain applied across cursor pages. Diagnostic fields can explain failure timing but do not prove an external side effect did not occur.
 
 ### Filter artifacts when build output is needed
 

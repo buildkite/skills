@@ -95,9 +95,9 @@ REST requests consume both organization and per-user quotas. On `429`, stop requ
 
 ### Pipeline creation
 
-For YAML-enabled pipelines, send pipeline YAML as the REST `configuration` string and include a cluster ID. Legacy visual-step organizations can instead send a non-empty `steps` array. Pipelines using `pipeline_template_uuid` for their steps do not need either field.
+Default to pipeline YAML in the REST `configuration` string and include a cluster ID. Use `pipeline_template_uuid` when the user or organization workflow has selected a template. Send a visual `steps` array only for a known legacy visual-step workflow; no public organization field reliably identifies that mode before creation.
 
-The create request performs server validation and mutation together. Validate YAML locally first when useful, but do not describe local schema validation as proof that repository access, provider setup, permissions, or server-side create constraints will pass.
+The create request performs server validation and mutation together. Validate YAML locally first when useful, but do not describe local schema validation as proof that repository access, provider setup, permissions, or server-side create constraints will pass. Report a `422` validation response instead of silently retrying with a different step source.
 
 ### Organization administration
 
@@ -114,6 +114,8 @@ Download by artifact ID with `curl -L` because the download endpoint redirects. 
 If the organization uses customer-managed artifact storage, deleting the Buildkite artifact does not remove the underlying object. Do not infer the storage backend or delete external objects automatically; consult the organization's artifact-storage configuration and deletion runbook.
 
 ### Job and agent diagnostics
+
+Query jobs directly once the build number is known. Prefer server-side `state`, `step_key`, and `group_key` filters to fetching every job and filtering locally. A step key matches every job for that step, including parallel jobs; a group key matches every job in that group. Follow each `.links.next` URL as returned so filters remain applied across cursor pages.
 
 Use `signal` and `signal_reason` to distinguish signal termination from an ordinary nonzero exit. Inspect the embedded agent's `os_id`, `arch`, `queue`, `connected_at`, `disconnected_at`, `lost_at`, and `stopped_at` to correlate platform, routing, and lifecycle timing.
 

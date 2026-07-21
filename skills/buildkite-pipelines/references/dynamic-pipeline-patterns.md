@@ -258,7 +258,7 @@ Two important notes:
 - **Unquoted heredoc (`<<YAML`)** is correct here — `${BUILDKITE_LABEL}` and `${BUILDKITE_COMMAND}` need to expand at upload time.
 - **`limit: 1`** on the uploaded retry step prevents infinite retry loops when the bigger agent also runs out of memory.
 
-This pattern works for any infrastructure-class failure where a different queue would help. For exit code reference, see `references/retry-and-error-codes.md`. For agent hook configuration, see the **buildkite-agent-infrastructure** skill.
+This pattern works for any infrastructure-class failure where a different queue would help. For exit code reference, see `references/retry-and-error-codes.md`. For agent hook configuration, see the [agent hooks documentation](https://buildkite.com/docs/agent/hooks).
 
 ## Branch-based routing
 
@@ -484,7 +484,7 @@ response.raise_for_status()
 print(response.json())
 ```
 
-The token needs the **Enable GraphQL API Access** permission, granted on the user's API access tokens page. Store it as a cluster secret or pipeline-level secret rather than checking it into the repo. See the **buildkite-api** skill for the full GraphQL surface and pagination patterns, and the **buildkite-agent-infrastructure** skill for cluster-scoped secret storage.
+The token needs the **Enable GraphQL API Access** permission, granted on the user's API access tokens page. Store it as a cluster secret or pipeline-level secret rather than checking it into the repo. See the **buildkite-api** skill for the full GraphQL surface and pagination patterns, and the [Buildkite Secrets documentation](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets) for cluster-scoped secret storage.
 
 ## See also: cross-cluster triggers via Rules
 

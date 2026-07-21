@@ -113,12 +113,14 @@ These default to the most recent build on the current branch. Shared flags: `-p/
 
 ### `bk job list`
 
-Pass `--build` when the build number is known. This uses the dedicated cursor-paginated List Jobs endpoint instead of searching build responses. The pipeline can be passed with `--pipeline` or resolved from the current repository or configuration. `--limit` remains the total output cap; `--no-limit` follows every cursor page. `--since` and `--until` cannot be combined with `--build`.
+Pass `--build` when the build number is known. This uses the dedicated cursor-paginated List Jobs endpoint instead of searching build responses. The pipeline can be passed with `--pipeline` or resolved from the current repository or configuration. `--step-key` and `--group-key` require `--build`, can be combined, and remain applied across cursor pages. A step key includes parallel jobs for that step; a group key includes every job in that group. `--limit` remains the total output cap; `--no-limit` follows every cursor page. `--since` and `--until` cannot be combined with `--build`.
 
 | Flag | Default | Description | Side |
 |------|---------|-------------|------|
 | `--pipeline` (`-p`) | — | Filter by pipeline slug | server |
 | `--build` | — | Filter by build number; requires a resolvable pipeline | server |
+| `--step-key` | — | Filter by step key; requires `--build` | server with `--build` |
+| `--group-key` | — | Filter by group key; requires `--build` | server with `--build` |
 | `--since` | — | Builds created since (e.g. `1h`) | server |
 | `--until` | — | Builds created before (e.g. `1h`) | server |
 | `--queue` | — | Filter by queue name | client |

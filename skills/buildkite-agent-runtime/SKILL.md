@@ -344,7 +344,7 @@ echo "--- Environment after environment hook:"
 buildkite-agent env dump | jq 'keys'
 ```
 
-> For agent lifecycle hooks and `buildkite-agent.cfg` configuration, see the **buildkite-agent-infrastructure** skill.
+> For agent lifecycle hooks and `buildkite-agent.cfg` configuration, see the [agent hooks](https://buildkite.com/docs/agent/hooks) and [agent configuration](https://buildkite.com/docs/agent/self-hosted/configure) documentation.
 
 ## Secrets
 
@@ -372,7 +372,7 @@ Multiple secret keys can be requested at once: `buildkite-agent secret get KEY1 
 
 By default, `secret get` automatically registers retrieved values with the log redactor, masking them as `[REDACTED]` in subsequent output.
 
-> For setting up cluster secrets, see the **buildkite-agent-infrastructure** skill. For the declarative `secrets:` pipeline YAML key, see the **buildkite-pipelines** skill.
+> For setting up cluster secrets, see the [Buildkite Secrets documentation](https://buildkite.com/docs/pipelines/security/secrets/buildkite-secrets). For the declarative `secrets:` pipeline YAML key, see the **buildkite-pipelines** skill.
 
 ## Log Redaction
 
