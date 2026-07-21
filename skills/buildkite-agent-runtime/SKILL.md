@@ -10,8 +10,8 @@ description: >
   upload/download, buildkite-agent meta-data set/get, buildkite-agent pipeline upload,
   buildkite-agent oidc request-token, buildkite-agent step, buildkite-agent lock,
   buildkite-agent env, buildkite-agent secret get, buildkite-agent redactor add,
-  buildkite-agent tool sign/keygen, or any buildkite-agent subcommand used inside
-  a running job step.
+  buildkite-agent tool sign/keygen, buildkite:webhook, raw webhook payloads, or
+  any buildkite-agent subcommand used inside a running job step.
 ---
 
 # Buildkite Agent Runtime
