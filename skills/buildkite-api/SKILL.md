@@ -63,7 +63,7 @@ Common scopes include:
 | Teams | `read_teams`/`write_teams` |
 | Hosted and cluster resources | `read_clusters`/`write_clusters` |
 
-Scopes are necessary but not always sufficient. Check the caller's organization role, granular permission, and feature gate before changing an endpoint or payload in response to `403` or `404`. See [API token scopes](https://buildkite.com/docs/apis/managing-api-tokens#token-scopes) for the full catalogue.
+Scopes are necessary but not always sufficient. Treat `403` and permission-gated `404` responses as access or availability boundaries, not evidence that another payload or endpoint should be tried. Use observable organization state and known caller context when available; otherwise report the required role, permission, or feature and ask an administrator to verify it. See [API token scopes](https://buildkite.com/docs/apis/managing-api-tokens#token-scopes) for the full catalogue.
 
 ## REST API
 
@@ -109,6 +109,8 @@ The create request performs server validation and mutation together. Validate YA
 Read settings before mutation, compare only managed fields, and send the smallest supported update. Preserve unknown or feature-gated fields. For API settings, model an allowlist change as a lockout-sensitive operation: verify the caller's source address, retain a rollback path, and avoid concurrent settings writes.
 
 Treat invitations and memberships as different states. List invitations to reconcile pending requests, use show for any invitation state, and use `DELETE` only to revoke a pending invitation. Bulk invitation creation supports role, SSO mode, and team assignments, but validates the entire request atomically. A failure creates none of the requested invitations.
+
+Enable Teams only when the requested outcome explicitly requires team-based permissions. Do not use the mutation to probe availability. Read `Organization.isTeamsEnabled` through GraphQL when the current state is needed; when Teams is disabled, explain the plan and permission requirements before enabling it.
 
 ### Artifact filtering
 
