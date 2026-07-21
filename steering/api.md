@@ -83,7 +83,7 @@ Use this map to select a resource family, then open the linked reference for exa
 | Build lifecycle | REST read/write | `read_builds`/`write_builds`; pipeline access | Rebuild replays the original context instead of fetching current source-control state. [Builds](https://buildkite.com/docs/apis/rest-api/builds) |
 | Hosted resources | REST mixed access | `read_clusters`/`write_clusters`; manage-cluster permission; feature gates | Image creation is asynchronous with no update; cache deletion is explicit. [Images](https://buildkite.com/docs/apis/rest-api/clusters/agent-images), [network ranges](https://buildkite.com/docs/apis/rest-api/clusters/network-ranges), and [cache volumes](https://buildkite.com/docs/apis/rest-api/clusters/cache-volumes) |
 | Diagnostics | REST read-only | `read_builds`, `read_agents` | Signal and agent lifecycle fields are evidence, not proof that retry is safe. [Jobs](https://buildkite.com/docs/apis/rest-api/jobs) and [agents](https://buildkite.com/docs/apis/rest-api/agents) |
-| Artifacts | REST read/write; GraphQL deletion | `read_artifacts`/`write_artifacts`; GraphQL API access | Filter before pagination and confirm deletion explicitly. [Artifacts](https://buildkite.com/docs/apis/rest-api/artifacts) |
+| Artifacts | REST read/write; GraphQL deletion | `read_artifacts`/`write_artifacts` for REST; GraphQL API access; **Build & Read** access or higher on the artifact's pipeline for deletion | Filter before pagination and confirm deletion explicitly. [Artifacts](https://buildkite.com/docs/apis/rest-api/artifacts) |
 
 ### Pagination
 
@@ -95,7 +95,7 @@ REST requests consume both organization and per-user quotas. On `429`, stop requ
 
 ### Pipeline creation
 
-Default to pipeline YAML in the REST `configuration` string and include a cluster ID. Use `pipeline_template_uuid` when the user or organization workflow has selected a template. Send a visual `steps` array only for a known legacy visual-step workflow; no public organization field reliably identifies that mode before creation.
+Default to pipeline YAML in the REST `configuration` string. Include `cluster_id` when a cluster has been selected. Omission is valid when the organization allows unclustered pipelines; otherwise the server returns `422` with `Cluster must be specified`. Do not reject a create client-side solely because `cluster_id` is absent. Use `pipeline_template_uuid` when the user or organization workflow has selected a template. Send a visual `steps` array only for a known legacy visual-step workflow; no public organization field reliably identifies that mode before creation.
 
 The create request performs server validation and mutation together. Validate YAML locally first when useful, but do not describe local schema validation as proof that repository access, provider setup, permissions, or server-side create constraints will pass. Report a `422` validation response instead of silently retrying with a different step source.
 
@@ -111,7 +111,7 @@ Enable Teams only when the requested outcome explicitly requires team-based perm
 
 Apply `state` and `path` before pagination on build-level and job-level artifact lists. A path without `*` is exact; include `*` only when glob matching is intended. URL-encode paths and state filters rather than filtering a single page locally.
 
-Download by artifact ID with `curl -L` because the download endpoint redirects. REST deletion requires `write_artifacts` and accepts the artifact UUID at either `/organizations/{org.slug}/jobs/{job.id}/artifacts/{id}` or the fully qualified pipeline/build/job route. The build-level artifact-list route has no corresponding delete operation. GraphQL `artifactDelete` accepts the artifact global ID. Require explicit confirmation for either path, and never turn filtered discovery into an automatic deletion loop.
+Download by artifact ID with `curl -L` because the download endpoint redirects. REST deletion requires `write_artifacts`; both REST and GraphQL deletion also require **Build & Read** access or higher on the artifact's pipeline. REST accepts the artifact UUID at either `/organizations/{org.slug}/jobs/{job.id}/artifacts/{id}` or the fully qualified pipeline/build/job route. The build-level artifact-list route has no corresponding delete operation. GraphQL `artifactDelete` accepts the artifact global ID and requires GraphQL API access. Require explicit confirmation for either path, and never turn filtered discovery into an automatic deletion loop.
 
 If the organization uses customer-managed artifact storage, deleting the Buildkite artifact does not remove the underlying object. Do not infer the storage backend or delete external objects automatically; consult the organization's artifact-storage configuration and deletion runbook.
 
@@ -155,7 +155,8 @@ For outbound handlers, branch on `X-Buildkite-Event` or the payload `event`. Do 
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
-| Creating a REST pipeline without `cluster_id`, or without a valid step source | Creation returns `422` | Send the cluster UUID and use YAML `configuration`, legacy visual `steps`, or `pipeline_template_uuid` as applicable; treat create validation as mutating |
+| Assuming `cluster_id` is always required or always optional | Valid unclustered creation is rejected client-side, or clustered-only creation returns `422` | Include a selected cluster; otherwise let the server enforce whether the organization permits unclustered pipelines |
+| Creating a REST pipeline without a valid step source | Creation returns `422` | Use YAML `configuration`, legacy visual `steps`, or `pipeline_template_uuid` as applicable; treat create validation as mutating |
 | Updating settings without reading first | Feature-gated fields are overwritten or an IP allowlist locks out automation | Read, compare managed fields, and preserve a tested rollback path |
 | Treating an invitation as active membership | Automation assumes access before acceptance or provisioning | Track pending invitations separately from members |
 | Assuming repository connections have CRUD endpoints | Automation attempts unsupported mutations | Use list/show and repository discovery only |

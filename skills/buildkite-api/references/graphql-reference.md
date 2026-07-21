@@ -189,7 +189,7 @@ mutation DeleteArtifact($id: ID!) {
 }
 ```
 
-Pass the artifact global GraphQL ID, not its REST UUID. Require explicit confirmation and apply the artifact-deletion safeguards in the main skill.
+Pass the artifact global GraphQL ID, not its REST UUID. GraphQL API access alone is insufficient: deletion also requires **Build & Read** access or higher on the artifact's pipeline. Require explicit confirmation and apply the artifact-deletion safeguards in the main skill.
 
 ## Introspection
 
