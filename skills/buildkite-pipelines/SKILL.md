@@ -8,8 +8,8 @@ description: >
   "work with artifacts in pipeline YAML".
   Also use when the user mentions .buildkite/ directory, pipeline.yml,
   buildkite-agent pipeline upload, step types (command, wait, block, trigger,
-  group, input), if_changed, notify, concurrency, or asks about Buildkite CI
-  configuration.
+  group, input), if_changed, notify, concurrency, dynamic pipeline quotas,
+  pipeline upload limits, or asks about Buildkite CI configuration.
 ---
 
 # Buildkite Pipelines
