@@ -13,309 +13,181 @@ description: >
 
 # Buildkite API
 
-Buildkite exposes a REST API and a GraphQL API for programmatic automation, plus webhooks for event-driven integrations. Use the REST API for straightforward CRUD operations on builds, pipelines, and organizations. Use the GraphQL API for mutations (queue creation, template management, cluster operations) and when fetching nested or specific fields. Use webhooks to react to build and agent events in real time.
+Do not treat REST as read-only and GraphQL as the write API. Default to REST for builds, pipelines, organization administration, hosted resources, diagnostics, and notification-service writes. Use GraphQL when typed nested reads avoid several requests or for GraphQL-only mutations.
 
-> To execute API calls interactively from the terminal, see the **buildkite-cli** skill for `bk api` commands. With the Buildkite MCP server, use `list_builds` and `get_build` for build metadata without jobs or expanded pipeline information; use `list_jobs` and `get_job` only when job details are needed.
+> To execute API calls interactively from the terminal, see the **buildkite-cli** skill for `bk api` commands. With the Buildkite MCP server, prefer purpose-built tools for supported reads and actions.
 
 ## Quick Start
 
-List builds for a pipeline using the REST API:
+List lightweight build records with REST:
 
 ```bash
 curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
   "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds?exclude_jobs=true&exclude_pipeline=true&per_page=5" \
-  | jq '.[].state'
+  | jq '.[] | {number, state, branch}'
 ```
 
-Query the same data via GraphQL:
+Query selected nested fields with GraphQL:
 
 ```bash
 curl -sS -X POST "https://graphql.buildkite.com/v1" \
   -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "{ pipeline(slug: \"my-org/my-pipeline\") { builds(first: 5) { edges { node { state message } } } } }"
-  }' | jq '.data.pipeline.builds.edges[].node'
+  -d '{"query":"{ pipeline(slug: \"my-org/my-pipeline\") { builds(first: 5) { edges { node { number state message } } } } }"}' \
+  | jq '.data.pipeline.builds.edges[].node'
 ```
 
-## Rate Limits
+## Authentication and access
 
-Traffic through the Buildkite MCP server counts against a separate rate limit from the org-wide REST API budget. A 429 from an MCP call is the MCP-specific limit, not your production API allowance. See [platform limits](https://buildkite.com/docs/platform/limits) for exact numbers.
-
-## Authentication
-
-### Bearer Token
-
-All API requests require a Buildkite API access token passed as a Bearer token:
+Pass a personal API access token as a bearer token. Scope tokens to the required organizations and grant the minimum scopes. Treat an HTTP `404` as potentially meaning either absent or unavailable: several permission-gated and feature-gated resources deliberately do not disclose existence.
 
 ```bash
-curl -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
   "https://api.buildkite.com/v2/organizations"
 ```
 
-Create tokens at **Buildkite → Personal Settings → API Access Tokens**. Each token is scoped to specific organizations and permissions.
+For short-lived credentials, public-key API access tokens (preview) can authenticate REST API access with an RS256-signed JWT. Set the access token UUID as `iss`, keep `iat` within 10 seconds of the current time, and set `exp` no more than five minutes after `iat`. The JWT inherits the token's organization access and scopes.
 
-### Token Scopes
+Common scopes include:
 
-| Scope | Grants access to |
-|-------|-----------------|
-| `read_builds` / `write_builds` | List/inspect or create/cancel/retry builds |
-| `read_pipelines` / `write_pipelines` | List/inspect or create/update/delete pipelines |
-| `read_artifacts` / `write_artifacts` | Download or upload/delete artifacts |
-| `read_build_logs` / `write_build_logs` | Read or delete job log output |
-| `read_agents` / `write_agents` | List/inspect or stop/manage agents |
-| `read_organizations` | List organizations |
-| `read_teams` | List teams and memberships |
-| `read_job_env` | Retrieve job environment variables |
-| `read_user` | Inspect the authenticated user |
-| `read_clusters` / `write_clusters` | List/inspect or manage clusters and queues |
-| `read_suites` / `write_suites` | List/inspect or manage Test Engine suites |
-| `read_registries` / `write_registries` | List/inspect or manage package registries |
+| Capability | Scopes |
+|------------|--------|
+| Builds, pipelines, and artifacts | `read_builds`/`write_builds`, `read_pipelines`/`write_pipelines`, `read_artifacts`/`write_artifacts` |
+| Job logs, environments, and agents | `read_build_logs`/`write_build_logs`, `read_job_env`, `read_agents`/`write_agents` |
+| Organization members | `read_organizations`/`write_organizations` |
+| Organization settings | `read_organization_settings`/`write_organization_settings` |
+| Audit events | `read_audit_events` |
+| Repository connections and discovery | `read_organization_repository_connections` |
+| Notification services | `read_notification_services`/`write_notification_services` |
+| Organization invitations | `read_organization_invitations`/`write_organization_invitations` |
+| Teams | `read_teams`/`write_teams` |
+| Hosted and cluster resources | `read_clusters`/`write_clusters` |
 
-Grant the minimum scopes required. A CI automation script that only triggers builds needs `write_builds` and `read_pipelines` — nothing else.
-
-### JWT Authentication (Public Key)
-
-For machine-to-machine integrations without long-lived tokens, sign RS256 JWTs with claims `iss` (API token UUID), `iat` (within 10 seconds of server time), and `exp` (within 5 minutes of `iat`). Register the public key in Buildkite, then use the JWT as a bearer token.
-
-```python
-import jwt, time
-now = int(time.time())
-token = jwt.encode({"iss": "your-token-uuid", "iat": now, "exp": now + 300},
-                   open("private_key.pem").read(), algorithm="RS256")
-headers = {"Authorization": f"Bearer {token}"}
-```
+Scopes are necessary but not always sufficient. Treat `403` and permission-gated `404` responses as access or availability boundaries, not evidence that another payload or endpoint should be tried. Use observable organization state and known caller context when available; otherwise report the required role, permission, or feature and ask an administrator to verify it. See [API token scopes](https://buildkite.com/docs/apis/managing-api-tokens#token-scopes) for the full catalogue.
 
 ## REST API
 
-Base URL: `https://api.buildkite.com/v2`
+Use `https://api.buildkite.com/v2` as the base URL and `Content-Type: application/json` for JSON request bodies. Most organization-scoped resources begin with `/organizations/{org.slug}`; user, organization-list, and other top-level resources do not.
 
-All responses return JSON. Use `Content-Type: application/json` for request bodies.
+For build metadata and status reads, default to `exclude_jobs=true&exclude_pipeline=true`. Fetch jobs from the Jobs API only when job details are required.
 
-Default build list and get requests to `exclude_jobs=true`. Also set `exclude_pipeline=true` unless expanded pipeline information is required. Retrieve jobs from the Jobs API rather than expanding every job into a build response.
+### Capability map
 
-### Endpoint Reference
+Use this map to select a resource family, then open the linked reference for exact schemas and response behavior.
 
-All endpoints are under `/organizations/{org.slug}`. Abbreviated as `/{org}` below.
-
-| Resource | Endpoint | Methods | Scope |
-|----------|----------|---------|-------|
-| Organizations | `/organizations` | GET | `read_organizations` |
-| Pipelines | `/{org}/pipelines` | GET, POST | `read_pipelines`, `write_pipelines` |
-| Pipeline | `/{org}/pipelines/{slug}` | GET, PUT, PATCH, DELETE | `read_pipelines`, `write_pipelines` |
-| Pipeline templates | `/{org}/pipeline-templates` | GET, POST | `read_pipeline_templates`, `write_pipeline_templates` |
-| Builds (org) | `/{org}/builds` | GET | `read_builds` |
-| Builds (pipeline) | `/{org}/pipelines/{slug}/builds` | GET, POST | `read_builds`, `write_builds` |
-| Build | `/{org}/pipelines/{slug}/builds/{num}` | GET | `read_builds` |
-| Jobs (build) | `/{org}/pipelines/{slug}/builds/{num}/jobs` | GET | `read_builds` |
-| Job log | `/{org}/pipelines/{slug}/builds/{num}/jobs/{id}/log` | GET, DELETE | `read_build_logs` |
-| Job env | `/{org}/pipelines/{slug}/builds/{num}/jobs/{id}/env` | GET | `read_job_env` |
-| Artifacts (build) | `/{org}/pipelines/{slug}/builds/{num}/artifacts` | GET | `read_artifacts` |
-| Artifact download | `/{org}/pipelines/{slug}/builds/{num}/artifacts/{id}/download` | GET | `read_artifacts` |
-| Annotations | `/{org}/pipelines/{slug}/builds/{num}/annotations` | GET | `read_builds` |
-| Agents | `/{org}/agents` | GET | `read_agents` |
-| Clusters | `/{org}/clusters` | GET, POST | `read_clusters`, `write_clusters` |
-| Cluster | `/{org}/clusters/{id}` | GET, PUT, DELETE | `read_clusters`, `write_clusters` |
-| Cluster queues | `/{org}/clusters/{id}/queues` | GET, POST | `read_clusters`, `write_clusters` |
-| Cluster queue | `/{org}/clusters/{id}/queues/{id}` | GET, PUT, DELETE | `read_clusters`, `write_clusters` |
-| Cluster tokens | `/{org}/clusters/{id}/tokens` | GET, POST | `read_agents`, `write_agents` |
-| Cluster secrets | `/{org}/clusters/{id}/secrets` | GET, POST | `read_secrets_details`, `write_secrets` |
-| Members | `/{org}/members` | GET | `read_organizations` |
+| Family | Protocol and access | Scope, permission, or gate | Key boundary and docs |
+|--------|---------------------|----------------------------|-----------------------|
+| Organization settings | REST read/write | `read_organization_settings`/`write_organization_settings`; organization admin; field gates | Read before writing; API allowlist changes can lock out the caller. [API settings](https://buildkite.com/docs/apis/rest-api/organizations/api-settings) and [pipeline settings](https://buildkite.com/docs/apis/rest-api/organizations/pipeline-settings) |
+| Audit events | REST read-only | `read_audit_events`; organization admin; Enterprise | Cursor-paginated independently of settings. [Audit events](https://buildkite.com/docs/apis/rest-api/organizations/audit-events) |
+| Members and invitations | REST read/write | `read_organizations`/`write_organizations`, `read_organization_invitations`/`write_organization_invitations`; organization admin for member updates and all invitation operations | Member `PATCH` changes only `role` and `sso_mode` and cannot target the caller; pending invitations are not memberships. [Members](https://buildkite.com/docs/apis/rest-api/organizations/members) and [invitations](https://buildkite.com/docs/apis/rest-api/organizations/invitations) |
+| Teams activation | REST enable-only; GraphQL `Organization.isTeamsEnabled` state read | `write_teams`; organization access; `change_teams_enabled`; plan gate when disabled | Idempotent `POST /organizations/{org.slug}/teams/enable`; may create Everyone when no teams exist; no REST read or disable route. [Teams](https://buildkite.com/docs/apis/rest-api/teams) |
+| Repository connections | REST read-only | `read_organization_repository_connections`; organization admin; provider support | Connections have no API mutations; unsupported discovery providers return `422`. [Connections](https://buildkite.com/docs/apis/rest-api/organizations/repository-connections) and [discovery](https://buildkite.com/docs/apis/rest-api/repository-connections) |
+| Pipeline setup | REST read/write | `read_pipelines`/`write_pipelines`; pipeline access | Create validates and mutates together; there is no REST dry run. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
+| Notification services | REST read/write lifecycle | `read_notification_services`/`write_notification_services`; organization admin or **Manage Notification Services** | OAuth Slack Workspace and Linear require initial browser authorization; preserve omitted secrets. [Notification services](https://buildkite.com/docs/apis/rest-api/organizations/notification-services) |
+| Inbound GitHub processing | REST read/write | `read_pipelines`/`write_pipelines`; Full Access; provider and feature gates | Processing controls do not register a repository webhook or configure the GitHub App. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
+| Build lifecycle | REST read/write | `read_builds`/`write_builds`; pipeline access | Rebuild replays the original context instead of fetching current source-control state. [Builds](https://buildkite.com/docs/apis/rest-api/builds) |
+| Hosted resources | REST mixed access | `read_clusters`/`write_clusters`; manage-cluster permission; hosted-agent and resource gates | Cluster read/update exposes hosted Git mirror and container cache settings only to cluster managers; image creation is asynchronous with no update; cache deletion is explicit. [Clusters](https://buildkite.com/docs/apis/rest-api/clusters), [images](https://buildkite.com/docs/apis/rest-api/clusters/agent-images), [network ranges](https://buildkite.com/docs/apis/rest-api/clusters/network-ranges), and [cache volumes](https://buildkite.com/docs/apis/rest-api/clusters/cache-volumes) |
+| Diagnostics | REST read-only | `read_builds`, `read_agents` | Signal and agent lifecycle fields are evidence, not proof that retry is safe. [Jobs](https://buildkite.com/docs/apis/rest-api/jobs) and [agents](https://buildkite.com/docs/apis/rest-api/agents) |
+| Artifacts | REST read/write; GraphQL deletion | `read_artifacts`/`write_artifacts` for REST; GraphQL API access; **Build & Read** access or higher on the artifact's pipeline for deletion | Filter before pagination and confirm deletion explicitly. [Artifacts](https://buildkite.com/docs/apis/rest-api/artifacts) |
 
 ### Pagination
 
-Most REST list responses are paginated using HTTP `Link` headers. The List Jobs endpoint instead returns cursor links in the response body, as described below.
+Most REST list responses return arrays and HTTP `Link` headers. Follow the URL marked `rel="next"` rather than constructing page numbers. Keep query filters on the initial request and use the server-provided next URL thereafter.
 
-```
-Link: <https://api.buildkite.com/v2/organizations/my-org/builds?exclude_jobs=true&exclude_pipeline=true&page=2&per_page=30>; rel="next",
-      <https://api.buildkite.com/v2/organizations/my-org/builds?exclude_jobs=true&exclude_pipeline=true&page=5&per_page=30>; rel="last"
-```
+The Jobs API, invitations, notification services, and audit events use cursor-oriented bodies. Read records from `.items` and follow `.links.next` until it is `null`. Audit events also expose a `Link` header. Do not run array-only `jq` filters against these body shapes.
 
-| Parameter | Default | Max | Description |
-|-----------|---------|-----|-------------|
-| `page` | `1` | — | Page number |
-| `per_page` | `30` | `100` | Results per page |
+REST requests consume both organization and per-user quotas. On `429`, stop requests until the matching `RateLimit-Reset` or `RateLimit-User-Reset` window expires; do not retry in a tight loop. Remote Buildkite MCP server requests use a separate per-user limit, while local MCP server requests consume the organization REST quota.
 
-Parse the `Link` header to follow `rel="next"` until no next link exists.
+### Pipeline creation
 
-### List Builds
+Default to pipeline YAML in the REST `configuration` string. Include `cluster_id` when a cluster has been selected. Omission is valid when the organization allows unclustered pipelines; otherwise the server returns `422` with `Cluster must be specified`. Do not reject a create client-side solely because `cluster_id` is absent. Use `pipeline_template_uuid` when the user or organization workflow has selected a template. Send a visual `steps` array only for a known legacy visual-step workflow; no public organization field reliably identifies that mode before creation.
 
-```bash
-# Filter by state and branch
-curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds?exclude_jobs=true&exclude_pipeline=true&state=failed&branch=main"
-```
+The create request performs server validation and mutation together. Validate YAML locally first when useful, but do not describe local schema validation as proof that repository access, provider setup, permissions, or server-side create constraints will pass. Report a `422` validation response instead of silently retrying with a different step source.
 
-Build list query parameters:
+### Organization administration
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `state` | Filter: `running`, `scheduled`, `passed`, `failed`, `blocked`, `canceled`, `skipped`, `finished` | `state=failed` |
-| `state[]` | Multiple states | `state[]=running&state[]=scheduled` |
-| `branch` | Branch name | `branch=main` |
-| `commit` | Commit SHA | `commit=abc123` |
-| `created_from` | Builds after (ISO 8601) | `created_from=2024-01-01T00:00:00Z` |
-| `created_to` | Builds before (ISO 8601) | `created_to=2024-12-31T23:59:59Z` |
-| `exclude_jobs` | Exclude embedded jobs; use for state polling and metadata | `exclude_jobs=true` |
-| `exclude_pipeline` | Exclude expanded pipeline information | `exclude_pipeline=true` |
-| `include_retried_jobs` | Include retried executions | `include_retried_jobs=true` |
-| `meta_data` | Filter by metadata | `meta_data[deploy]=true` |
+Read settings before mutation, compare only managed fields, and send the smallest supported update. Preserve unknown or feature-gated fields. For API settings, model an allowlist change as a lockout-sensitive operation: verify the caller's source address, retain a rollback path, and avoid concurrent settings writes.
 
-### Get a Build
+Treat invitations and memberships as different states. List invitations to reconcile pending requests, use show for any invitation state, and use `DELETE` only to revoke a pending invitation. Bulk invitation creation supports role, SSO mode, and team assignments, but validates the entire request atomically. A failure creates none of the requested invitations.
 
-Use a build number, not a build UUID. Keep metadata and status checks lightweight:
+Update an existing member with `PATCH /organizations/{org.slug}/members/{user.uuid}` only after reading that membership. The request accepts only `role` (`admin` or `member`) and `sso_mode` (`optional` or `required`), requires `write_organizations` and organization-admin permission, and cannot update the caller's own membership. Send only the fields intended to change; use invitations for people who are not yet members.
 
-```bash
-curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42?exclude_jobs=true&exclude_pipeline=true"
-```
+Enable Teams only when the requested outcome explicitly requires team-based permissions. Do not use the mutation to probe availability. Read `Organization.isTeamsEnabled` through GraphQL when the current state is needed; when Teams is disabled, explain the plan and permission requirements before enabling it.
 
-Omit an exclusion only when the response must include that expansion.
+### Hosted resources
 
-### List Jobs
+Read a cluster with `read_clusters` before changing hosted cache behavior. For callers with manage-cluster permission, cluster show responses include `hosted_git_mirror_enabled` and `hosted_container_cache_enabled`; callers without that permission do not receive these fields, so do not interpret absence as `false`. Update either boolean with `PUT /organizations/{org.slug}/clusters/{id}` using `write_clusters` and manage-cluster permission. Changing either value is supported only for hosted clusters; a non-hosted cluster returns `422`.
 
-Query jobs directly once the build number is known. Do not fetch the build again with embedded jobs. Prefer server-side `state`, `step_key`, and `group_key` filters to fetching every job and filtering locally. A step key matches every job for that step, including parallel jobs; a group key matches every job in that group.
+### Artifact filtering
 
-```bash
-curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/jobs?state[]=failed&group_key=verification&include_retried_jobs=false&per_page=100" \
-  | jq '.items[] | {id, name, state, exit_status, web_url}'
-```
+Apply `state` and `path` before pagination on build-level and job-level artifact lists. A path without `*` is exact; include `*` only when glob matching is intended. URL-encode paths and state filters rather than filtering a single page locally.
 
-This endpoint uses cursor pagination: read jobs from `.items` and follow `.links.next` until it is `null`. Follow the returned next URL as-is so `state[]`, `step_key`, `group_key`, and `include_retried_jobs` remain applied on every page. `include_retried_jobs` defaults to `true`; set it to `false` when only the latest attempt for each step is needed.
+Download by artifact ID with `curl -L` because the download endpoint redirects. REST deletion requires `write_artifacts`; both REST and GraphQL deletion also require **Build & Read** access or higher on the artifact's pipeline. REST accepts the artifact UUID at either `/organizations/{org.slug}/jobs/{job.id}/artifacts/{id}` or the fully qualified pipeline/build/job route. The build-level artifact-list route has no corresponding delete operation. GraphQL `artifactDelete` accepts the artifact global ID and requires GraphQL API access. Require explicit confirmation for either path, and never turn filtered discovery into an automatic deletion loop.
 
-### Create a Build
+If the organization uses customer-managed artifact storage, deleting the Buildkite artifact does not remove the underlying object. Do not infer the storage backend or delete external objects automatically; consult the organization's artifact-storage configuration and deletion runbook.
 
-```bash
-curl -sS -X POST "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "commit": "HEAD",
-    "branch": "main",
-    "message": "Triggered via API",
-    "env": {
-      "DEPLOY_TARGET": "staging"
-    },
-    "meta_data": {
-      "triggered_by": "automation"
-    }
-  }'
-```
+### Job and agent diagnostics
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `commit` | Yes | Git ref, SHA, or `HEAD` |
-| `branch` | Yes | Branch name |
-| `message` | No | Build message (defaults to commit message) |
-| `env` | No | Environment variables (object) |
-| `meta_data` | No | Build metadata (object) — accessible via `buildkite-agent meta-data` |
-| `clean_checkout` | No | Force clean checkout (`true`/`false`) |
-| `ignore_pipeline_branch_filters` | No | Skip branch filtering rules |
+Query jobs directly once the build number is known. Prefer server-side `state`, `step_key`, and `group_key` filters to fetching every job and filtering locally. A step key matches every job for that step, including parallel jobs; a group key matches every job in that group. Follow each `.links.next` URL as returned so filters remain applied across cursor pages.
 
-Also supports `author` (object: `name`, `email`), `pull_request_id`, `pull_request_base_branch`, `pull_request_repository`.
+Use `signal` and `signal_reason` to distinguish signal termination from an ordinary nonzero exit. Inspect the embedded agent's `os_id`, `arch`, `queue`, `connected_at`, `disconnected_at`, `lost_at`, and `stopped_at` to correlate platform, routing, and lifecycle timing.
 
-### Rebuild a Build
-
-```bash
-curl -sS -X PUT "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/rebuild" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN"
-```
-
-### Cancel a Build
-
-```bash
-curl -sS -X PUT "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/cancel" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN"
-```
-
-### Download Artifacts
-
-Two-step process: list artifacts for a build, then download by artifact ID. The download endpoint returns a redirect — use `-L` to follow it:
-
-```bash
-curl -sS -L -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  "https://api.buildkite.com/v2/organizations/my-org/pipelines/my-pipeline/builds/42/artifacts/$ARTIFACT_ID/download" \
-  -o artifact.tar.gz
-```
-
-### Create a Pipeline
-
-```bash
-curl -sS -X POST "https://api.buildkite.com/v2/organizations/my-org/pipelines" \
-  -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "My Pipeline",
-    "repository": "git@github.com:my-org/my-repo.git",
-    "steps": [{"type": "script", "name": "Test", "command": "make test"}],
-    "default_branch": "main"
-  }'
-```
-
-### Error Handling
-
-API errors return JSON with a `message` field.
-
-| Status code | Meaning | Common cause |
-|-------------|---------|--------------|
-| `401` | Unauthorized | Invalid or expired token |
-| `403` | Forbidden | Token lacks required scope |
-| `404` | Not found | Wrong org/pipeline slug, or insufficient permissions |
-| `422` | Unprocessable entity | Invalid request body (missing required field, bad value) |
-| `429` | Rate limited | Too many requests — read `Retry-After` header and wait |
+Treat this context as diagnostic evidence, not proof that retry is safe. Before retrying, inspect logs, side effects, retry history, and whether the command is idempotent. A lost agent can explain interruption without establishing that an external deployment or write did not complete.
 
 ## GraphQL API
 
-Endpoint: `https://graphql.buildkite.com/v1`. The GraphQL API supports queries and mutations with cursor-based pagination. Use it when fetching nested or specific fields to reduce response size, for audit events, or when you prefer a typed query language over REST conventions.
+Use `https://graphql.buildkite.com/v1`. Prefer GraphQL when a typed query avoids several nested REST reads or when its mutation shape better fits the workflow. GraphQL access tokens use the **Enable GraphQL API Access** permission rather than granular REST scopes. Use global node IDs for mutation inputs, not REST UUIDs or pipeline slugs unless the schema explicitly requests them.
 
-> For full query/mutation examples, pagination details, and introspection guidance, see `references/graphql-reference.md`.
+| Scenario | Prefer | Reason |
+|----------|--------|--------|
+| Trigger a build | REST | Straightforward body and identifiers |
+| Filter builds, jobs, or artifacts | REST | Purpose-built server filters and pagination |
+| Read audit events | REST | Dedicated read-only audit endpoint and cursor response |
+| Fetch selected nested relationships | GraphQL | Typed field selection can avoid multiple calls |
+| Delete an artifact | REST or GraphQL | REST accepts the artifact UUID; `artifactDelete` accepts a global ID. Apply the same confirmation and storage caveats to both |
+| Use another GraphQL-only mutation | GraphQL | Follow the live schema and mutation-specific permissions |
 
-### REST vs GraphQL Decision Guide
-
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Trigger a build | Either | Both support it; REST is simpler |
-| Poll build state or read metadata | REST | Set `exclude_jobs=true&exclude_pipeline=true` to avoid unused expansions |
-| List builds with filtering | REST | Better query parameter support |
-| List jobs for one build | REST Jobs API | Server-side job filtering without expanding the build response |
-| Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
-| Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
-| Audit events | GraphQL | `auditEvent` query available |
-| Bulk operations on many pipelines | GraphQL | Fetch specific fields only, reduce payload size |
+Check both top-level HTTP failures and the GraphQL `errors` array. A `200` response can still contain operation errors or partial data. See `references/graphql-reference.md` for pagination, global IDs, and artifact deletion.
 
 ## Webhooks
 
-Webhooks deliver HTTP POST requests to a specified URL when events occur in Buildkite. Use them for event-driven automation: failure notifications, auto-retry logic, deployment triggers, status dashboards. Configure webhooks in the Buildkite dashboard under your organization's **Notification Services** settings, specifying a target URL, event subscriptions, and optional HMAC-SHA256 signature verification.
+Separate outbound notifications from inbound source-control processing:
 
-Most commonly used events: `build.finished` (react to build completion), `job.finished` (react to individual job results), `build.failing` (early failure notification). Agent events (`agent.connected`, `agent.disconnected`, etc.) and job lifecycle events are also available.
+- Create and manage an outbound webhook as a notification service through the organization notification-services REST lifecycle.
+- Enable or disable Buildkite processing of inbound GitHub events with the pipeline `github-webhooks` REST resource.
+- Register an SCM webhook for an eligible GitHub App pipeline with `POST /pipelines/{slug}/webhook`; Buildkite then creates the provider-side delivery. This is separate from the processing toggle.
+- Configuring an organization GitHub App connection is a separate browser and organization-administration workflow.
 
-> For webhook creation parameters, payload structure, HTTP headers, signature verification code, and a complete handler example, see `references/webhooks.md`.
+For outbound handlers, branch on `X-Buildkite-Event` or the payload `event`. Do not assume every event has build, job, pipeline, and sender objects with an identical shape. Acknowledge quickly, process idempotently, and consult the [webhooks reference](https://buildkite.com/docs/apis/webhooks) for the selected event and current authentication fields.
+
+> For notification-service lifecycle and inbound GitHub delivery diagnosis, see `references/webhooks.md`.
 
 ## Common Mistakes
 
 | Mistake | What happens | Fix |
 |---------|-------------|-----|
-| Polling build list/get endpoints with embedded jobs | Repeatedly transfers every job and expanded pipeline data | Add `exclude_jobs=true&exclude_pipeline=true`; query the Jobs API only when job details are needed |
-| Using pipeline slug as GraphQL `pipelineID` | Mutation fails with "not found" error | Query the pipeline first to get its `id` (base64-encoded GraphQL node ID), then use that in mutations |
-| Missing `Content-Type: application/json` on POST requests | 422 error or empty response body | Always include `-H "Content-Type: application/json"` for POST/PUT/PATCH requests |
-| Not following `Link` header pagination | Only get first 30 results, missing data | Parse the `Link` header for `rel="next"` and loop until no next link exists |
-| Using `per_page` above 100 | Silently capped at 100, appears to work but data is incomplete | Set `per_page=100` maximum and paginate for larger result sets |
-| Ignoring `429` rate limit responses | Subsequent requests fail or get blocked | Read the `Retry-After` header and wait before retrying |
-| Comparing webhook signatures with `==` instead of timing-safe comparison | Vulnerable to timing attacks | Use `crypto.timingSafeEqual` (Node.js) or `hmac.compare_digest` (Python) |
-| Sending `env` as a string instead of object in build creation | 422 error | `env` must be a JSON object: `{"KEY": "value"}`, not `"KEY=value"` |
+| Assuming `cluster_id` is always required or always optional | Valid unclustered creation is rejected client-side, or clustered-only creation returns `422` | Include a selected cluster; otherwise let the server enforce whether the organization permits unclustered pipelines |
+| Creating a REST pipeline without a valid step source | Creation returns `422` | Use YAML `configuration`, legacy visual `steps`, or `pipeline_template_uuid` as applicable; treat create validation as mutating |
+| Updating settings without reading first | Feature-gated fields are overwritten or an IP allowlist locks out automation | Read, compare managed fields, and preserve a tested rollback path |
+| Treating an invitation as active membership | Automation assumes access before acceptance or provisioning | Track pending invitations separately from members |
+| Assuming repository connections have CRUD endpoints | Automation attempts unsupported mutations | Use list/show and repository discovery only |
+| Replacing notification secrets because GET omits them | Working credentials are rotated unnecessarily | Account for provider-specific secret response behavior and preserve omitted secrets |
+| Confusing outbound notification webhooks with inbound GitHub processing | The wrong endpoint is changed and repository delivery remains broken | Identify notification service, processing toggle, repository registration, and app connection separately |
+| Filtering artifacts after reading one page | Matching artifacts on later pages are missed | Apply `state` and `path` on the API request before pagination |
+| Retrying solely because signal or agent timing suggests interruption | Non-idempotent external effects may run twice | Inspect logs, side effects, and retry history before retrying |
 
 ## Additional Resources
 
-- `references/graphql-reference.md` — Full GraphQL query/mutation examples, pagination, introspection
-- `references/webhooks.md` — Webhook creation, payload structure, signature verification, handler example
-- `references/patterns.md` — Common API usage patterns: fetching failed builds, build success rates, triggering downstream pipelines
+### Reference Files
+
+- **`references/graphql-reference.md`** — GraphQL pagination, global IDs, common queries, and safe artifact deletion
+- **`references/webhooks.md`** — Notification-service lifecycle and boundaries between outbound and inbound webhook concepts
+- **`references/patterns.md`** — Copy-paste REST workflows for audit inventory, repository-to-pipeline setup, notification reconciliation, and diagnostics
 
 ## Further Reading
 
+- [Buildkite REST API reference](https://buildkite.com/docs/apis/rest-api)
+- [Buildkite GraphQL API documentation](https://buildkite.com/docs/apis/graphql-api)
+- [Buildkite webhook events](https://buildkite.com/docs/apis/webhooks)
+- [API authentication and token management](https://buildkite.com/docs/apis/managing-api-tokens)
 - [Buildkite Docs for LLMs](https://buildkite.com/docs/llms.txt)
-- [Buildkite REST API reference](https://buildkite.com/docs/apis/rest-api.md)
-- [Buildkite GraphQL API documentation](https://buildkite.com/docs/apis/graphql-api.md)
-- [Buildkite GraphQL Explorer](https://buildkite.com/docs/apis/graphql/graphql-tutorial.md)
-- [Buildkite Webhooks guide](https://buildkite.com/docs/apis/webhooks.md)
-- [API authentication and token management](https://buildkite.com/docs/apis/managing-api-tokens.md)

@@ -274,7 +274,7 @@ bk pipeline view my-app -w       # open in browser
 
 ```bash
 bk pipeline create "My App" -r "git@github.com:org/my-app.git" --cluster-name "Default"
-bk pipeline create "My App" -r "git@github.com:org/my-app.git" --dry-run   # preview only
+bk pipeline create "My App" -r "git@github.com:org/my-app.git" --dry-run   # synthetic non-mutating preview
 ```
 
 | Flag | Short | Default | Description |
@@ -284,8 +284,10 @@ bk pipeline create "My App" -r "git@github.com:org/my-app.git" --dry-run   # pre
 | `--description` | `-d` | — | Pipeline description |
 | `--cluster-uuid` | — | — | Cluster UUID to assign the pipeline to |
 | `--cluster-name` | — | — | Cluster name (resolved to UUID) |
-| `--create-webhook` | `-W` | `false` | Create an SCM webhook (GitHub / GitHub Enterprise only) |
-| `--dry-run` | — | `false` | Show what would be created without creating it |
+| `--create-webhook` | `-W` | `false` | Create a GitHub or GitHub Enterprise SCM webhook after pipeline creation |
+| `--dry-run` | — | `false` | Print a synthetic preview without creating the pipeline; may make read-only API calls |
+
+Treat pipeline creation and `--create-webhook` as non-atomic operations: pipeline creation can succeed while SCM webhook creation fails. An SCM webhook delivers repository events and is distinct from an outbound organization notification-service webhook.
 
 > For pipeline YAML configuration, step types, and plugins, see the **buildkite-pipelines** skill.
 
@@ -298,7 +300,7 @@ bk pipeline copy my-app --target "other-org/my-app"      # across orgs (cluster 
 
 ### Validate a pipeline
 
-`bk pipeline validate` checks YAML against the pipeline schema locally (no API token needed). Defaults to `.buildkite/pipeline.yaml` or `.yml`.
+`bk pipeline validate` checks YAML against the pipeline schema locally (no API token needed). It does not check repository access, source-control provider setup, permissions, or server-side pipeline creation constraints. Defaults to `.buildkite/pipeline.yaml` or `.yml`.
 
 ```bash
 bk pipeline validate
@@ -364,8 +366,6 @@ bk queue pause <cluster-uuid> <queue-uuid>     # stop dispatching to a queue
 ```
 
 Full CRUD exists for `bk cluster`, `bk queue`, and `bk maintainer`. See `references/command-reference.md` for the command list.
-
-> For cluster/queue strategy, hosted agent shapes, agent tokens, and infrastructure provisioning, see the **buildkite-agent-infrastructure** skill.
 
 ## Local Agent
 

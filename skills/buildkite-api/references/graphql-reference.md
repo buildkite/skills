@@ -2,7 +2,9 @@
 
 Endpoint: `https://graphql.buildkite.com/v1`
 
-The GraphQL API supports queries and mutations with cursor-based pagination. Use it when fetching nested or specific fields to reduce response size, for audit events, or when you prefer a typed query language over REST conventions.
+Use GraphQL for typed nested reads and mutations that fit the workflow. GraphQL access requires the **Enable GraphQL API Access** token permission rather than granular REST scopes.
+
+Use the REST Audit Events endpoint for audit-event retrieval.
 
 ## Basic Query
 
@@ -131,7 +133,7 @@ mutation {
 }
 ```
 
-Note: `pipelineID` is the GraphQL node ID (base64-encoded), not the pipeline slug. Retrieve it with a pipeline query first.
+Note: `pipelineID` is the opaque GraphQL node ID, not the pipeline slug or REST UUID. Retrieve it with a pipeline query rather than deriving it.
 
 **Create a pipeline** (use `clusterId` to associate with a cluster):
 
@@ -172,20 +174,22 @@ mutation {
 }
 ```
 
-> For detailed guidance on cluster and queue provisioning strategy, see the **buildkite-agent-infrastructure** skill.
-
 Other key mutations: `pipelineUpdate`, `pipelineTemplateCreate` (Enterprise), `agentTokenCreate`, `agentTokenRevoke`.
 
-## REST vs GraphQL Decision Guide
+**Delete an artifact:**
 
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Trigger a build | Either | Both support it; REST is simpler |
-| List builds with filtering | REST | Better query parameter support |
-| Fetch build + jobs + artifacts in one call | GraphQL | Single request, no N+1 |
-| Simple CRUD on pipelines, clusters, queues | REST | Simpler request/response |
-| Audit events | GraphQL | `auditEvent` query available |
-| Bulk operations on many pipelines | GraphQL | Fetch specific fields only, reduce payload size |
+```graphql
+mutation DeleteArtifact($id: ID!) {
+  artifactDelete(input: { id: $id }) {
+    artifact {
+      id
+      state
+    }
+  }
+}
+```
+
+Pass the artifact global GraphQL ID, not its REST UUID. GraphQL API access alone is insufficient: deletion also requires **Build & Read** access or higher on the artifact's pipeline. Require explicit confirmation and apply the artifact-deletion safeguards in the main skill.
 
 ## Introspection
 
