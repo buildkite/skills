@@ -13,6 +13,15 @@ npx skills add buildkite/skills
 
 See [skills.sh](https://skills.sh) for supported agents and options.
 
+### Claude Code
+
+Add the marketplace and install the plugin:
+
+```
+/plugin marketplace add buildkite/skills
+/plugin install buildkite@buildkite-skills
+```
+
 ### Cursor
 
 Search for **Buildkite Skills** in the Cursor Marketplace, or run `/add-plugin` and search for "Buildkite".
