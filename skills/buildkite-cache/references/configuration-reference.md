@@ -56,7 +56,8 @@ Resolves to the variable's value; an unset variable resolves to the empty string
 - Accepts one path or an array of paths and glob patterns. Globs support `*`, `?`, and `**`.
 - Paths resolve relative to the working directory. `~` is **not** expanded in checksum paths.
 - Glob traversal does not follow symlinked directories.
-- All matched regular files across all patterns are deduplicated and sorted, then folded into one SHA-256 digest that covers each file's path and contents — renaming a file changes the digest even if contents are identical.
+- A single literal (non-glob) path is hashed by contents alone — renaming that file while keeping its contents identical produces the same digest.
+- With an array or any glob pattern, all matched regular files are deduplicated and sorted, then folded into one SHA-256 digest that covers each file's path and contents — renaming a matched file changes the digest even if contents are identical.
 - A literal (non-glob) path must exist and be a regular file, or the command errors.
 - If all patterns together match zero files, the command errors ("matched no files") rather than producing an empty digest.
 
@@ -100,7 +101,7 @@ S3 URL query parameters:
 | `concurrency` | SDK default (upload); tuned high (download) | Multipart transfer parallelism |
 | `part_size_mb` | SDK default (upload); tuned high (download) | Multipart part size |
 
-Credentials are **ambient**: the AWS default credential chain (instance profile, IRSA, environment variables, shared config). Buildkite issues no storage credentials. Required S3 actions: `s3:GetObject` and `s3:PutObject`. These also cover the self-copy the agent performs after each download to refresh the object's last-modified timestamp (so lifecycle rules keyed on last-modified retain hot blobs) — there is no separate `s3:CopyObject` IAM action.
+Credentials are **ambient**: the AWS default credential chain (instance profile, IRSA, environment variables, shared config). Buildkite issues no storage credentials. Required S3 actions: `s3:GetObject` and `s3:PutObject`. These also cover the self-copy the agent performs after a download to refresh the object's last-modified timestamp (so lifecycle rules keyed on last-modified retain hot blobs) — there is no separate `s3:CopyObject` IAM action. The refresh is best-effort and never fails the restore: copy errors are ignored, objects over S3's 5 GB CopyObject limit cannot be refreshed, and each object is refreshed at most once per 12 hours — so size lifecycle windows to tolerate missed refreshes, especially for large archives.
 
 Hosted agents use a Buildkite-provided store automatically; do not set a store URL there.
 
