@@ -251,6 +251,7 @@ Each skill owns specific topics exclusively. Do not cover topics outside your bo
 | OIDC auth flows, Package Registry setup, SLSA provenance, pipeline signing (JWKS), verification rollout | **buildkite-secure-delivery** | Reference only |
 | Clusters, queues, hosted agent instance shapes, cluster secrets, `buildkite-agent.cfg`, agent tokens, lifecycle hooks, pipeline templates, audit logging, SSO/SAML, cost optimization | Buildkite documentation (no dedicated skill) | Link to the relevant documentation |
 | `buildkite-agent` subcommands inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, step, lock, env, secret, redactor, tool sign/verify | **buildkite-agent-runtime** | Reference only |
+| Buildkite Cache: `buildkite-agent cache save/restore`, `.buildkite/cache.yml`, cache keys and `fallback_limit`, cache registries and policies, `BUILDKITE_AGENT_CACHE_STORE_URL` | **buildkite-cache** | Reference only |
 | `bk build`, `bk job`, `bk pipeline`, `bk pipeline convert`, `bk secret`, `bk artifact`, `bk auth`, `bk cluster`, `bk package` commands | **buildkite-cli** | Reference only |
 | REST API endpoints, GraphQL schema/mutations, webhook setup, API authentication, pagination | **buildkite-api** | Reference only |
 | CI migration planning, `bk pipeline convert`, provider-specific concept mappings (GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI), pipeline best practices for converted pipelines | **buildkite-migration** | Reference only |
