@@ -75,11 +75,11 @@ Marks the mandatory/optional boundary. Parts at or before the marked part are ma
 
 | Variable | Equivalent flag | Notes |
 |----------|-----------------|-------|
-| `BUILDKITE_CACHE_NAMES` | `--name` | Comma-free; set multiple names via repeated flag instead |
+| `BUILDKITE_CACHE_NAMES` | `--name` | Comma-separated cache names; use repeated `--name` flags on the CLI |
 | `BUILDKITE_AGENT_CACHE_REGISTRY` | `--registry` | Default `~` = cluster default registry |
 | `BUILDKITE_AGENT_CACHE_STORE_URL` | `--cache-store-url` | Required on self-hosted agents |
 | `BUILDKITE_CACHE_CONFIG_FILE` | `--cache-config-file` | Overrides default file resolution |
-| `BUILDKITE_CACHE_CONCURRENCY` | `--concurrency` | Default 2; `0` or negative uses all CPUs |
+| `BUILDKITE_CACHE_CONCURRENCY` | `--concurrency` | Default 2; `0` or negative uses all CPUs. Currently applies only to save — restore ignores it and always uses one worker per CPU |
 
 The commands also require the standard in-job agent environment (`BUILDKITE_AGENT_ACCESS_TOKEN`, agent endpoint), so they only work inside a running job or an environment that replicates it.
 
@@ -114,9 +114,11 @@ Per cache (in parallel, up to `--concurrency`):
 4. Build a single zip archive of all target paths (zstd-compressed entries, deterministic timestamps) and compute its SHA-256.
 5. Register the pending entry with the registry, upload the archive to the store under its digest (content-addressed), then commit the entry.
 
-An uncommitted upload (for example, a job killed mid-save) is discarded automatically after a few minutes.
+The existence check (step 3) is not atomic with the commit (step 5): concurrent saves under the same key can both observe a miss and both upload, and the later commit replaces the earlier entry. An uncommitted upload (for example, a job killed mid-save) is discarded automatically after a few minutes.
 
 ## Restore lifecycle
+
+Per cache (in parallel, one worker per CPU — restore currently ignores `--concurrency`):
 
 1. Resolve the cache key; ask the registry for an entry — exact match first, then fallback prefix matching (newest wins) when a `fallback_limit` is set.
 2. No entry → cache miss; the command succeeds.

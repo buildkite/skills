@@ -8,6 +8,9 @@ caches:
   # installing. Exact hit when package-lock.json is unchanged; fallback_limit
   # on arch means a changed lockfile still restores the newest node + os + arch
   # cache, so `npm ci` only downloads new or changed packages.
+  # POSIX-only path: on Windows npm caches to %LocalAppData%\npm-cache, so
+  # ~/.npm never exists and save fails — set npm_config_cache to a fixed path
+  # and cache that path instead.
   - name: node
     cache_key:
       - node
