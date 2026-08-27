@@ -1,0 +1,11 @@
+# Minimal pipeline using the test-collector plugin with RSpec
+# Collects test timing data and sends it to Buildkite Test Engine
+steps:
+  - label: ":rspec: Tests"
+    command: "bundle exec rspec --format progress --format RspecJunitFormatter --out tmp/rspec.xml"
+    plugins:
+      - test-collector#v2.0.0:
+          files: "tmp/rspec.xml"
+          format: "junit"
+    env:
+      BUILDKITE_ANALYTICS_TOKEN: "your-suite-api-token"
