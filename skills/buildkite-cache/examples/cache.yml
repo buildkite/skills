@@ -4,9 +4,10 @@
 #   buildkite-agent cache restore              # all caches
 #   buildkite-agent cache save --name node     # one cache
 caches:
-  # Node.js dependencies. Exact hit when package-lock.json is unchanged;
-  # fallback_limit on arch means a changed lockfile still restores the newest
-  # node + os + arch cache as a warm start for `npm ci`.
+  # npm's download cache — not node_modules, which `npm ci` deletes before
+  # installing. Exact hit when package-lock.json is unchanged; fallback_limit
+  # on arch means a changed lockfile still restores the newest node + os + arch
+  # cache, so `npm ci` only downloads new or changed packages.
   - name: node
     cache_key:
       - node
@@ -14,7 +15,7 @@ caches:
       - { agent: arch, fallback_limit: true }
       - { checksum: package-lock.json }
     target_paths:
-      - node_modules
+      - ~/.npm
 
   # Ruby gems installed to a local vendor path (bundle config set path vendor/bundle).
   # Gems compile native extensions, so os + arch are mandatory.

@@ -27,7 +27,7 @@ caches:
       - { agent: arch, fallback_limit: true }
       - { checksum: package-lock.json }
     target_paths:
-      - node_modules
+      - ~/.npm
 ```
 
 Call the commands inside a job step — nothing runs automatically:
@@ -42,7 +42,7 @@ steps:
       npm test
 ```
 
-On the first build, restore reports a miss, `npm ci` does a full install, and save uploads `node_modules`. On later builds with an unchanged lockfile, restore is an exact hit and `npm ci` becomes a no-op check. When the lockfile changes, the `fallback_limit` on `arch` lets restore fall back to the newest `node` + os + arch cache, so `npm ci` only installs the difference — then save uploads a fresh entry under the new checksum.
+The cache holds npm's download cache (`~/.npm`), not `node_modules` — `npm ci` deletes `node_modules` before installing, so caching it directly is wasted work. On the first build, restore reports a miss, `npm ci` downloads everything, and save uploads the populated `~/.npm`. On later builds with an unchanged lockfile, restore is an exact hit and `npm ci` installs from the local cache without re-downloading. When the lockfile changes, the `fallback_limit` on `arch` lets restore fall back to the newest `node` + os + arch cache, so only new or changed packages are downloaded — then save uploads a fresh entry under the new checksum. The same principle applies to any tool that rebuilds its target from scratch: cache the tool's download or package cache, and cache an install directory like `node_modules` only when the install step preserves it.
 
 Run `cache save` immediately after the step that produces the cached paths. Save checks for an existing entry first and never overwrites, so calling it on every build is cheap when the key already exists.
 
@@ -130,7 +130,7 @@ Shared flags:
 Behavioral guarantees to rely on:
 
 - **Save never overwrites.** If an entry already exists for the exact resolved key, save reports "Cache already exists" and skips the upload. New content requires a new key (normally via a checksum part).
-- **Restore never fails the build on cache problems.** A missing entry, a missing or corrupted archive, or a digest mismatch degrades to a cache miss; stale metadata is invalidated automatically. Write steps so they work from an empty cache.
+- **Misses and corrupt entries never fail the build.** A missing entry, a missing archive, a digest mismatch, or an unreadable archive degrades to a cache miss, and stale metadata is invalidated automatically. Other failures — invalid configuration, registry/API errors, store permission or network problems — are real errors and do fail the command. Write steps so they work from an empty cache.
 - **A failed save does fail the command** (missing target path, misconfiguration, no store access). Keep save inside the step that produced the paths so misconfiguration surfaces early.
 
 Because nothing invokes these commands automatically, the standard placements are inline in the command step (as in Quick Start) or in repository `pre-command` / `pre-exit` hooks for pipelines with many steps sharing the same caches.
@@ -147,7 +147,7 @@ Cache entry metadata lives in a **cache registry** in Buildkite; the archived by
 BUILDKITE_AGENT_CACHE_STORE_URL="s3://my-cache-bucket/buildkite?region=us-east-1"
 ```
 
-Uploads and downloads go directly between the agent and the bucket using ambient credentials (the AWS default credential chain — instance profile, IRSA, or environment variables). Buildkite never receives the cached bytes and issues no storage credentials. Grant agents `s3:GetObject`, `s3:PutObject`, and `s3:CopyObject` on the bucket. `file:///some/path` URLs work for local testing. Blob lifecycle in the bucket is the operator's responsibility — add an S3 lifecycle rule keyed on last-modified time (the agent refreshes last-modified on restore, keeping hot blobs alive).
+Uploads and downloads go directly between the agent and the bucket using ambient credentials (the AWS default credential chain — instance profile, IRSA, or environment variables). Buildkite never receives the cached bytes and issues no storage credentials. Grant agents `s3:GetObject` and `s3:PutObject` on the bucket (these also authorize the self-copy the agent performs to refresh object timestamps). `file:///some/path` URLs work for local testing. Blob lifecycle in the bucket is the operator's responsibility — add an S3 lifecycle rule keyed on last-modified time (the agent refreshes last-modified on restore, keeping hot blobs alive).
 
 Registries carry **save and restore policies** controlling which jobs may write or read entries — for example, restricting saves to default-branch builds while allowing restores from any branch. Policies are configured on the registry in Buildkite, not in `.buildkite/cache.yml`. Entries expire automatically after a few days without an exact-match restore; exact-match restores refresh the expiry.
 

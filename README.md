@@ -30,8 +30,8 @@ Search for **Buildkite Skills** in the Cursor Marketplace, or run `/add-plugin` 
 
 Recommended (one install): add the Buildkite **power** in the Powers panel, pointing at
 `github.com/buildkite/skills`. The root `POWER.md`, `mcp.json`, and `steering/`
-together give Kiro the Buildkite MCP server plus all six workflows (pipelines,
-migration, preflight, agent-runtime, CLI, API), loaded automatically when relevant.
+together give Kiro the Buildkite MCP server plus all seven workflows (pipelines,
+migration, preflight, agent-runtime, cache, CLI, API), loaded automatically when relevant.
 
 Alternatively, install individual workflows as Kiro **skills** via the Skills panel —
 each `skills/buildkite-*/` directory already conforms to the open Agent Skills standard.

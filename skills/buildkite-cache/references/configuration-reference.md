@@ -64,10 +64,12 @@ Resolves to the variable's value; an unset variable resolves to the empty string
 
 ```yaml
 - { agent: arch, fallback_limit: true }
-- { checksum: package-lock.json, fallback_limit: true }   # also valid on checksum/env/literal parts
+- { checksum: package-lock.json, fallback_limit: true }   # also valid on checksum and env parts
 ```
 
 Marks the mandatory/optional boundary. Parts at or before the marked part are mandatory; parts after it are optional. Fallback matching drops optional parts from right to left and returns the **newest** entry matching the remaining prefix. Only one part per cache may carry the marker. Key part values must not contain the `#` character.
+
+`fallback_limit` attaches only to mapped sources (`agent`, `checksum`, `env`). A literal part is a plain scalar and cannot carry the marker — `{ literal: v1, fallback_limit: true }` is rejected as an unknown source. To put the boundary after a literal, attach the marker to the mapped part preceding the optional parts instead.
 
 ## Environment variables
 
@@ -92,13 +94,13 @@ S3 URL query parameters:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `region` | AWS SDK default chain | Bucket region |
+| `region` | `us-east-1` | Bucket region. Not read from the AWS config chain — always set this explicitly for buckets outside `us-east-1` |
 | `endpoint` | AWS default | Custom endpoint for S3-compatible stores (MinIO, R2) |
 | `use_path_style` | `false` | Path-style addressing for S3-compatible stores |
 | `concurrency` | SDK default (upload); tuned high (download) | Multipart transfer parallelism |
 | `part_size_mb` | SDK default (upload); tuned high (download) | Multipart part size |
 
-Credentials are **ambient**: the AWS default credential chain (instance profile, IRSA, environment variables, shared config). Buildkite issues no storage credentials. Required S3 actions: `s3:GetObject`, `s3:PutObject`, and `s3:CopyObject` (the agent refreshes an object's last-modified timestamp after each download so lifecycle rules keyed on last-modified retain hot blobs).
+Credentials are **ambient**: the AWS default credential chain (instance profile, IRSA, environment variables, shared config). Buildkite issues no storage credentials. Required S3 actions: `s3:GetObject` and `s3:PutObject`. These also cover the self-copy the agent performs after each download to refresh the object's last-modified timestamp (so lifecycle rules keyed on last-modified retain hot blobs) — there is no separate `s3:CopyObject` IAM action.
 
 Hosted agents use a Buildkite-provided store automatically; do not set a store URL there.
 
@@ -119,7 +121,7 @@ An uncommitted upload (for example, a job killed mid-save) is discarded automati
 1. Resolve the cache key; ask the registry for an entry — exact match first, then fallback prefix matching (newest wins) when a `fallback_limit` is set.
 2. No entry → cache miss; the command succeeds.
 3. Download the archive from the store and verify its SHA-256.
-4. Any blob problem — missing object, digest mismatch, unreadable archive — degrades to a cache miss and invalidates the stale registry entry so later builds skip it. It never fails the build.
+4. Three specific blob problems — missing object, digest mismatch, unreadable archive — degrade to a cache miss and invalidate the stale registry entry so later builds skip it. Other failures (invalid configuration or store settings, registry/API errors after retries, store permission or network errors, cleanup or extraction errors) are returned as command errors and can fail the step.
 5. Delete each target path (with guards against removing the working directory, home directory, or filesystem roots), then extract.
 
 Archives are portable: paths are stored relative to anchors (home directory, working directory, or volume root) that re-resolve on the restoring machine, so caches move cleanly across agents, users, and checkout directories.
