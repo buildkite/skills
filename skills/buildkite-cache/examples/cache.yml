@@ -28,9 +28,13 @@ caches:
     target_paths:
       - vendor/bundle
 
-  # Go module and build caches, keyed on go.sum plus every go.mod in the repo.
+  # Go module cache, keyed on go.sum plus every go.mod in the repo.
   # The v1 literal is a manual generation number — bump it to abandon all
   # previous entries (for example after a Go toolchain upgrade).
+  # Go's build cache lives at an OS-specific path (~/.cache/go-build on Linux,
+  # ~/Library/Caches/go-build on macOS); to cache it too, set GOCACHE to a
+  # fixed path in the job environment and add that path here — save fails if
+  # a target path does not exist.
   - name: go
     cache_key:
       - go
@@ -40,4 +44,3 @@ caches:
       - { checksum: [go.sum, "**/go.mod"] }
     target_paths:
       - ~/go/pkg/mod
-      - ~/.cache/go-build

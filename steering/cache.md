@@ -133,7 +133,14 @@ Behavioral guarantees to rely on:
 - **Misses and corrupt entries never fail the build.** A missing entry, a missing archive, a digest mismatch, or an unreadable archive degrades to a cache miss, and stale metadata is invalidated automatically. Other failures — invalid configuration, registry/API errors, store permission or network problems — are real errors and do fail the command. Write steps so they work from an empty cache.
 - **A failed save does fail the command** (missing target path, misconfiguration, no store access). Keep save inside the step that produced the paths so misconfiguration surfaces early.
 
-Because nothing invokes these commands automatically, the standard placements are inline in the command step (as in Quick Start) or in repository `pre-command` / `pre-exit` hooks for pipelines with many steps sharing the same caches.
+Because nothing invokes these commands automatically, the standard placements are inline in the command step (as in Quick Start) or in repository `pre-command` / `pre-exit` hooks for pipelines with many steps sharing the same caches. A `pre-exit` hook also runs after failed steps, and because save never overwrites, saving a partially built path can poison the key until it expires — guard hook saves with the command's exit status:
+
+```bash
+# .buildkite/hooks/pre-exit
+if [ "${BUILDKITE_COMMAND_EXIT_STATUS:-1}" -eq 0 ]; then
+  buildkite-agent cache save
+fi
+```
 
 ## Storage and Registries
 
@@ -144,7 +151,8 @@ Cache entry metadata lives in a **cache registry** in Buildkite; the archived by
 **Self-hosted agents:** after Buildkite support enables the feature, provide a store with `BUILDKITE_AGENT_CACHE_STORE_URL` (typically as an agent environment variable or in an `environment` hook):
 
 ```bash
-BUILDKITE_AGENT_CACHE_STORE_URL="s3://my-cache-bucket/buildkite?region=us-east-1"
+# .buildkite/hooks/environment (or agent-level environment configuration)
+export BUILDKITE_AGENT_CACHE_STORE_URL="s3://my-cache-bucket/buildkite?region=us-east-1"
 ```
 
 Uploads and downloads go directly between the agent and the bucket using ambient credentials (the AWS default credential chain — instance profile, IRSA, or environment variables). Buildkite never receives the cached bytes and issues no storage credentials. Grant agents `s3:GetObject` and `s3:PutObject` on the bucket (these also authorize the self-copy the agent performs to refresh object timestamps). `file:///some/path` URLs work for local testing. Blob lifecycle in the bucket is the operator's responsibility — add an S3 lifecycle rule keyed on last-modified time (the agent refreshes last-modified on restore, keeping hot blobs alive).
