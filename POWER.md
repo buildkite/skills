@@ -33,12 +33,13 @@ bk configure
 
 ## Workflows
 
-Six steering files in `steering/` cover the full surface area. Kiro loads each one automatically when a request matches its description:
+Seven steering files in `steering/` cover the full surface area. Kiro loads each one automatically when a request matches its description:
 
 - **`steering/pipelines.md`** — Pipeline YAML, step types, plugins, caching, parallelism, dynamic pipelines, matrix builds, conditionals, annotations, artifacts.
 - **`steering/migration.md`** — Converting from Jenkins, GitHub Actions, CircleCI, Bitbucket Pipelines, or GitLab CI with `bk pipeline convert`.
 - **`steering/preflight.md`** — Running CI builds against the local working tree before pushing.
 - **`steering/agent-runtime.md`** — `buildkite-agent` subcommands used inside job steps: annotate, artifact, meta-data, pipeline upload, oidc, lock, secret, redactor.
+- **`steering/cache.md`** — Buildkite Cache (preview): `buildkite-agent cache save/restore`, `.buildkite/cache.yml`, cache keys, fallbacks, registries, storage setup.
 - **`steering/cli.md`** — `bk` command-line operations: builds, jobs, pipelines, secrets, artifacts, clusters, packages, API access.
 - **`steering/api.md`** — REST, GraphQL, webhooks, authentication, pagination, common automation patterns.
 

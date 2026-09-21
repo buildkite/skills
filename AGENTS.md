@@ -11,6 +11,7 @@ skills/                              # All skills live here
   buildkite-migration/               # Journey — CI migration, bk pipeline convert, converting from GitHub Actions, Jenkins, CircleCI, Bitbucket, GitLab CI
   buildkite-preflight/               # Cross-cutting — bk preflight against local uncommitted changes
   buildkite-agent-runtime/           # Cross-cutting — buildkite-agent subcommands in job steps
+  buildkite-cache/                   # Cross-cutting — Buildkite Cache (preview): cache save/restore, .buildkite/cache.yml
   buildkite-cli/                     # Cross-cutting — bk CLI commands
   buildkite-api/                     # Cross-cutting — REST API, GraphQL, webhooks
 ```

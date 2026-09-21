@@ -24,6 +24,10 @@ Topics: bk preflight, local changes, CI validation, failed jobs, failed tests
 Path: skills/buildkite-agent-runtime/SKILL.md
 Topics: buildkite-agent annotate, artifact upload/download, meta-data set/get, pipeline upload, oidc request-token, step, lock, env, secret get, redactor add, tool sign/verify
 
+### buildkite-cache
+Path: skills/buildkite-cache/SKILL.md
+Topics: Buildkite Cache (preview), buildkite-agent cache save/restore, .buildkite/cache.yml, cache_key, target_paths, fallback_limit, checksum keys, cache registries, BUILDKITE_AGENT_CACHE_STORE_URL
+
 ### buildkite-cli
 Path: skills/buildkite-cli/SKILL.md
 Topics: bk build create/list/view/watch, bk job log/retry/cancel, bk pipeline, bk pipeline convert, bk secret, bk artifact, bk cluster, bk package, bk auth, bk configure, bk init

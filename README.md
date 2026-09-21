@@ -30,8 +30,8 @@ Search for **Buildkite Skills** in the Cursor Marketplace, or run `/add-plugin` 
 
 Recommended (one install): add the Buildkite **power** in the Powers panel, pointing at
 `github.com/buildkite/skills`. The root `POWER.md`, `mcp.json`, and `steering/`
-together give Kiro the Buildkite MCP server plus all six workflows (pipelines,
-migration, preflight, agent-runtime, CLI, API), loaded automatically when relevant.
+together give Kiro the Buildkite MCP server plus all seven workflows (pipelines,
+migration, preflight, agent-runtime, cache, CLI, API), loaded automatically when relevant.
 
 Alternatively, install individual workflows as Kiro **skills** via the Skills panel —
 each `skills/buildkite-*/` directory already conforms to the open Agent Skills standard.
@@ -46,6 +46,7 @@ mkdir -p .claude/skills
 cp -r skills/buildkite-pipelines .claude/skills/
 cp -r skills/buildkite-preflight .claude/skills/
 cp -r skills/buildkite-agent-runtime .claude/skills/
+cp -r skills/buildkite-cache .claude/skills/
 cp -r skills/buildkite-cli .claude/skills/
 cp -r skills/buildkite-api .claude/skills/
 cp -r skills/buildkite-migration .claude/skills/
@@ -55,6 +56,7 @@ mkdir -p .cursor/skills
 cp -r skills/buildkite-pipelines .cursor/skills/
 cp -r skills/buildkite-preflight .cursor/skills/
 cp -r skills/buildkite-agent-runtime .cursor/skills/
+cp -r skills/buildkite-cache .cursor/skills/
 cp -r skills/buildkite-cli .cursor/skills/
 cp -r skills/buildkite-api .cursor/skills/
 cp -r skills/buildkite-migration .cursor/skills/
@@ -79,6 +81,7 @@ Skills needed across all journeys.
 |-------|-----------|-------------|
 | **Preflight** | [skills/buildkite-preflight/](skills/buildkite-preflight/SKILL.md) | `bk preflight` runs a CI build against local uncommitted changes |
 | **Agent Runtime** | [skills/buildkite-agent-runtime/](skills/buildkite-agent-runtime/SKILL.md) | `buildkite-agent` subcommands inside running job steps — annotate, artifact, meta-data, pipeline upload, OIDC, locks |
+| **Cache** | [skills/buildkite-cache/](skills/buildkite-cache/SKILL.md) | Buildkite Cache (preview) — `buildkite-agent cache save/restore`, `.buildkite/cache.yml`, cache keys, fallbacks, registries |
 | **CLI** | [skills/buildkite-cli/](skills/buildkite-cli/SKILL.md) | `bk` commands for builds, jobs, pipelines, secrets, artifacts, and auth |
 | **API** | [skills/buildkite-api/](skills/buildkite-api/SKILL.md) | REST API, GraphQL API, webhooks, authentication, pagination |
 

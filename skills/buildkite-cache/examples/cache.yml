@@ -1,0 +1,49 @@
+# .buildkite/cache.yml — Buildkite Cache configuration
+#
+# Save/restore with:
+#   buildkite-agent cache restore              # all caches
+#   buildkite-agent cache save --name node     # one cache
+caches:
+  # npm's download cache — not node_modules, which `npm ci` deletes before
+  # installing. Exact hit when package-lock.json is unchanged; fallback_limit
+  # on arch means a changed lockfile still restores the newest node + os + arch
+  # cache, so `npm ci` only downloads new or changed packages.
+  # POSIX-only path: on Windows npm caches to %LocalAppData%\npm-cache, so
+  # ~/.npm never exists and save fails — set npm_config_cache to a fixed path
+  # and cache that path instead.
+  - name: node
+    cache_key:
+      - node
+      - { agent: os }
+      - { agent: arch, fallback_limit: true }
+      - { checksum: package-lock.json }
+    target_paths:
+      - ~/.npm
+
+  # Ruby gems installed to a local vendor path (bundle config set path vendor/bundle).
+  # Gems compile native extensions, so os + arch are mandatory.
+  - name: gems
+    cache_key:
+      - gems
+      - { agent: os }
+      - { agent: arch, fallback_limit: true }
+      - { checksum: Gemfile.lock }
+    target_paths:
+      - vendor/bundle
+
+  # Go module cache, keyed on go.sum plus every go.mod in the repo.
+  # The v1 literal is a manual generation number — bump it to abandon all
+  # previous entries (for example after a Go toolchain upgrade).
+  # Go's build cache lives at an OS-specific path (~/.cache/go-build on Linux,
+  # ~/Library/Caches/go-build on macOS); to cache it too, set GOCACHE to a
+  # fixed path in the job environment and add that path here — save fails if
+  # a target path does not exist.
+  - name: go
+    cache_key:
+      - go
+      - v1
+      - { agent: os }
+      - { agent: arch, fallback_limit: true }
+      - { checksum: [go.sum, "**/go.mod"] }
+    target_paths:
+      - ~/go/pkg/mod
