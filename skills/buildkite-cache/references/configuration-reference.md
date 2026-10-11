@@ -124,8 +124,10 @@ Per cache (in parallel, one worker per CPU — restore currently ignores `--conc
 1. Resolve the cache key; ask the registry for an entry — exact match first, then fallback prefix matching (newest wins) when a `fallback_limit` is set.
 2. No entry → cache miss; the command succeeds.
 3. Download the archive from the store and verify its SHA-256.
-4. Three specific blob problems — missing object, digest mismatch, unreadable archive — degrade to a cache miss and invalidate the stale registry entry so later builds skip it. Other failures (invalid configuration or store settings, registry/API errors after retries, store permission or network errors, cleanup or extraction errors) are returned as command errors and can fail the step.
+4. Three specific blob problems — missing object, digest mismatch, unreadable archive — degrade to a cache miss and invalidate the stale registry entry so later builds skip it. Other per-cache failures before target mutation warn and continue by default; `--cache-fail-on-error` makes them fatal. Configuration discovery, validation, and cache-name selection errors can fail before this loop. Restore failures after target mutation remain fatal regardless of the flag.
 5. Delete each target path (with guards against removing the working directory, home directory, or filesystem roots), then extract.
+
+Cleanup and extraction are not transactional: a fatal restore can leave targets partially modified. Use job-private local targets, or coordinate exclusive access for the entire interval in which cached files are used. Locking only during restore does not protect another job that is still using those paths. Save also defaults to warning and continuing on per-cache failures; use `--cache-fail-on-error` when save success is required.
 
 Archives are portable: paths are stored relative to anchors (home directory, working directory, or volume root) that re-resolve on the restoring machine, so caches move cleanly across agents, users, and checkout directories.
 
