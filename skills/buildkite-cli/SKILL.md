@@ -249,7 +249,7 @@ bk job unblock <job-uuid> --data '{"release": "true"}'   # with block-step field
 bk job reprioritize <job-uuid> 10 # raise scheduling priority
 ```
 
-`bk job cancel` stops one job and leaves the rest of the build running; `bk build cancel` stops every unfinished job. Before canceling, read that one job with `bk api /jobs/<job-uuid>` (or MCP `get_job`) and show the user its name and state. Pass the global `--yes` (`bk job --yes cancel <job-uuid>`) only after the user has confirmed that job. A running job stays `canceling` until its agent finishes, but v3.61.1 prints `Job canceled: <url>` as soon as the request succeeds; reread the job before reporting it stopped.
+`bk job cancel` stops one job and leaves the rest of the build running; `bk build cancel` stops every unfinished job. Before canceling, read that one job with `bk api /jobs/<job-uuid>` (or MCP `get_job`) and show the user its name and state. Pass the global `--yes` (`bk job --yes cancel <job-uuid>`) only after the user has confirmed that job. A running job stays `canceling` until its agent finishes. Since v3.62.0 the command uses the REST job cancel endpoint and prints `Job canceling: <url>` for a running job and `Job canceled: <url>` otherwise; v3.61.1 and earlier print `Job canceled: <url>` in both cases. Either way, reread the job before reporting it stopped.
 
 ### Debugging workflow
 
