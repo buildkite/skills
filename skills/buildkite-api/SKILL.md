@@ -85,7 +85,7 @@ Use this map to select a resource family, then open the linked reference for exa
 | Pipeline setup | REST read/write | `read_pipelines`/`write_pipelines`; pipeline access | Create validates and mutates together; there is no REST dry run. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
 | Notification services | REST read/write lifecycle | `read_notification_services`/`write_notification_services`; organization admin or **Manage Notification Services** | OAuth Slack Workspace and Linear require initial browser authorization; preserve omitted secrets. [Notification services](https://buildkite.com/docs/apis/rest-api/organizations/notification-services) |
 | Inbound GitHub processing | REST read/write | `read_pipelines`/`write_pipelines`; Full Access; provider and feature gates | Processing controls do not register a repository webhook or configure the GitHub App. [Pipelines](https://buildkite.com/docs/apis/rest-api/pipelines) |
-| Build lifecycle | REST read/write | `read_builds`/`write_builds`; pipeline access | Rebuild replays the original context instead of fetching current source-control state. [Builds](https://buildkite.com/docs/apis/rest-api/builds) |
+| Build lifecycle | REST read/write | `read_builds`/`write_builds`; pipeline access | Rebuild replays the original context instead of fetching current source-control state. Build cancel stops every unfinished job; job cancel stops one. [Builds](https://buildkite.com/docs/apis/rest-api/builds) and [jobs](https://buildkite.com/docs/apis/rest-api/jobs) |
 | Hosted resources | REST mixed access | `read_clusters`/`write_clusters`; manage-cluster permission; hosted-agent and resource gates | Cluster read/update exposes hosted Git mirror and container cache settings only to cluster managers; image creation is asynchronous with no update; cache deletion is explicit. [Clusters](https://buildkite.com/docs/apis/rest-api/clusters), [images](https://buildkite.com/docs/apis/rest-api/clusters/agent-images), [network ranges](https://buildkite.com/docs/apis/rest-api/clusters/network-ranges), and [cache volumes](https://buildkite.com/docs/apis/rest-api/clusters/cache-volumes) |
 | Diagnostics | REST read-only | `read_builds`, `read_agents` | Signal and agent lifecycle fields are evidence, not proof that retry is safe. [Jobs](https://buildkite.com/docs/apis/rest-api/jobs) and [agents](https://buildkite.com/docs/apis/rest-api/agents) |
 | Artifacts | REST read/write; GraphQL deletion | `read_artifacts`/`write_artifacts` for REST; GraphQL API access; **Build & Read** access or higher on the artifact's pipeline for deletion | Filter before pagination and confirm deletion explicitly. [Artifacts](https://buildkite.com/docs/apis/rest-api/artifacts) |
@@ -134,6 +134,12 @@ Use `signal` and `signal_reason` to distinguish signal termination from an ordin
 
 Treat this context as diagnostic evidence, not proof that retry is safe. Before retrying, inspect logs, side effects, retry history, and whether the command is idempotent. A lost agent can explain interruption without establishing that an external deployment or write did not complete.
 
+### Job cancellation
+
+Cancel one command job with `PUT /organizations/{org.slug}/jobs/{job.id}/cancel`, or the nested `PUT /organizations/{org.slug}/pipelines/{pipeline.slug}/builds/{build.number}/jobs/{job.id}/cancel`. Send no body, require `write_builds`, and expect the standard job JSON. Other jobs keep running. To stop every unfinished job, cancel the build with `PUT .../builds/{build.number}/cancel` instead.
+
+Only command jobs in `scheduled`, `reserved`, `assigned`, `accepted`, or `running` can be canceled; others return `422` with a reason to report, not retry. A `running` job becomes `canceling` until its agent finishes, with no force option, so do not treat the `200` as termination. Confirm the job UUID, name, and state with the user first: an interrupted command may leave partial external effects, and recovery means a retry that creates a new job. Never loop job cancels to approximate a build cancel. See `references/patterns.md` for states, errors, and a cancel-and-poll script.
+
 ## GraphQL API
 
 Use `https://graphql.buildkite.com/v1`. Prefer GraphQL when a typed query avoids several nested REST reads or when its mutation shape better fits the workflow. GraphQL access tokens use the **Enable GraphQL API Access** permission rather than granular REST scopes. Use global node IDs for mutation inputs, not REST UUIDs or pipeline slugs unless the schema explicitly requests them.
@@ -174,6 +180,7 @@ For outbound handlers, branch on `X-Buildkite-Event` or the payload `event`. Do 
 | Replacing notification secrets because GET omits them | Working credentials are rotated unnecessarily | Account for provider-specific secret response behavior and preserve omitted secrets |
 | Confusing outbound notification webhooks with inbound GitHub processing | The wrong endpoint is changed and repository delivery remains broken | Identify notification service, processing toggle, repository registration, and app connection separately |
 | Filtering artifacts after reading one page | Matching artifacts on later pages are missed | Apply `state` and `path` on the API request before pagination |
+| Canceling the build to stop one job, or looping job cancels to stop a build | Unrelated jobs are stopped, or jobs created between calls keep running | Use the job cancel route for one confirmed job and the build cancel route for the whole build |
 | Retrying solely because signal or agent timing suggests interruption | Non-idempotent external effects may run twice | Inspect logs, side effects, and retry history before retrying |
 
 ## Additional Resources
@@ -182,7 +189,7 @@ For outbound handlers, branch on `X-Buildkite-Event` or the payload `event`. Do 
 
 - **`references/graphql-reference.md`** — GraphQL pagination, global IDs, common queries, and safe artifact deletion
 - **`references/webhooks.md`** — Notification-service lifecycle and boundaries between outbound and inbound webhook concepts
-- **`references/patterns.md`** — Copy-paste REST workflows for audit inventory, repository-to-pipeline setup, notification reconciliation, and diagnostics
+- **`references/patterns.md`** — Copy-paste REST workflows for audit inventory, repository-to-pipeline setup, notification reconciliation, single-job cancellation, and diagnostics
 
 ## Further Reading
 
