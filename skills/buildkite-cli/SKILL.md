@@ -249,7 +249,7 @@ bk job unblock <job-uuid> --data '{"release": "true"}'   # with block-step field
 bk job reprioritize <job-uuid> 10 # raise scheduling priority
 ```
 
-`bk job cancel` stops one job and leaves the rest of the build running; `bk build cancel` stops every unfinished job. Show the user the job name and state from `bk job list --build` before canceling, and pass the global `--yes` (`bk job --yes cancel <job-uuid>`) only after the user has confirmed that job. A running job reports `canceling` until its agent finishes.
+`bk job cancel` stops one job and leaves the rest of the build running; `bk build cancel` stops every unfinished job. Show the user the job name and state from `bk job list --build` before canceling, and pass the global `--yes` (`bk job --yes cancel <job-uuid>`) only after the user has confirmed that job. A running job stays `canceling` until its agent finishes, but v3.61.1 prints `Job canceled: <url>` as soon as the request succeeds; recheck the job state with `bk job list --build` before reporting it stopped.
 
 ### Debugging workflow
 
