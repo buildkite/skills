@@ -177,7 +177,14 @@ After the user confirms, cancel and poll. A `422` body explains why the job cann
 ```bash
 set -euo pipefail
 
-state=$(curl -sS --fail-with-body -X PUT -H "$auth" "$base/cancel" | jq -er '.state')
+response=$(curl -sS -X PUT -H "$auth" -w '\n%{http_code}' "$base/cancel")
+status=${response##*$'\n'}
+body=${response%$'\n'*}
+if [ "$status" != "200" ]; then
+  printf 'Cancel failed with HTTP %s: %s\n' "$status" "$(jq -r '.message // .' <<<"$body")" >&2
+  exit 1
+fi
+state=$(jq -er '.state' <<<"$body")
 
 for attempt in $(seq 1 30); do
   [ "$state" = "canceled" ] && break

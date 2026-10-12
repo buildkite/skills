@@ -136,7 +136,7 @@ Treat this context as diagnostic evidence, not proof that retry is safe. Before 
 
 ### Job cancellation
 
-Cancel one command job with `PUT /organizations/{org.slug}/jobs/{job.id}/cancel`, or the nested `PUT /organizations/{org.slug}/pipelines/{pipeline.slug}/builds/{build.number}/jobs/{job.id}/cancel`. Send no body, require `write_builds`, and expect the standard job JSON. Other jobs keep running. To stop every unfinished job, cancel the build with `PUT .../builds/{build.number}/cancel` instead.
+Cancel one command job with `PUT /organizations/{org.slug}/jobs/{job.id}/cancel`, or the nested `PUT /organizations/{org.slug}/pipelines/{pipeline.slug}/builds/{build.number}/jobs/{job.id}/cancel`. Send no body, require `write_builds`, and expect the standard job JSON. Other jobs are not canceled directly, but the canceled job can fail the build and trigger fast-fail (`cancel_on_build_failing`) on other steps, so do not promise they are unaffected. To stop every unfinished job, cancel the build with `PUT .../builds/{build.number}/cancel` instead.
 
 Only command jobs in `scheduled`, `reserved`, `assigned`, `accepted`, or `running` can be canceled; others return `422` with a reason to report, not retry. A `running` job becomes `canceling` until its agent finishes, with no force option, so do not treat the `200` as termination. Confirm the job UUID, name, and state with the user first: an interrupted command may leave partial external effects, and recovery means a retry that creates a new job. Never loop job cancels to approximate a build cancel. See `references/patterns.md` for states, errors, and a cancel-and-poll script.
 
