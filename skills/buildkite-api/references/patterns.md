@@ -156,7 +156,7 @@ Require `write_builds`. Show the job to the user and get confirmation before the
 |----------|---------|--------|
 | `422` `You can only cancel jobs that have started` | Job is `pending`, `waiting`, `blocked`, `limited`, finished, or already canceled | Report the state; do not retry the cancel |
 | `422` `This job is already being canceled` | Job is `canceling` | Poll the job; do not resend |
-| `422` ``Only `command` jobs can be canceled`` | Wait, block, input, or trigger job | Use the step-specific action, such as unblocking a block step |
+| `422` ``Only `command` jobs can be canceled`` | Wait, block, input, or trigger job | Report that only command jobs can be canceled and ask the user how to proceed; do not unblock a block step, which releases downstream work |
 | `422` `This job can't be canceled anymore` | Job state changed, for example to lost, while the request was processed | Read the job state and report it |
 | `403` | Token lacks `write_builds` or the user cannot build the pipeline | Report the missing scope or permission |
 | `404` | Job does not exist, is not visible, or is not in the nested route's build | Recheck the identifiers and access |
