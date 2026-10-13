@@ -414,7 +414,8 @@ When the Buildkite MCP server is available, prefer MCP tools for read operations
 | `bk cluster list` | `list_clusters` | |
 | `bk auth status` | `current_user`, `access_token` | |
 | `bk build watch` / `download` | — | CLI only |
-| `bk job retry` / `cancel` / `unblock` | — | CLI only |
+| `bk job cancel` | `cancel_job` | Server v1.27.0+, not in read-only mode; pass `org_slug` and `job_id`, plus `pipeline_slug` and `build_number` together or neither. Same confirmation and recheck rules as the CLI. Fall back to `bk job cancel` when the server does not list the tool |
+| `bk job retry` / `unblock` | — | CLI only |
 | `bk secret *`, `bk package push`, `bk agent run` | — | CLI only |
 | `bk api` | — | Use MCP tools for reads; CLI for custom calls |
 
