@@ -150,15 +150,15 @@ Cancel a running build with `PUT $base/$number/cancel`; this stops every unfinis
 
 ### Cancel one job
 
-Require `write_builds`. Show the job to the user and get confirmation before the `PUT`. A `scheduled`, `reserved`, `assigned`, or `accepted` command job becomes `canceled` immediately. A `running` job moves to `canceling` and reaches `canceled` only after its agent finishes, so poll with a bound instead of treating the `200` as termination. There is no force option.
+The endpoint requires `write_builds`. Show the job to the user and get confirmation before the `PUT`. A `scheduled`, `reserved`, `assigned`, or `accepted` command job becomes `canceled` immediately. A `running` job moves to `canceling` and reaches `canceled` only after its agent finishes, so poll with a bound instead of treating the `200` as termination. The REST API has no force option.
 
 | Response | Meaning | Action |
 |----------|---------|--------|
 | `422` `You can only cancel jobs that have started` | Job is `pending`, `waiting`, `blocked`, `limited`, finished, or already canceled | Report the state; do not retry the cancel |
 | `422` `This job is already being canceled` | Job is `canceling` | Poll the job; do not resend |
 | `422` ``Only `command` jobs can be canceled`` | Wait, block, input, or trigger job | Report that only command jobs can be canceled and ask the user how to proceed; do not unblock a block step, which releases downstream work |
-| `422` `This job can't be canceled anymore` | Job state changed, for example to lost, while the request was processed | Read the job state and report it |
-| `403` | Token lacks `write_builds` or the user cannot build the pipeline | Report the missing scope or permission |
+| `422` `This job can't be canceled anymore` | Job state changed while the request was processed | Read the job state and report it |
+| `403` | Token lacks `write_builds`, or the user doesn't have permission to cancel the job | Report the missing scope or permission |
 | `404` | Job does not exist, is not visible, or is not in the nested route's build | Recheck the identifiers and access |
 
 Show the target first:
@@ -187,7 +187,7 @@ fi
 state=$(jq -er '.state' <<<"$body")
 
 for attempt in $(seq 1 30); do
-  [ "$state" = "canceled" ] && break
+  [ "$state" != "canceling" ] && break
   sleep 10
   state=$(curl -sS --fail-with-body -H "$auth" "$base" | jq -er '.state')
 done
