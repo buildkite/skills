@@ -146,7 +146,55 @@ esac
 printf 'Build %s finished in state %s\n' "$number" "$state"
 ```
 
-Cancel a running build with `PUT $base/$number/cancel`. Rebuild with `PUT $base/$number/rebuild` only when replaying the original commit, branch, environment, message, and pull request context is intended. To fetch current source-control state, create a new build instead.
+Cancel a running build with `PUT $base/$number/cancel`; this stops every unfinished job in the build. Rebuild with `PUT $base/$number/rebuild` only when replaying the original commit, branch, environment, message, and pull request context is intended. To fetch current source-control state, create a new build instead.
+
+### Cancel one job
+
+The endpoint requires `write_builds`. Show the job to the user and get confirmation before the `PUT`. A `scheduled`, `reserved`, `assigned`, or `accepted` command job becomes `canceled` immediately. A `running` job moves to `canceling` and reaches `canceled` only after its agent finishes, so poll with a bound instead of treating the `200` as termination. The REST API has no force option.
+
+| Response | Meaning | Action |
+|----------|---------|--------|
+| `422` `You can only cancel jobs that have started` | Job is `pending`, `waiting`, `blocked`, `limited`, finished, or already canceled | Report the state; do not retry the cancel |
+| `422` `This job is already being canceled` | Job is `canceling` | Poll the job; do not resend |
+| `422` ``Only `command` jobs can be canceled`` | Wait, block, input, or trigger job | Report that only command jobs can be canceled and ask the user how to proceed; do not unblock a block step, which releases downstream work |
+| `422` `This job can't be canceled anymore` | Job state changed while the request was processed | Read the job state and report it |
+| `403` | Token lacks `write_builds`, or the user doesn't have permission to cancel the job | Report the missing scope or permission |
+| `404` | Job does not exist, is not visible, or is not in the nested route's build | Recheck the identifiers and access |
+
+Show the target first:
+
+```bash
+org="my-org"
+job="0190046e-e199-453b-a302-a21a4d649d31"
+base="https://api.buildkite.com/v2/organizations/$org/jobs/$job"
+auth="Authorization: Bearer $BUILDKITE_API_TOKEN"
+
+curl -sS --fail-with-body -H "$auth" "$base" | jq '{id, type, name, step_key, state, web_url}'
+```
+
+After the user confirms, cancel and poll. A `422` body explains why the job cannot be canceled; report that message instead of retrying.
+
+```bash
+set -euo pipefail
+
+response=$(curl -sS -X PUT -H "$auth" -w '\n%{http_code}' "$base/cancel")
+status=${response##*$'\n'}
+body=${response%$'\n'*}
+if [ "$status" != "200" ]; then
+  printf 'Cancel failed with HTTP %s: %s\n' "$status" "$(jq -r '.message // .' <<<"$body")" >&2
+  exit 1
+fi
+state=$(jq -er '.state' <<<"$body")
+
+for attempt in $(seq 1 30); do
+  [ "$state" != "canceling" ] && break
+  sleep 10
+  state=$(curl -sS --fail-with-body -H "$auth" "$base" | jq -er '.state')
+done
+printf 'Job %s is %s\n' "$job" "$state"
+```
+
+When the build is already known, `PUT /organizations/$org/pipelines/$pipeline/builds/$build/jobs/$job/cancel` behaves the same but returns `404` if the job is not in that build. A job still `canceling` after the polling window is waiting on its agent; report it rather than canceling the build.
 
 ### Diagnose failed jobs
 

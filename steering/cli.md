@@ -235,11 +235,13 @@ bk job list --duration ">10m" --order-by duration --no-limit
 
 ```bash
 bk job retry <job-uuid>           # each job UUID can be retried once
-bk job cancel <job-uuid>
+bk job cancel <job-uuid>          # cancel one job; prompts for confirmation
 bk job unblock <job-uuid>         # unblock a blocked step
 bk job unblock <job-uuid> --data '{"release": "true"}'   # with block-step fields
 bk job reprioritize <job-uuid> 10 # raise scheduling priority
 ```
+
+`bk job cancel` stops one job; `bk build cancel` stops every unfinished job. Other jobs are not canceled directly, but unless the step has `soft_fail`, the canceled job fails the build and can trigger fast-fail (`cancel_on_build_failing`) on other steps. Before canceling, read that one job with `bk api /jobs/<job-uuid>` (or MCP `get_job`) and show the user its name and state. Pass the global `--yes` (`bk job --yes cancel <job-uuid>`) only after the user has confirmed that job. A running job stays `canceling` until its agent finishes. Since v3.62.0 the command uses the REST job cancel endpoint and prints `Job canceling: <url>` for a running job and `Job canceled: <url>` otherwise; v3.61.1 and earlier print `Job canceled: <url>` in both cases. Either way, reread the job before reporting it stopped.
 
 ### Debugging workflow
 
@@ -412,7 +414,8 @@ When the Buildkite MCP server is available, prefer MCP tools for read operations
 | `bk cluster list` | `list_clusters` | |
 | `bk auth status` | `current_user`, `access_token` | |
 | `bk build watch` / `download` | — | CLI only |
-| `bk job retry` / `cancel` / `unblock` | — | CLI only |
+| `bk job cancel` | `cancel_job` | Server v1.27.0+, not in read-only mode; pass `org_slug` and `job_id`, plus `pipeline_slug` and `build_number` together or neither. Same confirmation and recheck rules as the CLI. Fall back to `bk job cancel` when the server does not list the tool |
+| `bk job retry` / `unblock` | — | CLI only |
 | `bk secret *`, `bk package push`, `bk agent run` | — | CLI only |
 | `bk api` | — | Use MCP tools for reads; CLI for custom calls |
 
@@ -428,6 +431,7 @@ When the Buildkite MCP server is available, prefer MCP tools for read operations
 | Retrying a job UUID that was already retried | API returns 422 — each UUID retries once | Use the new job UUID returned by the first retry |
 | Creating secrets with keys starting with `buildkite`/`bk` | Creation fails — reserved prefix | Choose another name (exception: `BUILDKITE_API_TOKEN`) |
 | Passing secret values literally in `--value` | Values persist in shell history and process list | Use env var references (`--value "$TOKEN"`) or the masked prompt |
+| Running `bk build cancel` to stop one stuck job | Every unfinished job in the build is canceled | Run `bk job cancel <job-uuid>` for the confirmed job |
 | Running `bk build cancel` on a finished build | API errors — only scheduled/running/failing builds cancel | Check state with `bk build view --summary` first |
 | Assuming `bk artifacts upload` exists | No such command | Upload from a job with `buildkite-agent artifact upload` |
 | Confusing `bk` with `buildkite-agent` | `bk` runs locally against the API; `buildkite-agent` runs inside job steps | Use `bk` from a terminal, `buildkite-agent` inside pipeline commands |
