@@ -1,0 +1,29 @@
+{
+  "name": "buildkite",
+  "description": "Official Buildkite skills for Claude Code, Cursor, and other AI coding agents — pipelines, migration, preflight, agent runtime, CLI, and API",
+  "version": "1.0.0",
+  "author": {
+    "name": "Buildkite"
+  },
+  "homepage": "https://buildkite.com/",
+  "repository": "https://github.com/buildkite/skills",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": [
+    "ci/cd",
+    "buildkite",
+    "buildkite pipelines",
+    "continuous integration",
+    "build automation",
+    "test-engine",
+    "secure-delivery",
+    "continuous delivery"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "buildkite": {
+      "type": "http",
+      "url": "https://mcp.buildkite.com/mcp"
+    }
+  }
+}

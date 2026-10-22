@@ -26,6 +26,22 @@ Add the marketplace and install the plugin:
 
 Search for **Buildkite Skills** in the Cursor Marketplace, or run `/add-plugin` and search for "Buildkite".
 
+### Grok Build
+
+Clone this repository and load the plugin locally:
+
+```bash
+git clone https://github.com/buildkite/skills.git
+grok --plugin-dir ./skills
+```
+
+The plugin loads all seven skills and connects to `https://mcp.buildkite.com/mcp`.
+Complete the browser OAuth flow on first use with a Buildkite account; no API token
+is required. For read-only MCP access, change the server URL in
+`.grok-plugin/plugin.json` to `https://mcp.buildkite.com/mcp/readonly`.
+See the [remote MCP server documentation](https://buildkite.com/docs/apis/mcp-server/remote/configuring-ai-tools)
+for permissions and access boundaries.
+
 ### Kiro
 
 Recommended (one install): add the Buildkite **power** in the Powers panel, pointing at
