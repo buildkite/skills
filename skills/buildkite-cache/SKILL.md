@@ -130,12 +130,14 @@ Shared flags:
 | `--cache-store-url` | — | `BUILDKITE_AGENT_CACHE_STORE_URL` | Blob store URL, e.g. `s3://my-cache-bucket` |
 | `--cache-config-file` | `.buildkite/cache.yml` or `.buildkite/cache.yaml` | `BUILDKITE_CACHE_CONFIG_FILE` | Path to the cache configuration file |
 | `--concurrency` | `2` | `BUILDKITE_CACHE_CONCURRENCY` | Number of caches processed in parallel; currently applies only to save — restore ignores it and uses one worker per CPU |
+| `--cache-fail-on-error` | `false` | `BUILDKITE_AGENT_CACHE_FAIL_ON_ERROR` | Make per-cache save/restore failures fatal; restore failures after target mutation remain fatal regardless |
 
 Behavioral guarantees to rely on:
 
 - **Save skips existing entries (best-effort).** If an entry already exists for the exact resolved key, save reports "Cache already exists" and skips the upload. New content requires a new key (normally via a checksum part). The existence check is not atomic with the write: concurrent saves under the same key can both observe a miss and both upload, and the later commit wins — do not rely on first-writer-wins across parallel builds.
-- **Misses and corrupt entries never fail the build.** A missing entry, a missing archive, a digest mismatch, or an unreadable archive degrades to a cache miss, and stale metadata is invalidated automatically. Other failures — invalid configuration, registry/API errors, store permission or network problems — are real errors and do fail the command. Write steps so they work from an empty cache.
-- **A failed save does fail the command** (missing target path, misconfiguration, no store access). Keep save inside the step that produced the paths so misconfiguration surfaces early.
+- **Cache misses succeed; error handling depends on the stage.** Missing entries and unusable archives degrade to misses. Per-cache save errors and restore errors before target mutation warn and continue by default; use `--cache-fail-on-error` to make these failures fatal. Configuration discovery, validation, and cache-name selection errors can fail before per-cache processing. Write steps so they work from an empty cache.
+- **A partially modified restore is always fatal.** Cleanup and extraction are not transactional. A restore error after target mutation fails even without `--cache-fail-on-error`; do not treat partially restored paths as a cold cache. Restore into job-private targets, or coordinate exclusive access for the entire time the cached files are in use, not only during restore.
+- **Save only complete outputs.** Keep save inside the step that produced the paths. Use `--cache-fail-on-error` when save success is a required check; default best-effort saves can warn about missing paths or store access without failing the command.
 
 Because nothing invokes these commands automatically, the standard placements are inline in the command step (as in Quick Start) or in repository `pre-command` / `pre-exit` hooks for pipelines with many steps sharing the same caches. A `pre-exit` hook also runs after failed steps, and because save skips existing entries, saving a partially built path can poison the key until it expires — guard hook saves with the command's exit status:
 
