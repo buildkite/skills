@@ -5,6 +5,8 @@ description: >
   "check build status", "watch a build", "view build logs", "rebuild a build",
   "cancel a build", "list builds", "list jobs", "unblock a job",
   "download artifacts", "manage secrets", "create a pipeline", "list pipelines",
+  "review my Buildkite environment", "find unnecessary builds",
+  "review retry effectiveness", "optimize Buildkite workflows",
   "validate a pipeline", "copy a pipeline", "run a local agent", or
   "interact with Buildkite from the command line".
   Also use when the user mentions bk commands, bk build, bk job, bk pipeline,
@@ -44,6 +46,12 @@ bk job log <job-uuid>
 ```
 
 Most build, job, artifact, and pipeline commands resolve the pipeline, branch, and most-recent build from the current git repository. Pass `-p/--pipeline` explicitly only when outside a repo or when targeting a different pipeline.
+
+## Review a Buildkite Environment
+
+For an environment review or evidence-backed workflow optimization, read `references/environment-review.md`. Start with obsolete branch builds, retry effectiveness, schedule health, and measured concurrency contention. Keep the review read-only and recommendations tied to observed settings and build history, not compute costs or a best-practice score.
+
+Use the normal lightweight build/job commands for a single-build status request; do not expand it into an environment review.
 
 ## Installation
 
@@ -447,6 +455,7 @@ When the Buildkite MCP server is available, prefer MCP tools for read operations
 ## Additional Resources
 
 ### Reference Files
+- **`references/environment-review.md`** — Read-only environment review: scope, evidence collection, four initial checks, and recommendation boundaries
 - **`references/command-reference.md`** — Installation methods, full `bk build list`/`bk job list` filter tables, cluster/queue/maintainer commands, `bk agent`, `bk api`, package push, and config details
 
 ## Further Reading
